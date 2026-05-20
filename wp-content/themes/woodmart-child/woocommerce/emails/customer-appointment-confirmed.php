@@ -160,9 +160,6 @@ $cancellation_hours = function_exists( 'get_wc_appointment_cancellation_policy_a
 		</td>
 	</tr>
 	<?php endif; ?>
-			</td>
-		</tr>
-		<?php endif; ?>
 
 		<?php if ( $payment_method ) : ?>
 		<tr>
