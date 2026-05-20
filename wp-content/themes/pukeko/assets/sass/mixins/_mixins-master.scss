@@ -1,0 +1,596 @@
+/*--------------------------------------------------------------
+	* Responsive Breakpoints
+
+		 @include breakpoint(600)	{ } xs
+		 @include breakpoint(720)	{ } s
+		 @include breakpoint(840)	{ } m
+		 @include breakpoint(1200)	{ } l
+		 @include breakpoint(1296)	{ } xl
+		 @include breakpoint(1600)	{ } xxl
+	* ------------------------------------------------------------ */
+@mixin breakpoint($class) {
+	@if $class == xs {
+		@media (min-width: 37.500em) {
+			@content;
+		}
+	} @else
+	if $class == s {
+		@media (min-width: 45.000em) {
+			@content;
+		}
+	} @else
+	if $class == m {
+		@media (min-width: 52.500em) {
+			@content;
+		}
+	} @else
+	if $class == l {
+		@media (min-width: 75.000em) {
+			@content;
+		}
+	} @else
+	if $class == xl {
+		@media (min-width: 81.000em) {
+			@content;
+		}
+	} @else
+	if $class == xxl {
+		@media (min-width: 100.000em) {
+			@content;
+		}
+	} @else {
+		@warn "Breakpoint mixin supports: xs, s, m, l, xl, xxl";
+	}
+}
+// Fonts Families
+@mixin f1 {
+	font-family: $f1;
+}
+@mixin f2 {
+	font-family: $f2;
+}
+@mixin f-code {
+	font-family: $f-code;
+	font-size: 14px;
+	line-height: 22px;
+}
+// Font Weights
+@mixin font-light {
+	font-weight: 300;
+}
+@mixin font-regular {
+	font-weight: normal;
+}
+@mixin font-medium {
+	font-weight: 500;
+}
+@mixin font-bold {
+	font-weight: bold;
+}
+// Mixins for f1 Fonts
+@mixin f1-display {
+	font-size: 42px;
+	line-height: 51px;
+	letter-spacing: 0;
+	@include breakpoint(m) {
+		font-size: 66px;
+		line-height: 78px;
+	}
+}
+@mixin f1-h1 {
+	font-size: 37px;
+	line-height: 45px;
+	letter-spacing: 0;
+	@include breakpoint(m) {
+		font-size: 55px;
+		line-height: 66px;
+	}
+}
+@mixin f1-h2 {
+	font-size: 33px;
+	line-height: 41px;
+	letter-spacing: 0;
+	@include breakpoint(m) {
+		font-size: 46px;
+		line-height: 56px;
+	}
+}
+@mixin f1-h3 {
+	font-size: 29px;
+	line-height: 37px;
+	letter-spacing: 0;
+	@include breakpoint(m) {
+		font-size: 38px;
+		line-height: 47px;
+	}
+}
+@mixin f1-h4 {
+	font-size: 26px;
+	line-height: 33px;
+	letter-spacing: 0;
+	@include breakpoint(m) {
+		font-size: 32px;
+		line-height: 40px;
+	}
+}
+@mixin f1-h5 {
+	font-size: 23px;
+	line-height: 27px;
+	letter-spacing: 0;
+	@include breakpoint(m) {
+		font-size: 27px;
+		line-height: 34px;
+	}
+}
+@mixin f1-h6 {
+	font-size: 21px;
+	line-height: 28px;
+	letter-spacing: 0;
+	@include breakpoint(m) {
+		font-size: 22px;
+		line-height: 28px;
+	}
+}
+@mixin f1-body1 {
+	font-size: 22px;
+	line-height: 28px;
+	@include font-light;
+	@include breakpoint(m) {
+		font-size: 26px;
+		line-height: 40px;
+	}
+}
+@mixin f1-body1-mobile {
+	font-size: 22px;
+	line-height: 28px;
+	@include font-light;
+}
+@mixin f1-body2 {
+	font-size: 18px;
+	line-height: 24px;
+	@include font-light;
+	@include breakpoint(m) {
+		font-size: 19px;
+		line-height: 34px;
+	}
+}
+@mixin f1-body3 {
+	font-size: 15px;
+	line-height: 20px;
+	@include font-light;
+	@include breakpoint(m) {
+		font-size: 16px;
+		line-height: 24px;
+	}
+}
+@mixin f1-body4 {
+	font-size: 14px;
+	line-height: 22px;
+	@include font-light;
+}
+@mixin f1-body5 {
+	font-size: 12px;
+	line-height: 16px;
+	@include font-light;
+}
+@mixin f1-uppercase {
+	font-size: 13px;
+	line-height: 24px;
+	letter-spacing: 1px;
+	text-transform: uppercase;
+	@include font-regular;
+}
+@mixin f1-lowercase {
+	font-size: 15px;
+	line-height: 24px;
+	letter-spacing: 0;
+	@include font-regular;
+}
+
+// Font 2
+@mixin f2-display {
+	font-size: 44px;
+	line-height: 51px;
+	letter-spacing: -0.6px;
+	@include breakpoint(m) {
+		font-size: 68px;
+		line-height: 78px;
+	}
+}
+@mixin f2-h1 {
+	font-size: 39px;
+	line-height: 45px;
+	letter-spacing: -0.6px;
+	@include breakpoint(m) {
+		font-size: 57px;
+		line-height: 66px;
+	}
+}
+@mixin f2-h2 {
+	font-size: 35px;
+	line-height: 41px;
+	letter-spacing: -0.6px;
+	@include breakpoint(m) {
+		font-size: 48px;
+		line-height: 56px;
+	}
+}
+@mixin f2-h3 {
+	font-size: 31px;
+	line-height: 37px;
+	letter-spacing: -0.6px;
+	@include breakpoint(m) {
+		font-size: 40px;
+		line-height: 47px;
+		letter-spacing: -0.4px;
+	}
+}
+@mixin f2-h4 {
+	font-size: 28px;
+	line-height: 33px;
+	letter-spacing: -0.6px;
+	@include breakpoint(m) {
+		font-size: 34px;
+		line-height: 40px;
+		letter-spacing: -0.5px;
+	}
+}
+@mixin f2-h5 {
+	font-size: 25px;
+	line-height: 27px;
+	letter-spacing: -0.7px;
+	@include breakpoint(m) {
+		font-size: 29px;
+		line-height: 34px;
+		letter-spacing: -0.6px;
+	}
+}
+@mixin f2-h6 {
+	font-size: 23px;
+	line-height: 28px;
+	letter-spacing: -0.7px;
+	@include breakpoint(m) {
+		font-size: 24px;
+		line-height: 28px;
+		letter-spacing: -0.7px;
+	}
+}
+
+// Buttons general
+@mixin btn {
+	display: inline-block;
+	vertical-align: middle;
+	@include f1-lowercase;
+	font-style: normal;
+	@include transition-btn;
+}
+
+// Buttons Sizes (incl lowercase and uppercase adjustments)
+@mixin button-size($btnsize, $texttransform) {
+	@if $btnsize == xl and $texttransform == lowercase {
+		height: 64px;
+		padding: 19px 56px 21px;
+	}
+	@else if $btnsize == xl and $texttransform == uppercase {
+		height: 64px;
+		padding: 20px 56px;
+	}
+	@else if $btnsize == l and $texttransform == lowercase {
+		height: 56px;
+		padding: 15px 48px 17px;
+	}
+	@else if $btnsize == l and $texttransform == uppercase {
+		height: 56px;
+		padding: 16px 48px;
+	}
+	@else if $btnsize == m and $texttransform == lowercase {
+		height: 48px;
+		padding: 11px 40px 13px;
+	}
+	@else if $btnsize == m and $texttransform == uppercase {
+		height: 48px;
+		padding: 12px 40px;
+	}
+	@else if $btnsize == s and $texttransform == lowercase {
+		height: 40px;
+		padding: 7px 32px 9px;
+	}
+	@else if $btnsize == s and $texttransform == uppercase {
+		height: 40px;
+		padding: 8px 32px;
+	}
+}
+
+// Buttons Styles
+@mixin btn-primary {
+	display: inline-block;
+	color: $white;
+	fill: $white;
+	background-color: $primary;
+	@include transition-btn;
+
+	&:hover {
+		@include shadow-none;
+		color: #fff !important;
+		background-color: $primary-sub;
+	}
+}
+
+@mixin btn-secondary {
+	color: $black-text-high-emphasis;
+	fill: $black-text-high-emphasis;
+	background-color: $surface-light;
+	@include transition-btn;
+
+	&:hover {
+		color: $primary;
+	}
+}
+
+@mixin btn-outlined {
+	color: $primary;
+	fill: $primary;
+	border: solid 2px $primary;
+	@include transition-btn;
+
+	&:hover {
+		color: $white;
+		fill: $white;
+		background-color: $primary;
+	}
+}
+
+@mixin btn-flat {
+	background-color: transparent;
+	color: $black-text-high-emphasis;
+	fill: $black-text-high-emphasis;
+	padding-left: 0;
+	padding-right: 0;
+
+	&:hover {
+		color: $primary;
+		fill: $primary;
+	}
+}
+
+@mixin btn-naked {
+	color: $black-text-high-emphasis;
+	padding-left: 0;
+	padding-right: 0;
+
+	&:hover {
+		color: $primary;
+	}
+}
+
+// Avatar Sizes
+@mixin avatar-xl {
+	width: 160px;
+	height: 160px;
+}
+@mixin avatar-l {
+	width: $spacing-desktop-9;
+	height: $spacing-desktop-9;
+}
+@mixin avatar-m {
+	width: $spacing-desktop-7;
+	height: $spacing-desktop-7;
+}
+@mixin avatar-s {
+	width: $spacing-desktop-5;
+	height: $spacing-desktop-5;
+}
+@mixin avatar-xs {
+	width: $spacing-desktop-4;
+	height: $spacing-desktop-4;
+}
+
+// Clearfix
+@mixin clearfix {
+	&:after,
+	&:before {
+		content: " ";
+		display: table;
+	}
+
+	&:after {
+		clear: both;
+	}
+}
+
+// Placeholders
+@mixin input-placeholder {
+	&.placeholder {
+		@content;
+	}
+
+	&:-moz-placeholder {
+		@content;
+	}
+
+	&::-moz-placeholder {
+		@content;
+	}
+
+	&:-ms-input-placeholder {
+		@content;
+	}
+
+	&::-webkit-input-placeholder {
+		@content;
+	}
+}
+
+// @include push--auto
+@mixin push--auto {
+	margin: {
+		left: auto;
+		right: auto;
+	}
+}
+
+// Mixin grid padding
+@mixin col-padding {
+	padding-left: $spacing-mobile-3;
+	padding-right: $spacing-mobile-3;
+	@include breakpoint(m) {
+		padding-left: $spacing-desktop-3;
+		padding-right: $spacing-desktop-3;
+	}
+}
+
+// Special Colors
+@mixin color-notice {
+	color: $notice;
+}
+
+// Border Radius
+@mixin border-radius($radius) {
+	border-radius: $radius;
+}
+@mixin hide-rounded {
+	-webkit-appearance: none;
+	border-radius: 0;
+}
+
+@mixin border-radius-0 {
+		border-radius: 0;
+}
+@mixin border-radius-xs {
+		border-radius: $border-radius-xs;
+}
+@mixin border-radius-s {
+		border-radius: $border-radius-s;
+}
+@mixin border-radius-m {
+		border-radius: $border-radius-m;
+}
+@mixin border-radius-l {
+		border-radius: $border-radius-l;
+}
+@mixin border-radius-100 {
+		border-radius: 50%;
+}
+
+// Transitions
+@mixin transition-standard {
+	-webkit-transition: all 0.2s ease;
+	transition        : all 0.2s ease;
+}
+@mixin transition-posthover {
+	-webkit-transition: all 0.2s ease-in-out;
+	transition				: all 0.2s ease-in-out;
+}
+@mixin transition-btn {
+	-webkit-transition: all 0.7s cubic-bezier(0.23,1,0.32,1);
+	transition        : all 0.7s cubic-bezier(0.23,1,0.32,1);
+}
+
+// Shadows System
+// Shadows XL
+@mixin shadow-xl-light {
+	box-shadow        : 0 16px 48px 0 rgba(31, 32, 68, 0.08);
+	-webkit-box-shadow: 0 16px 48px 0 rgba(31, 32, 68, 0.08);
+}
+
+@mixin shadow-xl-regular {
+	box-shadow        : 0 16px 48px 0 rgba(31, 32, 68, 0.16);
+	-webkit-box-shadow: 0 16px 48px 0 rgba(31, 32, 68, 0.16);
+}
+
+@mixin shadow-xl-medium {
+	box-shadow        :  0 16px 48px 0 rgba(31, 32, 68, 0.24);
+	-webkit-box-shadow:  0 16px 48px 0 rgba(31, 32, 68, 0.24);
+}
+
+@mixin shadow-xl-heavy {
+	box-shadow        : 0 16px 48px 0 rgba(31, 32, 68, 0.32);
+	-webkit-box-shadow: 0 16px 48px 0 rgba(31, 32, 68, 0.32);
+}
+
+// Shadows L
+@mixin shadow-l-light {
+	box-shadow        : 0 8px 32px 0 rgba(31, 32, 68, 0.08);
+	-webkit-box-shadow: 0 8px 32px 0 rgba(31, 32, 68, 0.08);
+}
+
+@mixin shadow-l-regular {
+	box-shadow        : 0 8px 32px 0 rgba(31, 32, 68, 0.16);
+	-webkit-box-shadow: 0 8px 32px 0 rgba(31, 32, 68, 0.16);
+}
+
+@mixin shadow-l-medium {
+	box-shadow        :  0 8px 32px 0 rgba(31, 32, 68, 0.24);
+	-webkit-box-shadow:  0 8px 32px 0 rgba(31, 32, 68, 0.24);
+}
+
+@mixin shadow-l-heavy {
+	box-shadow        : 0 8px 32px 0 rgba(31, 32, 68, 0.32);
+	-webkit-box-shadow: 0 8px 32px 0 rgba(31, 32, 68, 0.32);
+}
+
+// Shadows M
+@mixin shadow-m-light {
+	box-shadow        : 0 4px 16px 0 rgba(31, 32, 68, 0.08);
+	-webkit-box-shadow: 0 4px 16px 0 rgba(31, 32, 68, 0.08);
+}
+
+@mixin shadow-m-regular {
+	box-shadow        : 0 4px 16px 0 rgba(31, 32, 68, 0.16);
+	-webkit-box-shadow: 0 4px 16px 0 rgba(31, 32, 68, 0.16);
+}
+
+@mixin shadow-m-medium {
+	box-shadow        :  0 4px 16px 0 rgba(31, 32, 68, 0.24);
+	-webkit-box-shadow:  0 4px 16px 0 rgba(31, 32, 68, 0.24);
+}
+
+@mixin shadow-m-heavy {
+	box-shadow        : 0 4px 16px 0 rgba(31, 32, 68, 0.32);
+	-webkit-box-shadow: 0 4px 16px 0 rgba(31, 32, 68, 0.32);
+}
+
+// Shadows S
+@mixin shadow-s-light {
+	box-shadow        : 0 2px 8px 0 rgba(31, 32, 68, 0.08);
+	-webkit-box-shadow: 0 2px 8px 0 rgba(31, 32, 68, 0.08);
+}
+
+@mixin shadow-s-regular {
+	box-shadow        : 0 2px 8px 0 rgba(31, 32, 68, 0.16);
+	-webkit-box-shadow: 0 2px 8px 0 rgba(31, 32, 68, 0.16);
+}
+
+@mixin shadow-s-medium {
+	box-shadow        :  0 2px 8px 0 rgba(31, 32, 68, 0.24);
+	-webkit-box-shadow:  0 2px 8px 0 rgba(31, 32, 68, 0.24);
+}
+
+@mixin shadow-s-heavy {
+	box-shadow        : 0 2px 8px 0 rgba(31, 32, 68, 0.32);
+	-webkit-box-shadow: 0 2px 8px 0 rgba(31, 32, 68, 0.32);
+}
+
+// Disable Shadow
+@mixin shadow-none {
+	box-shadow        : none;
+	-webkit-box-shadow: none;
+}
+
+// Special Hovers
+@mixin scale {
+	-webkit-transform: scale(1.01);
+	transform        : scale(1.01);
+}
+@mixin image-brightness {
+	-webkit-filter   : brightness(110%);
+	filter           : brightness(110%);
+}
+
+// Retina Images
+@mixin image-2x($image, $width, $height) {
+	@media (min--moz-device-pixel-ratio: 1.3), (-webkit-min-device-pixel-ratio: 1.3), (min-device-pixel-ratio: 1.3), (min-resolution: 1.3dppx) {
+		background-image: url($image);
+		background-size: $width $height;
+	}
+}

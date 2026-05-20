@@ -1,0 +1,355 @@
+
+input[type="text"],
+input[type="email"],
+input[type="url"],
+input[type="password"],
+input[type="search"],
+input[type="number"],
+input[type="tel"],
+input[type="range"],
+input[type="date"],
+input[type="month"],
+input[type="week"],
+input[type="time"],
+input[type="datetime"],
+input[type="datetime-local"],
+input[type="color"] {
+	width: 100%;
+	background: $white;
+	border: 1px solid $form-border-default;
+	height: $spacing-desktop-6;
+	padding: 0 12px;
+	outline: none;
+	@include hide-rounded;
+	@include transition-standard;
+	@include input-placeholder {
+		color: $black-text-medium-emphasis;
+	}
+}
+
+/* Header search form */
+.nav-container input[type="search"] {
+	@include input-placeholder {
+		color: $white-text-medium-emphasis;
+		padding-left: 1px;
+	}
+	@include breakpoint(l) {
+		@include input-placeholder {
+			color:  $black-text-high-emphasis;
+		}
+	}
+}
+
+.search-header input[type="search"]:focus {
+	color: $white;
+	@include breakpoint(l) {
+		color: $black-text-high-emphasis;
+	}
+}
+
+textarea {
+	width: 100%;
+	background: $white;
+	border: 1px solid $form-border-default;
+	padding: $spacing-2 $spacing-1;
+	outline: none;
+	@include hide-rounded;
+	@include transition-standard;
+	@include input-placeholder {
+		color: $black-text-high-emphasis
+	}
+}
+
+/* Form Hover States */
+input[type="text"]:hover, input[type="email"]:hover,
+input[type="url"]:hover, input[type="password"]:hover,
+input[type="search"]:hover, input[type="number"]:hover,
+input[type="tel"]:hover, input[type="range"]:hover,
+input[type="date"]:hover, input[type="month"]:hover,
+input[type="week"]:hover, input[type="time"]:hover,
+input[type="datetime"]:hover,
+input[type="datetime-local"]:hover,
+input[type="color"]:hover, textarea:hover {
+	border: 1px solid $form-border-hover;
+}
+
+input[type="text"]:focus, input[type="email"]:focus,
+input[type="url"]:focus, input[type="password"]:focus,
+input[type="search"]:focus, input[type="number"]:focus,
+input[type="tel"]:focus, input[type="range"]:focus,
+input[type="date"]:focus, input[type="month"]:focus,
+input[type="week"]:focus, input[type="time"]:focus,
+input[type="datetime"]:focus,
+input[type="datetime-local"]:focus,
+input[type="color"]:focus, textarea:focus,
+input[type="text"]:active, input[type="email"]:active,
+input[type="url"]:active, input[type="password"]:active,
+input[type="search"]:active, input[type="number"]:active,
+input[type="tel"]:active, input[type="range"]:active,
+input[type="date"]:active, input[type="month"]:active,
+input[type="week"]:active, input[type="time"]:active,
+input[type="datetime"]:active,
+input[type="datetime-local"]:active,
+input[type="color"]:active, textarea:active {
+	-webkit-box-shadow: 0 3px 0 0 $notice;
+	box-shadow: 0 3px 0 0 $notice;
+	border: 1px solid $notice;
+}
+
+.color-notice,
+label.color-notice span {
+	@include color-notice;
+}
+
+.comment-respond textarea {
+		height: 150px;
+}
+
+form p,
+.entry-content .elementor-text-editor form p {
+	margin: 0 0 $spacing-3;
+	@include breakpoint(m) {
+		margin: 0 0 $spacing-3;
+	}
+}
+
+form .comment-form-cookies-consent {
+	margin: 0;
+	padding: $spacing-3 0 0 0;
+	clear: both;
+}
+
+form .comment-form-cookies-consent label {
+	display: inline;
+	padding-left: 12px;
+	@include font-light;
+}
+
+form p.comment-form-comment {
+	margin: 0;
+	line-height: 0;
+}
+
+form label {
+	display: block;
+	padding: 0 0 $spacing-1;
+}
+
+select {
+	background:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='50px' height='50px'><polyline points='46.139,15.518 25.166,36.49 4.193,15.519'/></svg>");
+	border: 1px solid $form-border-default;
+	background-repeat:no-repeat;
+	background-position: right 14px top 21px;
+	background-size: 12px 12px;
+	padding: 15px 40px 15px 15px;
+	border-radius: 0;
+	-webkit-appearance: none;
+	width: 100%;
+}
+
+.wpcf7 {
+	margin-bottom: $spacing-mobile-5;
+	@include breakpoint(m) {
+		margin-bottom: $spacing-desktop-5;
+	}
+}
+
+/* Search Form Widget and Mailchimp Newsletter Widget */
+.searchform-wrap,
+.form-wrap {
+	position: relative;
+	display: block;
+	clear: both;
+	max-width: $col5-nopadding;
+}
+
+.entry-content .search-form,
+.widget_search .search-form {
+	position: relative;
+}
+
+.entry-content form label,
+.widget_search form label {
+	padding: 0;
+}
+
+.widget_search input[type="search"],
+.entry-content input[type="search"],
+.widget_mc4wp_form_widget input[type="email"],
+.elementor-widget-wp-widget-mc4wp_form_widget input[type="email"] {
+	width: calc(100% - 120px);
+	padding: 0 0 0 12px;
+	height: $spacing-desktop-7;
+	line-height: 1;
+	box-sizing: border-box;
+	border: 1px solid $form-border-default;
+}
+
+.footer-light-text #colophon .widget_search input[type="search"],
+.footer-light-text #colophon .widget_mc4wp_form_widget input[type="email"] {
+	border: 1px solid transparent;
+}
+
+.elementor-widget-wp-widget-mc4wp_form_widget .form-wrap {
+	display: flex;
+}
+
+.widget_search input[type="search"]:hover,
+.widget_search input[type="search"]:hover,
+.widget_mc4wp_form_widget input[type="email"]:hover,
+.elementor-widget-wp-widget-mc4wp_form_widget input[type="email"]:hover {
+	box-shadow: none;
+	border: 1px solid $form-border-hover;
+}
+
+.footer-light-text #colophon .widget_search input[type="search"]:hover,
+.footer-light-text #colophon .widget_mc4wp_form_widget input[type="email"]:hover {
+	border: 1px solid transparent;
+	background-color: $form-surface-hover;
+}
+
+.widget_search input[type="search"]:active,
+.entry-content input[type="search"]:active,
+.widget_search input[type="search"]:focus,
+.entry-content input[type="search"]:focus,
+.widget_mc4wp_form_widget input[type="email"]:active,
+.elementor-widget-wp-widget-mc4wp_form_widget input[type="email"]:active,
+.widget_mc4wp_form_widget input[type="email"]:focus,
+.elementor-widget-wp-widget-mc4wp_form_widget input[type="email"]:focus {
+	box-shadow: none;
+	border: 1px solid $notice;
+	caret-color: $notice;
+}
+
+.footer-light-text #colophon .widget_search input[type="search"]:active,
+.footer-light-text #colophon .widget_mc4wp_form_widget input[type="email"]:active,
+.footer-light-text #colophon .widget_search input[type="search"]:focus,
+.footer-light-text #colophon .widget_mc4wp_form_widget input[type="email"]:focus {
+	border: 1px solid $notice;
+	background-color: $white;
+}
+
+.entry-content label .search-icon,
+.widget_search label .search-icon {
+	display: none;
+}
+
+.entry-content .search-submit,
+.widget_search .search-submit {
+	position: absolute;
+	top: 0;
+	right: 0;
+	width: 120px;
+	height: $spacing-desktop-7;
+	text-align: center;
+	padding: 0;
+	display: inline-block;
+	@include btn-primary;
+}
+
+.entry-content .search-submit span.search-icon,
+.widget_search .search-submit span.search-icon {
+	width: 120px;
+	height: $spacing-desktop-7;
+	padding: 16px 0 0;
+}
+
+.entry-content .search-submit .icon,
+.widget_search .search-submit .icon,
+.elementor-widget-wp-widget-mc4wp_form_widget .subscribe-btn .icon,
+.widget_mc4wp_form_widget .subscribe-btn .icon {
+	fill: $white;
+}
+
+#secondary .widget_mc4wp_form_widget input[type="submit"],
+#colophon .widget_mc4wp_form_widget input[type="submit"] {
+	display: none !important;
+}
+
+.elementor-widget-wp-widget-mc4wp_form_widget .subscribe-btn,
+.widget_mc4wp_form_widget .subscribe-btn {
+	cursor: pointer;
+	position: absolute;
+	top: 0;
+	right: 0;
+	width: 120px;
+	height: $spacing-desktop-7;
+	display: block;
+	text-align: center;
+	padding-top: 15px;
+	@include btn-primary;
+	box-shadow: none !important;
+}
+
+.entry-content .mc4wp-response p {
+	padding-top: $spacing-2;
+	font-style: italic;
+}
+
+.elementor-widget-wp-widget-mc4wp_form_widget {
+	max-width: $content-width;
+	@include push--auto;
+	text-align: center;
+	padding: $spacing-mobile-9 $spacing-mobile-3;
+	@include breakpoint(m) {
+		padding: $spacing-desktop-9 0;
+	}
+}
+
+.elementor-widget-wp-widget-mc4wp_form_widget .form-wrap {
+	@include push--auto;
+}
+
+.entry-content .elementor-widget-wp-widget-mc4wp_form_widget h5 {
+	margin: 0;
+	padding: 0;
+}
+
+.entry-content .elementor-widget-wp-widget-mc4wp_form_widget .mc4wp-form-fields p {
+	padding: 0 0 $spacing-mobile-4;
+	@include breakpoint(m) {
+		padding: 0 0 $spacing-desktop-4;
+	}
+}
+
+.elementor-widget-wp-widget-mc4wp_form_widget .subscribe-btn {
+	display: none;
+}
+
+/* Rounded borders for one-column forms */
+.borders-round input,
+.borders-round textarea,
+.borders-round select {
+	@include border-radius-xs;
+}
+
+.borders-round .widget_search input[type="search"],
+.borders-round .entry-content input[type="search"],
+.borders-round .widget_mc4wp_form_widget input[type="email"],
+.borders-round .elementor-widget-wp-widget-mc4wp_form_widget input[type="email"] {
+	border-radius: 4px 0px 0px 4px;
+}
+
+.borders-round .entry-content .search-submit,
+.borders-round .widget_search .search-submit,
+.borders-round .elementor-widget-wp-widget-mc4wp_form_widget .subscribe-btn,
+.borders-round .widget_mc4wp_form_widget .subscribe-btn,
+.borders-round .elementor-widget-wp-widget-mc4wp_form_widget input[type="submit"] {
+	border-radius: 0 4px 4px 0px;
+}
+
+.btn-round .widget_search input[type="search"],
+.btn-round .entry-content input[type="search"],
+.btn-round .widget_mc4wp_form_widget input[type="email"],
+.btn-round .elementor-widget-wp-widget-mc4wp_form_widget input[type="email"] {
+	border-radius: 100px 0px 0px 100px;
+	padding: 0 0 0 $spacing-3;
+}
+
+.btn-round .entry-content .search-submit,
+.btn-round .widget_search .search-submit,
+.btn-round .elementor-widget-wp-widget-mc4wp_form_widget .subscribe-btn,
+.btn-round .widget_mc4wp_form_widget .subscribe-btn,
+.btn-round .elementor-widget-wp-widget-mc4wp_form_widget input[type="submit"] {
+	border-radius: 0 100px 100px 0px;
+}

@@ -1,0 +1,129 @@
+/*
+ Theme Name: Pukeko Child
+ Theme URI:
+ Description: Pukeko Child Theme
+ Author: Webixmedia
+ Author URI: http://www.webixmedia.com/
+ Template: pukeko
+ Version: 1.0.0
+ License: GNU General Public License v2 or later
+ License URI: http://www.gnu.org/licenses/gpl-2.0.html
+ Tags: Pukeko Child Theme
+*/
+
+/*
+You can start adding your own styles here. Use !important to overwrite styles if needed. */
+.grecaptcha-badge, .rc-anchor-invisible { visibility: hidden !important; }
+
+textarea {
+    height: 140px;
+}
+
+.tencol-width.center .teammember-content-wrap {
+    padding: 0px !important;
+}
+
+.tencol-width.center .teammember-content-wrap .teammember-social-wrap {
+    align-items: center;
+    align-content: center;
+    display: block;
+}
+.elementor-col-100 .elementor-widget-wp-widget-pukeko-teammember-widget {
+    margin-top: 0px !important;
+}
+
+.elementor-shortcode .elementor-container.elementor-column-gap-default {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.teammember-widget {
+    background: #FFF;
+	margin-bottom: 25px;
+}
+
+.teammember-widget .teammember-content-wrap {
+    padding: 25px;
+}
+
+.teammember-widget .teammember-content-wrap h2.section-title.f1 {
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 1.2;
+}
+
+.single_team_page {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.team_page_left {
+    text-align: center;
+}
+
+.team_page_left img {
+    display: block;
+    max-width: 100%;
+    margin-bottom: 25px;
+}
+
+.teammember-widget.press_post .teammember-content-wrap {
+    text-align: center;
+}
+
+.teammember-widget.press_post .teammember-content-wrap h2.section-title.f1 {
+    font-weight: 300;
+    font-size: 22px;
+}
+.contact_form .elementor-widget-container .wpcf7 {
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+}
+.whatsapp {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    width: 70px;
+    height: 70px;
+    margin: 15px;
+	opacity: 0.7;
+}
+.whatsapp:hover {
+	opacity: 1;
+}
+
+.team_tab ul li a {
+    box-shadow: none !important;
+    border-bottom: 2px solid transparent;
+}
+
+.team_tab ul li a:hover {
+    border-bottom: 2px solid #701162;
+}
+@media screen and (min-width: 75em) {
+	.header-cta-wrap ul li a {
+		height: 50px;
+		padding: 13px 20px 10px;
+	    font-size: 14px;
+	}
+	.header-cta-wrap {
+		padding: 16px 0 0 20px;
+	}
+}
+@media screen and (min-width: 52.5em) {
+	.page-id-851 .elementor-widget-wp-widget-pukeko-pagetitle-widget .section-title, .page-id-851 .pukeko_pagetitle .section-title, .page-id-851 h1 {
+		font-size: 42px;
+		line-height: 66px;
+	}
+}
+@media screen and (min-width:992px) {
+	.elementor-column.elementor-col-33 {
+		width: 33%;
+		padding: 25px;
+	}
+	.elementor-column.elementor-col-66 {
+		width: 66%;
+		padding: 25px;
+	}
+}

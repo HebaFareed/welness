@@ -1,0 +1,12 @@
+<wpml-config>
+		<admin-texts>
+			<key name="theme_mods_pukeko">
+					<key name="pukeko_hero_subtitle" />
+					<key name="pukeko_hero_title" />
+					<key name="pukeko_hero_text" />
+					<key name="pukeko_hero_btn_text" />
+					<key name="pukeko_hero_btn_url" />
+					<key name="pukeko_credit" />
+			</key>
+		</admin-texts>
+</wpml-config>

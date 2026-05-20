@@ -1,0 +1,15 @@
+a:4:{s:8:"template";s:6:"pukeko";s:4:"mods";a:39:{i:0;b:0;s:18:"nav_menu_locations";a:5:{s:13:"social-header";i:2;s:13:"social-footer";i:3;s:6:"menu-1";i:10;s:6:"menu-2";i:10;s:10:"cta-header";i:48;}s:18:"custom_css_post_id";i:665;s:22:"pukeko_sitedescription";b:1;s:18:"pukeko_blogsidebar";s:9:"post-only";s:18:"pukeko_displaydate";b:1;s:24:"pukeko_displaycategories";b:1;s:18:"pukeko_displaytags";b:1;s:20:"pukeko_displayauthor";b:1;s:11:"custom_logo";i:649;s:23:"pukeko_footertextcolors";s:17:"footer-light-text";s:19:"pukeko_headersearch";s:0:"";s:18:"pukeko_blogcolumns";s:11:"threecolumn";s:20:"pukeko_hero_subtitle";s:17:"Welcome to Pukeko";s:17:"pukeko_hero_title";s:46:"Be in the flow and create something beautiful.";s:16:"pukeko_hero_text";s:47:"Build your website with a new theme generation.";s:20:"pukeko_hero_btn_text";s:12:"Explore More";s:19:"pukeko_hero_btn_url";s:43:"https://www.elmastudio.de/en/themes/pukeko/";s:22:"pukeko_hero_text_color";s:7:"#000000";s:12:"header_image";s:68:"https://themes.elmastudio.de/pukeko/files/2017/11/headerimg_mini.jpg";s:17:"header_image_data";O:8:"stdClass":5:{s:13:"attachment_id";i:467;s:3:"url";s:68:"https://themes.elmastudio.de/pukeko/files/2017/11/headerimg_mini.jpg";s:13:"thumbnail_url";s:68:"https://themes.elmastudio.de/pukeko/files/2017/11/headerimg_mini.jpg";s:6:"height";i:1200;s:5:"width";i:2000;}s:13:"pukeko_credit";s:45:"© 2017 Pukeko WordPress theme by Elmastudio.";s:22:"pukeko_displaycomments";b:1;s:24:"tailor_mobile_breakpoint";s:3:"600";s:24:"tailor_tablet_breakpoint";s:3:"840";s:23:"pukeko_displayauthorbio";b:1;s:25:"pukeko_displaythumbsposts";b:1;s:26:"pukeko_displayrelatedposts";b:1;s:27:"pukeko_headline_font_weight";s:7:"regular";s:16:"pukeko_btn_style";s:6:"smooth";s:19:"pukeko_avatar_style";s:6:"circle";s:27:"pukeko_hero_overlay_opacity";s:1:"0";s:21:"pukeko_hero_alignment";s:9:"hero-left";s:17:"pukeko_link_color";s:7:"#1767f3";s:22:"pukeko_footer_bg_color";s:7:"#191919";s:23:"pukeko_blogcards_shadow";s:21:"blogcards-shadow-none";s:29:"pukeko_blogcards_shadow_hover";s:18:"blogcards-shadow-l";s:28:"pukeko_blogcards_hovereffect";s:16:"blogcards-moveup";s:29:"pukeko_blogcards_authororcats";b:1;}s:7:"options";a:2:{s:9:"site_icon";s:3:"652";s:23:"nav_menus_created_posts";a:0:{}}s:6:"wp_css";s:297:".is-fullscreen .product-img-wrap img,
+.elementor-widget-container{
+	    width: 100%;
+}
+.single-post .entry-content p.intro {
+font-size: 22px;
+	font-weight: 300;
+	line-height: 1.54;
+}
+@media (min-width: 52.5em) {
+.single-post .entry-content p.intro {
+    font-size: 26px;
+    line-height: 1.54;
+}
+}";}

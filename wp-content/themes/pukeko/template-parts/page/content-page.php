@@ -1,0 +1,33 @@
+<?php
+/**
+ * Template part for displaying page content in page.php
+ *
+ * @link https://codex.wordpress.org/Template_Hierarchy
+ *
+ * @package Pukeko
+ * @since Pukeko 1.0.0
+ * @version 1.0.0
+ */
+
+?>
+
+<article id="post-<?php the_ID(); ?>" <?php post_class(); ?>>
+	<header class="entry-header cf">
+		<?php the_title( '<h1 class="entry-title f2">', '</h1>' ); ?>
+
+		<?php pukeko_edit_link(); ?>
+
+	</header><!-- .entry-header -->
+
+	<div class="entry-content col cf">
+		<?php
+			the_content();
+
+			wp_link_pages( array(
+				'before' => '<div class="page-links">' . esc_html__( 'Pages:', 'pukeko' ),
+				'after'  => '</div>',
+			) );
+		?>
+	</div><!-- .entry-content -->
+
+</article><!-- #post-## -->

@@ -1,0 +1,87 @@
+.error-404 .entry-header,
+.search.search-no-results .entry-header,
+.single-page .type-page .entry-header {
+	position: relative;
+	margin: 0 0 $spacing-mobile-8;
+	padding: 0 0 $spacing-mobile-4;
+	border-bottom: solid 1px $border-dark;
+	@include breakpoint(m) {
+		margin: 0 $spacing-3 $spacing-desktop-8;
+		padding: 0 0 $spacing-desktop-4;
+	}
+}
+
+.archive .type-page .entry-header,
+.search-results .type-page .entry-header {
+	padding-top: $spacing-mobile-4;
+	padding-bottom: 0;
+	@include breakpoint(m) {
+		padding-top: $spacing-desktop-4;
+		padding-bottom: 0;
+	}
+}
+
+.archive .type-page .entry-footer,
+.search-results .type-page .entry-footer {
+	display: none;
+}
+
+.error-404 .entry-content,
+.search-no-results .entry-content,
+.type-page .entry-content {
+	padding-bottom: $spacing-mobile-7;
+	@include breakpoint(m) {
+		padding-bottom: $spacing-desktop-7;
+	}
+}
+
+.type-page.comments-closed.has-comments .entry-content,
+.type-page.comments-open .entry-content {
+	padding-bottom: 0;
+	@include breakpoint(m) {
+		padding-bottom: 0;
+	}
+}
+
+.type-page.comments-closed.has-comments .entry-content p:last-child,
+.type-page.comments-open .entry-content p:last-child {
+	margin-bottom: 0;
+	padding-bottom: 0;
+}
+/* Pages without showing the title */
+.no-pagetitle .type-page .entry-header .entry-title {
+	display: none;
+}
+
+.no-pagetitle .type-page .entry-header {
+	margin-bottom: 0;
+	padding-bottom: 0;
+	border-bottom: none;
+}
+
+/* Fullwidth Page (max width 1200px) */
+.fullwidth-page .site-content .entry-content {
+	@include breakpoint(m) {
+		margin: 0 $spacing-3;
+	}
+}
+
+/* Fullscreen Page (for Page Building) */
+.fullscreen-page .type-page .entry-header {
+	display: none;
+}
+
+.fullscreen-page .site-content {
+	max-width: none;
+	padding: 0;
+}
+
+.fullscreen-page .site-content .type-page {
+	clear: both;
+	overflow: hidden;
+}
+
+.fullscreen-page .site-content .entry-content {
+	padding: 0;
+	float: none;
+}

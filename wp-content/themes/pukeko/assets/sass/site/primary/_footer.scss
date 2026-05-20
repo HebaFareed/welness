@@ -1,0 +1,71 @@
+#colophon {
+	background: $surface-dark;
+}
+
+#colophon,
+#colophon .textwidget p {
+	color: $white;
+	fill: $white;
+}
+
+.footer-light-text #colophon .textwidget p,
+.footer-light-text .site-info,
+.footer-light-text #colophon .widget_mc4wp_form_widget p {
+	color: $white-text-disabled;
+}
+
+.footer-wrap {
+	padding: $spacing-mobile-9 0;
+	@include breakpoint(m) {
+		padding: $spacing-desktop-9 0;
+	}
+}
+
+.footer-menu-wrap {
+	border-bottom: 1px solid $border-light;
+	border-top: 1px solid $border-light;
+	margin-bottom: $spacing-mobile-7;
+	@include breakpoint(m) {
+		margin-bottom: $spacing-desktop-7;
+	}
+}
+
+.site-info {
+	padding: 0;
+}
+
+/* Footer Menus */
+.footer-nav,
+.social-footer-nav {
+	padding: $spacing-mobile-7 0;
+	@include breakpoint(m) {
+		float: left;
+		padding: $spacing-desktop-7 0;
+	}
+}
+
+.footer-nav {
+	@include breakpoint(m) {
+		float: left;
+	}
+}
+
+.social-footer-nav {
+	line-height: 0;
+	@include breakpoint(m) {
+		float: right;
+	}
+}
+
+.footer-nav ul li {
+	display: block;
+	padding: 0 0 $spacing-3;
+
+	&:last-child {
+		padding: 0;
+	}
+	@include breakpoint(m) {
+		display: inline-block;
+		padding: 0 $spacing-3 0 0;
+	}
+}

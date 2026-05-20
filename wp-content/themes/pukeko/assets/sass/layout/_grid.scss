@@ -1,0 +1,363 @@
+/* Grid General */
+.col,
+.column,
+.row {
+	box-sizing: border-box;
+}
+
+.row:after,
+.row:before {
+	content: " ";
+	display: table;
+}
+
+.row:after {
+	clear: both;
+}
+/* Grid max widths */
+.archive .site-content,
+.blog .site-content,
+.container-standard,
+.error404 .site-content,
+.footer-wrap,
+.no-sidebar.no-title .site-main,
+.page .site-content,
+.related,
+.search .site-content,
+.single-post .nav-links,
+.single-post .site-content,
+.single-post.sidebar-hide-post .entry-header,
+.single-post.sidebar-hide-post .post-thumb,
+.elementor-widget-wp-widget-pukeko-sectiontitle-widget,
+.pukeko_sectiontitle,
+.elementor-widget-wrap .elementor-widget-wp-widget-pukeko-pagetitle-widget {
+	max-width: $website-width;
+	@include push--auto;
+}
+
+.single-post.sidebar-hide-post .site-content {
+	max-width: 100%;
+}
+
+.single-post.sidebar-hide-post .col,
+.nosidebar-notitle-page .comments-area {
+	max-width: $bg-content-width;
+	@include push--auto;
+}
+
+/* 8-col grid length (max 784px)  */
+.page-header .page-title,
+.archive-description {
+	max-width: $content-width;
+}
+
+/* Grid Margins and Paddings */
+.site-main,
+.related-container,
+.single-post .post-navigation,
+.footer-widget-wrap {
+	padding-left: $grid-margins-s;
+	padding-right: $grid-margins-s;
+	@include breakpoint(xs) {
+		padding-left: $grid-margins-l;
+		padding-right: $grid-margins-l;
+	}
+	@include breakpoint(s) {
+		padding-left: $grid-margins-m;
+		padding-right: $grid-margins-m;
+	}
+	@include breakpoint(m) {
+		padding-left: $grid-margins-s;
+		padding-right: $grid-margins-s;
+	}
+	@include breakpoint(l) {
+		padding-left: 0;
+		padding-right: 0;
+	}
+}
+
+.side-widgets {
+	padding-left: $grid-margins-s;
+	padding-right: $grid-margins-s;
+	@include breakpoint(xs) {
+		padding-left: $grid-margins-l;
+		padding-right: $grid-margins-l;
+	}
+	@include breakpoint(m) {
+		padding-left: 0;
+		padding-right: 0;
+	}
+	@include breakpoint(l) {
+		padding-left: $grid-margins-s;
+		padding-right: $grid-margins-s;
+	}
+}
+
+.footer-menu-wrap,
+.site-info,
+.blog-archive .page-header,
+.single-post.sidebar-show-post .entry-content {
+	margin-left: $grid-margins-s;
+	margin-right: $grid-margins-s;
+	@include breakpoint(xs) {
+		margin-left: $grid-margins-l;
+		margin-right: $grid-margins-l;
+	}
+	@include breakpoint(m) {
+		margin-left: $grid-margins-l;
+		margin-right: $grid-margins-l;
+	}
+	@include breakpoint(xl) {
+		margin-left: $grid-margins-s;
+		margin-right: $grid-margins-s;
+	}
+}
+
+.page-template-default .entry-header,
+.page-template-default .entry-content,
+.single-post .hentry .entry-header,
+.single-post .hentry .entry-content,
+.single-post .hentry .entry-footer,
+.search-no-results .entry-content,
+.related-wrap h2.section-title,
+.elementor-widget-wp-widget-pukeko-pagetitle-widget,
+.elementor-widget-wp-widget-pukeko-sectiontitle-widget,
+.elementor-col-100 .elementor-widget-wp-widget-pukeko-teammember-widget,
+.elementor-widget-wp-widget-pukeko-product-widget,
+.single-post .comments-area {
+	padding-left: $grid-margins-s;
+	padding-right: $grid-margins-s;
+	@include breakpoint(xs) {
+		padding-left: $grid-margins-l;
+		padding-right: $grid-margins-l;
+	}
+	@include breakpoint(l) {
+		padding-left: $grid-margins-s;
+		padding-right: $grid-margins-s;
+	}
+}
+
+.single-post .hentry .entry-content,
+.single-post .comments-area,
+.single-post .hentry .entry-footer {
+	@include breakpoint(m) {
+		padding-left: $grid-margins-s;
+		padding-right: $grid-margins-s;
+	}
+}
+
+
+/* Primary + Secondary Content Areas */
+.side-widgets {
+	padding-bottom: $spacing-mobile-6;
+	max-width: $content-width;
+	@include push--auto;
+	@include breakpoint(m) {
+		padding-bottom: $spacing-desktop-6;
+	}
+}
+
+.archive.sidebar-show .content-area,
+.blog.sidebar-show .content-area,
+.page-template-default .content-area,
+.search.sidebar-show .content-area,
+.single-post.sidebar-show-post .content-area {
+	@include breakpoint(l) {
+		width: 66.667%;
+	}
+}
+
+.error404 .content-area,
+.nosidebar-notitle-page .content-area,
+.nosidebar-page .content-area,
+.search-no-results .content-area {
+	@include breakpoint(l) {
+		width: 66.667%;
+		@include push--auto;
+	}
+}
+
+.archive.sidebar-show .content-area,
+.blog.sidebar-show .content-area,
+.page-template-default .content-area,
+.search.sidebar-show .content-area,
+.single-post.sidebar-show-post .content-area {
+	@include breakpoint(l) {
+		float: left;
+	}
+}
+
+.search-no-results.sidebar-show .content-area {
+	float: none;
+}
+
+.archive.sidebar-show .side-widgets,
+.blog.sidebar-show .side-widgets,
+.page-template-default .side-widgets,
+.search.sidebar-show .side-widgets,
+.single-post.sidebar-show-post .side-widgets {
+	@include breakpoint(l) {
+		width: 33.333%;
+		float: right;
+	}
+}
+
+/* Grid Columns */
+.footer-widget-wrap,
+.header-infobar,
+.posts-container,
+.single-post .nav-links {
+	display: flex;
+	flex-wrap: wrap;
+	flex-direction: row;
+	align-items: flex-start;
+}
+
+.footer-widget-wrap {
+	@include breakpoint(l) {
+		flex-wrap: nowrap;
+	}
+}
+
+.single-post .nav-links {
+	@include breakpoint(s) {
+		flex-wrap: nowrap;
+	}
+}
+
+.col,
+.posts-container .type-page,
+.posts-container .type-post {
+	position: relative;
+}
+
+/* 1-Column */
+.blog-1-column .posts-container .type-page,
+.blog-1-column .posts-container .type-post,
+.footer-1-column .footer-widget {
+	width: 100%;
+	flex-grow: 0;
+	flex-basis: 100%; // 1-column on mobile
+	clear: both;
+	float: none;
+}
+
+.blog-1-column .posts-container .hentry {
+	width: 100%;
+	float: none;
+}
+
+/* 2-Columns */
+.blog-2-column .posts-container .hentry,
+.footer-2-column .footer-widget,
+.posts-container .hentry,
+.s6,
+.single-post .related-post,
+.single-post .navigation .next,
+.post-navigation .nav-next,
+.single-post .navigation .prev,
+.post-navigation .nav-previous {
+	width: 100%; // 1-column on mobile
+	flex-grow: 0;
+	@include breakpoint(s) {
+		flex-basis: calc(50% - 32px);
+		margin-left: $spacing-mobile-2;
+		margin-right: $spacing-mobile-2;
+	}
+	@include breakpoint(m) {
+		flex-basis: calc(50% - 48px);
+		margin-left: $spacing-desktop-3;
+		margin-right: $spacing-desktop-3;
+	}
+}
+
+/* 3-Columns */
+.blog-3-column .posts-container .hentry,
+.footer-widget,
+.header-infobar .col,
+.s4,
+.single-post .related-post {
+	width: 100%;
+	flex-grow: 0;
+	@include breakpoint(s) {
+		flex-basis: calc(50% - 32px);
+		margin-left: $spacing-2;
+		margin-right: $spacing-2;
+	}
+	@include breakpoint(m) {
+		flex-basis: calc(50% - 48px);
+		margin-left: $spacing-3;
+		margin-right: $spacing-3;
+	}
+	@include breakpoint(l) {
+		flex-basis: calc(33.333% - 48px);
+	}
+}
+
+/* 4-Columns */
+.footer-4-column .footer-widget {
+	@include breakpoint(l) {
+		flex-basis: calc(25% - 48px);
+	}
+}
+
+/* 5-Columns */
+.footer-5-column .footer-widget {
+	@include breakpoint(l) {
+		flex-basis: calc(20% - 48px);
+	}
+}
+
+/* 6-Columns */
+.footer-6-column .footer-widget {
+	@include breakpoint(l) {
+		flex-basis: calc(16.667% - 48px);
+	}
+}
+
+/* Elementor Columns */
+
+.entry-content .elementor-col-50 {
+	width: 100%;
+@include breakpoint(s) {
+	width: 50%;
+}
+}
+
+.entry-content .elementor-col-25,
+.entry-content .elementor-col-33,
+.entry-content .elementor-col-50 {
+	border: none !important;
+	padding-left: $grid-margins-s;
+	padding-right: $grid-margins-s;
+	padding-bottom: $grid-margins-m;
+	@include breakpoint(xs) {
+		padding-left: $grid-margins-l;
+		padding-right: $grid-margins-l;
+		padding-bottom: $grid-margins-l;
+	}
+	@include breakpoint(s) {
+		padding-left: $grid-margins-s;
+		padding-right: $grid-margins-s;
+		padding-bottom: 0;
+	}
+}
+
+.entry-content .elementor-col-33:first-of-type,
+.entry-content .elementor-col-50:first-of-type {
+	@include breakpoint(s) {
+	padding-left: $grid-margins-l;
+	}
+	@include breakpoint(xl) {
+	padding-left: $grid-margins-s;
+	}
+}
+.entry-content .elementor-col-33:last-of-type,
+.entry-content .elementor-col-50:last-of-type  {
+	@include breakpoint(s) {
+	padding-right: $grid-margins-l;
+	}
+	@include breakpoint(xl) {
+	padding-right: $grid-margins-s;
+	}
+}

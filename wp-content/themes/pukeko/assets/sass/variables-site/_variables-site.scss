@@ -1,0 +1,92 @@
+// Typography
+$f1                         : "Roboto", sans-serif;
+$f2                         : "Cardo", serif;
+$f-code                     : "Courier 10 Pitch", Courier, monospace;
+
+// Spacing
+$spacing-none               : 0;
+$spacing-mobile-0           : 0;
+$spacing-mobile-1           : 8px;
+$spacing-mobile-2           : 16px;
+$spacing-mobile-3           : 24px;
+$spacing-mobile-4           : 24px;
+$spacing-mobile-5           : 32px;
+$spacing-mobile-6           : 32px;
+$spacing-mobile-7           : 40px;
+$spacing-mobile-8           : 40px;
+$spacing-mobile-9           : 48px;
+$spacing-mobile-10          : 48px;
+
+$spacing-desktop-0          : 0;
+$spacing-0                  : 0;
+$spacing-desktop-1          : 8px;
+$spacing-1                  : 8px;
+$spacing-desktop-2          : 16px;
+$spacing-2                  : 16px;
+$spacing-desktop-3          : 24px;
+$spacing-3                  : 24px;
+$spacing-desktop-4          : 32px;
+$spacing-desktop-5          : 40px;
+$spacing-desktop-6          : 48px;
+$spacing-desktop-7          : 56px;
+$spacing-desktop-8          : 72px;
+$spacing-desktop-9          : 96px;
+$spacing-desktop-10         : 144px;
+
+// Grid Margins
+$grid-margins-s             : 24px;
+$grid-margins-m             : 32px;
+$grid-margins-l             : 48px;
+
+// Spacing Headerbar
+$stickyheader-mobile        : 64px;
+$stickyheader-desktop       : 88px;
+
+// Max Content Widths
+$website-width              : 1248px; // max default width
+$ten-columns-width          : 1040px; // max default width
+$content-width              : 784px;
+$content-width-plus-padding : 880px; // max content width on single posts (incl additional 48px padding on each side)
+$bg-content-width           : 832px; // max content width, if has background
+$col5-nopadding             : 472px; // 5 column width without padding
+$col6-nopadding             : 576px; // 6 column width without padding
+$col7                       : 728px; // 7 column width padding
+
+// Colors
+$primary                    : #1767f3;
+$primary-sub                : #0542af;
+
+$surface                    : #ffffff;
+$surface-light              : #f3f4f4;
+$surface-dark               : #000000;
+
+$black-text-high-emphasis   : rgba(0, 0, 0, 1.0);
+$black-text-medium-emphasis : rgba(0, 0, 0, 0.6);
+$black-text-disabled        : rgba(0, 0, 0, 0.38);
+
+$border-dark               : rgba(0, 0, 0, 0.12);
+$border-light               : rgba(255, 255, 255, 0.12);
+
+$white-text-high-emphasis   : rgba(255, 255, 255, 1.0);
+$white-text-medium-emphasis : rgba(255, 255, 255, 0.6);
+$white-text-disabled        : rgba(255, 255, 255, 0.38);
+
+$error                      : #ef6c00;
+$success                    : #4fb83c;
+$info                       : #edc201;
+$notice                     : #5392f9;
+$white                      : #ffffff;
+$black                      : #000000;
+$light                      : #F8F8F9;
+
+$form-border-default        : rgba(31, 32, 68, 0.24);
+$form-border-hover          : rgba(31, 32, 68, 0.8);
+
+$form-surface-hover         : rgba(255, 255, 255, 0.8);
+
+
+// Border Radius
+$border-radius-xs: 4px;
+$border-radius-s: 8px;
+$border-radius-m: 16px;
+$border-radius-l: 24px;

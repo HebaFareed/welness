@@ -1,0 +1,436 @@
+/* Page Builder Customizations */
+.entry-content .teammember-wrap {
+	width: 100%;
+	padding: $spacing-mobile-9 0 !important;
+	@include breakpoint(m) {
+		padding: $spacing-desktop-9 0 !important;
+	}
+}
+
+.entry-content .pageblock {
+	padding: $spacing-mobile-9 0;
+	@include breakpoint(m) {
+		padding: $spacing-desktop-9 0;
+	}
+}
+
+.emptybg {
+	min-height: 300px !important;
+}
+
+.site-content .elementor-section.elementor-section-boxed > .elementor-container {
+	max-width: 100%;
+}
+
+.entry-content .elementor-widget:not(:last-child) {
+	margin-bottom: 0;
+}
+
+.elementor-widget-container {
+	width: 100%;
+}
+
+.entry-content,
+.post-thumb-img {
+	max-width: 100%;
+}
+/* Custom class for theme width items inside pagebuilder elements */
+.hidden,
+.hide {
+	visibility: hidden !important;
+}
+
+.theme-width,
+.themewidth {
+	max-width: $website-width;
+	@include push--auto;
+	@include breakpoint(xl) {
+		width: $website-width;
+	}
+}
+
+.tencol-width {
+	@include push--auto;
+	max-width: 992px;
+}
+
+.elementor-column-gap-default > .elementor-row > .elementor-column > .elementor-element-populated {
+	padding: 0 !important;
+}
+
+/* Page and Section Title Widget */
+.elementor-widget-wp-widget-pukeko-pagetitle-widget,
+.elementor-widget-wp-widget-pukeko-sectiontitle-widget {
+	padding-top: $spacing-mobile-9;
+	@include breakpoint(m) {
+		padding-top: $spacing-desktop-9;
+	}
+}
+
+.pukeko-sectiontitle-wrap {
+	max-width: $col6-nopadding;
+	text-align: left;
+}
+
+.elementor-widget-wp-widget-pukeko-sectiontitle-widget .section-title {
+	display: block;
+	margin: 0;
+	padding: 0;
+}
+
+.elementor-page .elementor-widget-wp-widget-pukeko-pagetitle-widget p,
+.elementor-page .elementor-widget-wp-widget-pukeko-sectiontitle-widget p {
+	margin: 0;
+	padding: $spacing-2 0 0;
+}
+
+a.sectiontitle-btn {
+	margin-top: $spacing-mobile-4;
+	@include breakpoint(m) {
+		margin-top: $spacing-desktop-4;
+	}
+}
+
+.elementor-widget-wp-widget-pukeko-sectiontitle-widget .center,
+.elementor-widget-wp-widget-pukeko-sectiontitle-widget .center .section-title,
+.elementor-widget-wp-widget-pukeko-sectiontitle-widget .center p {
+	text-align: center;
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.pukeko-pagetitle-wrap {
+	max-width: $content-width;
+}
+
+.pukeko-pagetitle-wrap.left {
+    text-align: left;
+}
+
+.elementor-widget-wp-widget-pukeko-pagetitle-widget.tencol-width {
+	@include push--auto;
+	max-width: $content-width;
+}
+.elementor-column-wrap .elementor-widget-wp-widget-pukeko-pagetitle-widget .pukeko-pagetitle-wrap.center {
+	@include push--auto;
+}
+
+.elementor-widget-wp-widget-pukeko-pagetitle-widget .section-title,
+.pukeko_pagetitle p {
+	margin: 0;
+	padding: 0;
+}
+
+.elementor-widget-wp-widget-pukeko-pagetitle-widget .center p {
+	margin: 0 auto !important;
+}
+
+/* Contact Form 7 in Page Section */
+.elementor-widget-container .wpcf7 {
+	padding: $spacing-mobile-9 0;
+	@include breakpoint(m) {
+		padding: $spacing-desktop-9 0;
+	}
+}
+
+.elementor-widget-container .wpcf7 {
+	max-width: $content-width;
+	@include col-padding;
+	@include push--auto;
+}
+
+.wpcf7 .wpcf7-form-control-wrap {
+	display: block;
+	margin-top: $spacing-mobile-1;
+	@include breakpoint(m) {
+		margin-top: $spacing-desktop-1;
+	}
+}
+
+.wpcf7-radio .wpcf7-list-item {
+	margin: 0 $spacing-3 0 0;
+}
+
+span.wpcf7-list-item-label::before {
+		padding-right: 4px;
+}
+
+/* Product Widget */
+.elementor-widget-wp-widget-pukeko-product-widget {
+	padding-top: $spacing-mobile-9;
+	padding-bottom: $spacing-mobile-9;
+	@include push--auto;
+	@include breakpoint(m) {
+		display: flex;
+		flex-direction: row;
+		padding-top: $spacing-desktop-9;
+		padding-bottom: $spacing-desktop-9;
+	}
+}
+
+.elementor-widget-wp-widget-pukeko-product-widget.is-fullwidth,
+.pukeko_product {
+	max-width: $website-width;
+}
+
+.elementor-widget-wp-widget-pukeko-product-widget .pukeko-product-wrap {
+	@include breakpoint(m) {
+		display: flex;
+		flex-direction: row;
+	}
+}
+
+.is-fullscreen.elementor-widget-wp-widget-pukeko-product-widget {
+	max-width: 100%;
+	padding: $spacing-mobile-9 0;
+	@include breakpoint(m) {
+		padding: $spacing-desktop-9 0;
+	}
+	@include breakpoint(xxl) {
+		max-width: 2000px;
+	}
+}
+
+.is-fullscreen.elementor-widget-wp-widget-pukeko-product-widget {
+	width: 100%;
+}
+
+.elementor-widget-wp-widget-pukeko-product-widget .pukeko-product-wrap.right {
+	flex-direction: row-reverse;
+}
+
+.product-img-wrap {
+	@include breakpoint(m) {
+		width: 50%;
+	}
+}
+
+.is-fullscreen .right .product-img-wrap img {
+	width: 100%;
+}
+
+.product-content-wrap {
+	text-align: left;
+	justify-content: flex-end;
+	align-items: center;
+	display: flex;
+	@include breakpoint(m) {
+		width: 50%;
+	}
+}
+
+.elementor-widget-wp-widget-pukeko-product-widget .fullscreen .product-content-wrap {
+	@include breakpoint(m) {
+		max-width: 624px;
+		padding-right: $spacing-desktop-3;
+	}
+}
+
+.elementor-widget-wp-widget-pukeko-product-widget .right .product-content-wrap {
+	justify-content: flex-start;
+}
+
+.elementor-widget-wp-widget-pukeko-product-widget .fullscreen.right .product-content-wrap .product-content-wrap {
+	@include breakpoint(m) {
+		max-width: 624px;
+		padding-left: $spacing-desktop-3;
+		padding-right: 0;
+	}
+}
+
+.elementor-widget-wp-widget-pukeko-product-widget .fullscreen .product-content-wrap {
+	padding-top: $spacing-3;
+	padding-left: $grid-margins-s;
+	padding-right: $grid-margins-s;
+	@include breakpoint(xs) {
+		padding-left: $grid-margins-l;
+		padding-right: $grid-margins-l;
+	}
+	@include breakpoint(m) {
+		padding-left: 0;
+		padding-right: $grid-margins-s;
+	}
+}
+
+.product-content {
+	padding: $spacing-mobile-4 0 0;
+	@include breakpoint(m) {
+		padding: 0 0 0 $spacing-desktop-3;
+	}
+	@include breakpoint(xl) {
+		width: 78.666%;
+		padding: 0;
+	}
+}
+
+.pukeko-product-wrap.right .product-content {
+	@include breakpoint(m) {
+		padding: 0 $grid-margins-s 0 0;
+	}
+	@include breakpoint(xl) {
+		padding: 0;
+	}
+}
+
+.product-content .section-title {
+	margin: 0;
+}
+
+.entry-content .elementor-widget-wp-widget-mc4wp_form_widget .mc4wp-form-fields p,
+.entry-content .mc4wp-response p,
+.product-content p {
+	margin: $spacing-2 0 0;
+}
+
+.product-content .product-btn {
+	margin-top: $spacing-mobile-4;
+	@include breakpoint(m) {
+		margin-top: $spacing-desktop-4;
+	}
+}
+
+.product-content blockquote {
+	@include f1-body4;
+	padding: $spacing-mobile-8 0 0;
+	border: none;
+	@include breakpoint(m) {
+		padding: $spacing-desktop-8 0 0;
+	}
+}
+
+.product-content cite span .avatar {
+	@include avatar-m;
+}
+
+.avatar-circle .product-content cite span .avatar {
+	@include border-radius(100px);
+}
+
+.avatar-rounded .product-content cite span .avatar {
+	@include border-radius(8px);
+}
+
+.product-content blockquote p,
+.single-post .navigation .nav-title .nav-subtitle {
+	@include f1-body4;
+	margin: 0;
+}
+
+.product-content blockquote p:after,
+.product-content blockquote p:before {
+	display: inline;
+	content: '\0022';
+}
+
+.product-content blockquote cite {
+	padding: $spacing-1 0 0;
+}
+
+.product-content blockquote cite span {
+	padding: 0 $spacing-2 0 0;
+}
+
+/* Team Member Widget */
+.elementor-col-100 .elementor-widget-wp-widget-pukeko-teammember-widget {
+	margin-top: $spacing-mobile-9;
+	margin-bottom: $spacing-mobile-9;
+	@include breakpoint(m) {
+		margin-top: $spacing-desktop-9;
+		margin-bottom: $spacing-desktop-9;
+	}
+}
+
+.elementor-widget-wp-widget-pukeko-teammember-widget {
+	margin-bottom: $spacing-mobile-5;
+	@include breakpoint(m) {
+		margin-bottom: 0;
+	}
+}
+
+.teammember-content-wrap .section-title {
+	margin: 0;
+	padding: 0;
+}
+
+.elementor-col-100 .teammember-content-wrap .section-title span,
+.teammember-content-wrap .section-title span {
+	display: block;
+	padding: $spacing-mobile-1 0 0;
+	@include breakpoint(m) {
+		padding: $spacing-desktop-1 0 0;
+	}
+}
+
+.teammember-content-wrap p {
+	padding: $spacing-2 0 0;
+}
+
+.elementor-widget-wp-widget-pukeko-teammember-widget .teammember-content-wrap .section-title span {
+	display: block;
+	padding: $spacing-mobile-0 0 0;
+	@include breakpoint(m) {
+		padding: $spacing-desktop-0 0 0;
+	}
+}
+
+.teammember-img-wrap {
+	margin: 0 auto;
+}
+
+.elementor-col-100 .elementor-widget-wp-widget-pukeko-teammember-widget .teammember-img,
+.teammember-img {
+	width: 100%;
+}
+
+.elementor-col-100 .elementor-widget-wp-widget-pukeko-teammember-widget .teammember-content-wrap {
+	position: relative;
+	padding: $spacing-mobile-8;
+	margin: 0 auto;
+	@include breakpoint(m) {
+		padding: $spacing-desktop-8 0;
+			max-width: $content-width;
+	}
+}
+
+.elementor-widget-wp-widget-pukeko-teammember-widget .teammember-content-wrap {
+	padding: $spacing-mobile-4;
+	@include breakpoint(m) {
+		padding: $spacing-desktop-4;
+	}
+}
+
+.elementor-col-50 .elementor-widget-wp-widget-pukeko-teammember-widget .teammember-content-wrap {
+	padding: $spacing-mobile-7;
+	@include breakpoint(m) {
+		padding: $spacing-desktop-7;
+	}
+}
+
+.elementor-widget-wp-widget-pukeko-teammember-widget .teammember-social-wrap {
+	position: relative;
+	padding: $spacing-3 0 0;
+	display: flex;
+}
+
+.teammember-social-wrap a {
+	width: $spacing-3;
+	height: $spacing-3;
+	margin-right: $spacing-3;
+}
+
+/* Content Box */
+.center {
+	text-align: center;
+}
+
+.page.elementor-page .entry-content .elementor-column .elementor-text-editor p {
+	color: $black-text-high-emphasis;
+	@include font-light;
+}
+
+.page.elementor-page .entry-content .elementor-column .elementor-text-editor p strong {
+	display: inline-block;
+	margin: 0;
+	padding: 0 0 $spacing-2;
+	color: $black-text-high-emphasis;
+}

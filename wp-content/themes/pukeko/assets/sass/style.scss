@@ -1,0 +1,111 @@
+@charset "UTF-8";
+/*
+Theme Name: Pukeko
+Theme URI: https://www.elmastudio.de/en/themes/pukeko/
+Author: Elmastudio
+Author URI: https://www.elmastudio.de/en/
+Description: Pukeko is a multi-purpose, Gutenberg-ready WordPress theme with a sofiticated design, easy-to-use options and detailled documentations.
+Version: 1.2.2
+License: GNU General Public License v2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: pukeko
+Tags: one-column, two-columns, right-sidebar, custom-colors, custom-header, custom-menu, custom-logo, editor-style, featured-image-header, featured-images, footer-widgets, full-width-template, sticky-post, theme-options, threaded-comments, translation-ready, blog
+
+* @version 1.0.7
+
+Normalizing styles have been helped along thanks to the fine work of
+Nicolas Gallagher and Jonathan Neal http://necolas.github.com/normalize.css/
+*/
+
+/*--------------------------------------------------------------
+>>> TABLE OF CONTENTS:
+----------------------------------------------------------------
+# Normalize
+# Santize
+# Layout
+# Typography
+# Elements
+# Accessibility
+# Alignments
+# Clearings
+# Media
+# Site
+	## Header
+	## Hero
+	## Blog
+	## Post
+	## Page
+	## Pagination
+	## Sidebar
+	## Footer
+# Widgets Default
+# Widgets Theme
+# Blocks Default
+--------------------------------------------------------------*/
+@import "mixins/mixins-master";
+@import "variables-site/variables-site";
+
+/*--------------------------------------------------------------
+# Normalize
+--------------------------------------------------------------*/
+@import "vendors/normalize";
+
+/*--------------------------------------------------------------
+# Santize
+--------------------------------------------------------------*/
+@import "vendors/sanitize";
+
+/*--------------------------------------------------------------
+# Layout
+--------------------------------------------------------------*/
+@import "layout/grid";
+
+/*--------------------------------------------------------------
+# Typography
+--------------------------------------------------------------*/
+@import "typography/typography";
+
+/*--------------------------------------------------------------
+# Elements
+--------------------------------------------------------------*/
+@import "elements/elements";
+
+/*--------------------------------------------------------------
+ # Accessibility
+ --------------------------------------------------------------*/
+@import "modules/accessibility";
+
+/*--------------------------------------------------------------
+ # Alignments
+ --------------------------------------------------------------*/
+@import "modules/alignments";
+
+/*--------------------------------------------------------------
+ # Clearings
+ --------------------------------------------------------------*/
+@import "modules/clearings";
+
+/*--------------------------------------------------------------
+ # Media
+ --------------------------------------------------------------*/
+ @import "media/media";
+
+ /*--------------------------------------------------------------
+	# Site
+	--------------------------------------------------------------*/
+ @import "site/site";
+
+ /*--------------------------------------------------------------
+	# Widgets Default
+	--------------------------------------------------------------*/
+ @import "site/secondary/widgets-default";
+
+ /*--------------------------------------------------------------
+	# Widgets Theme
+	--------------------------------------------------------------*/
+ @import "site/secondary/widgets-theme";
+
+ /*--------------------------------------------------------------
+	# Blocks Default
+	--------------------------------------------------------------*/
+ @import "blocks/blocks-default";

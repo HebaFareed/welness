@@ -1,0 +1,530 @@
+/* Main Font Styles */
+body,
+button,
+input,
+select,
+table,
+textarea,
+.search .page-header p,
+.teammember-content-wrap h2.section-title span,
+.textwidget p,
+.page.elementor-page .entry-content .elementor-column .elementor-text-editor p {
+	@include f1;
+	@include f1-body3;
+	color: $black-text-high-emphasis;
+}
+
+.authorbox-title,
+.comment-respond h3.comment-reply-title,
+.elementor-widget-wp-widget-pukeko-sectiontitle-widget .section-title,
+.f1,
+.hentry .entry-header .entry-meta,
+.pukeko_sectiontitle .section-title,
+.sansserif {
+	@include f1;
+}
+
+.f2,
+.serif {
+	@include f2;
+}
+
+.elementor-widget-wp-widget-pukeko-teammember-widget .teammember-content-wrap h2.section-title span,
+.posts-container .hentry .entry-footer,
+.hentry .entry-header .entry-meta,
+.single-post .navigation a span.nav-subtitle,
+h3.related-title {
+	@include f1-body4;
+}
+
+/* F2 Fonts */
+/* Headings */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	@include f2;
+	@include font-regular;
+	margin: 0;
+	clear: both;
+}
+
+.hero-title {
+	@include f2-display;
+}
+
+.elementor-widget-wp-widget-pukeko-pagetitle-widget .section-title,
+.pukeko_pagetitle .section-title,
+h1 {
+	@include f2-h1;
+}
+
+h2,
+.blog .sticky-container .sticky h2.entry-title,
+.entry-content .elementor-widget-wp-widget-mc4wp_form_widget h5,
+.entry-content .elementor-widget-wp-widget-null-instagram-feed h5 {
+	@include f2-h2;
+}
+
+h3,
+.product-content .section-title {
+	@include f2-h3;
+}
+
+h4 {
+	@include f2-h4;
+}
+
+.blog h2.entry-title,
+.blog-archive h2.entry-title,
+h5 {
+	@include f2-h5;
+}
+
+.blog-archive.blog-1-column h2.entry-title,
+.blog.blog-1-column h2.entry-title {
+	@include breakpoint(l) {
+		@include f2-h3;
+	}
+}
+
+h6 {
+	@include f2-h6;
+}
+
+/* F1 Fonts */
+.header-infobar h3,
+.related-wrap h2.section-title .related-more-link,
+.comments-area h2.comments-title span,
+.comment-reply-title #cancel-comment-reply-link {
+	@include f1-lowercase;
+}
+
+.uppercase .header-infobar h3,
+.uppercase .related-wrap h2.section-title .related-more-link,
+.uppercase .comments-area h2.comments-title span,
+.uppercase .comment-reply-title #cancel-comment-reply-link,
+.uppercase .header-cta-wrap ul li a,
+.uppercase .wp-block-button .wp-block-button__link,
+.uppercase .btn,
+.uppercase .comment-respond input[type="submit"] {
+	@include f1-uppercase;
+}
+
+.uppercase .main-navigation li a {
+	@include breakpoint(l) {
+		@include f1-uppercase;
+	}
+}
+
+h3.sansserif,
+h2.comments-title,
+.h-alt h2.comments-title,
+.related-wrap h2.section-title,
+.h-alt .related-wrap h2.section-title {
+	@include f1-h3;
+}
+
+.elementor-col-100 .teammember-content-wrap h2.section-title,
+.h-alt .elementor-col-100 .teammember-content-wrap h2.section-title {
+	@include f1-h4;
+}
+
+.single-post .navigation .nav-title,
+h3.comment-reply-title,
+h5.sansserif,
+.teammember-content-wrap h2.section-title,
+.single-post h3.related-title {
+	@include f1-h5;
+	@include font-light;
+}
+
+.single-post.sidebar-show-post .navigation .nav-title,
+h6.sansserif {
+	@include f1-h6;
+}
+
+.elementor-widget-wp-widget-pukeko-sectiontitle-widget .section-title,
+.pukeko_sectiontitle .section-title {
+	@include f1-h4;
+	@include font-light;
+}
+
+/* Sansserif Headings */
+.h-alt h1,
+.h-alt h2,
+.h-alt h3,
+.h-alt h4,
+.h-alt h5,
+.h-alt h6 {
+	@include f1;
+	@include font-light;
+}
+
+.h-alt h1,
+.h-alt .elementor-widget-wp-widget-pukeko-pagetitle-widget .section-title,
+.h-alt .pukeko_pagetitle .section-title,
+.page-header .page-title,
+.archive.author .author-name span {
+	@include f1-h1;
+}
+
+h2.section-title,
+.h-alt h2.section-title,
+.h-alt h2,
+.elementor-widget-wp-widget-pukeko-sectiontitle-widget h2.section-title,
+.h-alt .elementor-widget-wp-widget-pukeko-sectiontitle-widget h2.section-title,
+.h-alt .entry-content .elementor-widget-wp-widget-mc4wp_form_widget h5,
+.h-alt .entry-content .elementor-widget-wp-widget-null-instagram-feed h5,
+.blog.h-alt .sticky-container .sticky h2.entry-title {
+	@include f1-h2;
+}
+
+.h-alt h3,
+.h-alt .product-content .section-title {
+	@include f1-h3;
+}
+
+.h-alt h4,
+.blog-archive.blog-1-column.h-alt h2.entry-title,
+.blog.blog-1-column.h-alt h2.entry-title,
+.single-post .entry-content p.has-extralarge-font-size {
+	@include f1-h4;
+}
+
+h1.site-title,
+p.site-title,
+.blog-archive.h-alt h2.entry-title,
+.blog.h-alt h2.entry-title,
+.h-alt h5,
+.h-alt.single-post .navigation .nav-title,
+.h-alt h5.sansserif,
+.h-alt .teammember-content-wrap h2.section-title,
+.single-post .authorbox .author-name span {
+	@include f1-h5;
+}
+
+.h-alt h6,
+.h-alt h3.comment-reply-title {
+	@include f1-h6;
+}
+
+/* Hero Title */
+h1.hero-title {
+	@include f1-display;
+}
+
+/* Headline Font Weight Option */
+h1.site-title,
+p.site-title,
+.h-bold .posts-container .sticky-container .sticky .author .url,
+.single-post.h-bold .author .url,
+.h-bold .posts-container .entry-footer .entry-cats,
+.hentry .entry-header .entry-cats,
+.single-post .navigation span a,
+.related-entry-cats a {
+	@include font-regular;
+}
+
+.h-bold h1.site-title,
+.h-bold p.site-title,
+.h-bold h1,
+.h-bold h2,
+.h-bold h3,
+.h-bold h4,
+.h-bold h5,
+.h-bold h6,
+.h-bold.single-post .navigation .entry-title,
+.h-bold .authorbox .author-name span,
+.h-bold .related-wrap h2.section-title,
+.h-bold h2.comments-title,
+.single-post.h-bold h3.related-title {
+	@include font-medium;
+}
+
+.h-bold .hero-content h1,
+.h-bold .entry-content h1,
+.h-bold .entry-content h2,
+.h-bold .entry-content h3,
+.h-bold .entry-content h4,
+.h-bold .entry-content h5,
+.h-bold .entry-content h6,
+.h-bold .entry-header .entry-title,
+.h-bold h2.entry-title {
+	@include font-bold;
+}
+
+.h-bold .elementor-widget-wp-widget-pukeko-sectiontitle-widget h2.section-title,
+.h-bold .teammember-content-wrap h2.section-title,
+.h-alt.h-bold .hero-content h1,
+.h-alt.h-bold .entry-content h1,
+.h-alt.h-bold .entry-content h2,
+.h-alt.h-bold .entry-content h3,
+.h-alt.h-bold .entry-content h4,
+.h-alt.h-bold .entry-content h5,
+.h-alt.h-bold .entry-content h6,
+.h-alt.h-bold .entry-header .entry-title,
+.h-alt.h-bold h2.entry-title,
+.h-alt.h-bold.single-post .navigation .entry-title,
+.h-bold .page-header .page-title,
+.h-bold .comments-area h2.comments-title {
+	@include font-medium;
+}
+
+.page-header .page-title,
+.comments-area h2.comments-title,
+.related-wrap h2.section-title {
+	@include font-light;
+}
+
+/* Padding for Headlines in Content Area */
+.entry-content h1,
+.entry-content h2,
+.entry-content h3,
+.entry-content h4,
+.entry-content h5,
+.entry-content h6 {
+	margin-top: $spacing-desktop-2;
+	margin-bottom: $spacing-desktop-2;
+}
+
+address,
+p {
+	margin: 0 0 $spacing-mobile-5;
+	@include breakpoint(m) {
+		margin: 0 0 $spacing-desktop-5;
+	}
+}
+
+p.intro {
+	margin: 0 0 $spacing-mobile-7;
+	@include breakpoint(m) {
+		margin: 0 0 $spacing-desktop-7;
+	}
+}
+
+.widget-area-default p {
+	margin: 0 0 $spacing-mobile-3;
+	@include breakpoint(m) {
+		margin: 0 0 $spacing-desktop-3;
+	}
+}
+
+.entry-content .elementor-col-100 .elementor-widget-wp-widget-pukeko-teammember-widget .teammember-content-wrap p,
+.entry-content .teammember-content-wrap p,
+.archive-description,
+.archive.author .author-bio,
+.entry-content .elementor-widget-wp-widget-mc4wp_form_widget .mc4wp-form-fields p,
+.entry-content .mc4wp-response p,
+.product-content p,
+.hero-subtitle,
+.product-subtitle,
+.pagetitle-subtitle {
+	margin: 0;
+	@include f1-body2;
+}
+
+.entry-content .elementor-widget-wp-widget-pukeko-teammember-widget .teammember-content-wrap p,
+.entry-summary p,
+.pukeko_sectiontitle p,
+.page.elementor-page .entry-content .elementor-widget-wp-widget-pukeko-sectiontitle-widget p,
+.wpcf7-radio,
+.single-post .entry-header .entry-cats,
+.single-post .hentry .entry-header .entry-meta,
+.single-post .entry-content p.has-small-font-size,
+.page .entry-content p.has-small-font-size,
+.widget-area .widget-title,
+.footer-nav a {
+	@include f1-body3;
+}
+
+.blog-archive.blog-1-column .entry-summary p,
+.blog.blog-1-column .entry-summary p,
+.elementor-page .elementor-widget-wp-widget-pukeko-pagetitle-widget p,
+.pukeko_pagetitle p,
+h3.author-name {
+	@include f1-body2;
+}
+
+.related-entry-cats,
+.single-post .entry-meta,
+.comment-list b.fn,
+.single-post .navigation .entry-cats,
+.posts-container .entry-meta .author-name,
+.posts-container .entry-footer .entry-cats,
+form label,
+.widget_flickr .flickr-more {
+	@include f1-body4;
+}
+
+.comment-list .comment-metadata,
+.comment-body .reply,
+.comment-notes,
+.logged-in-as,
+.posts-container .hentry .entry-footer .entry-meta {
+	@include f1-body5;
+}
+
+.page .entry-content ol,
+.page .entry-content p,
+.page .entry-content ul,
+.single-post .entry-content ol,
+.single-post .entry-content p,
+.single-post .entry-content ul,
+p.-text-m,
+.blog-1-column .hentry .entry-summary,
+.blog .sticky .entry-summary,
+.page-header .page-title span {
+	@include f1;
+	@include f1-body2;
+}
+
+.hero-text,
+.entry-content blockquote.quote-big p,
+.entry-content p.intro,
+.entry-content p.pull-left,
+.entry-content p.pull-right,
+.entry-content p.text-l,
+.entry-content p.wp-block-subhead,
+.entry-content p.has-large-font-size {
+	@include f1-body1;
+}
+
+/* Addon Styles */
+.entry-content .elementor-widget-wp-widget-pukeko-teammember-widget .teammember-content-wrap p,
+.entry-summary p,
+.pukeko_sectiontitle p,
+.page.elementor-page .entry-content .elementor-widget-wp-widget-pukeko-sectiontitle-widget p,
+.wpcf7-radio,
+.single-post .entry-header .entry-cats,
+.single-post .hentry .entry-header .entry-meta {
+	margin: 0;
+}
+
+.page-header .page-title span,
+h3.author-name,
+.hero-subtitle,
+.product-subtitle,
+.pagetitle-subtitle {
+	@include font-regular;
+	letter-spacing: 1px;
+	padding-bottom: $spacing-1;
+}
+
+dfn,
+em,
+i {
+	font-style: italic;
+}
+
+blockquote {
+	margin: 0;
+	padding: $spacing-mobile-4 0 $spacing-mobile-8 $spacing-mobile-5;
+	@include breakpoint(m) {
+		padding: $spacing-desktop-4 0 $spacing-desktop-8 $spacing-desktop-5;
+	}
+}
+
+.single-post .entry-content blockquote p,
+blockquote p {
+	margin: 0;
+}
+
+.wp-block-quote cite,
+blockquote cite,
+.product-content blockquote cite {
+	display: block;
+	font-style: normal;
+	margin: $spacing-2 0 0;
+	@include font-medium;
+	color: $black-text-high-emphasis;
+	@include f1-body3;
+	@include font-regular;
+}
+
+pre {
+	background-color: $surface-light;
+	color: $black-text-high-emphasis;
+	max-width: 100%;
+	overflow: auto;
+	padding: $spacing-2;
+	margin-bottom: $spacing-mobile-5;
+	@include f-code;
+	@include breakpoint(m) {
+		margin-bottom: $spacing-desktop-5;
+	}
+}
+
+code,
+kbd,
+tt,
+var {
+	@include f-code;
+}
+
+abbr,
+acronym {
+	text-decoration: none;
+	border-bottom: 1px dotted #666;
+	cursor: help;
+}
+
+ins,
+mark {
+	background-color: rgba(63, 192, 224, .1);
+	text-decoration: none;
+}
+
+big {
+	font-size: 125%;
+}
+
+.dropcap {
+	font-size: 98px;
+	font-weight: 300;
+	float: left;
+	padding: 0 10px 0 0;
+	line-height: 0.9;
+	color: $black-text-high-emphasis;
+	@include breakpoint(m) {
+		font-size: 124px;
+		margin-left: -11px;
+		line-height: 0.79;
+	}
+}
+
+.wide-content {
+	@include breakpoint(xl) {
+		margin: 0 -24px;
+	}
+}
+
+.sidebar-hide-post .wide-content {
+	@include breakpoint(xl) {
+		width: 1200px;
+		margin: 0 -256px;
+	}
+}
+
+/* Font Weights */
+.authorbox .author-name span {
+	@include font-light;
+}
+.comment-list b.fn,
+.comment-metadata .comment-reply-link,
+.posts-container .entry-meta .author-name,
+.single-post .entry-header .entry-meta .author,
+.posts-container .entry-footer .entry-cats,
+.single-post .entry-header .entry-cats {
+	@include font-regular;
+}
+.entry-content strong {
+	@include font-bold;
+}
+
+form label,
+.widget-area .widget-title {
+	@include font-medium;
+}

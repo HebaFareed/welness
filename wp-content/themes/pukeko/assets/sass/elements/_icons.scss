@@ -1,0 +1,99 @@
+
+/* Icons General */
+.icon {
+	display: inline-block;
+	fill: currentColor;
+	position: relative; /* Align more nicely with capital letters */
+	top: 0;
+	vertical-align: middle;
+	text-align: center;
+	stroke-width: 0;
+	stroke: currentColor;
+	width: 24px;
+	height: 24px;
+	padding: 2px;
+}
+
+/* Sticky Post Read More Icon */
+.icon-arrow-right,
+.icon-arrow-left {
+	position: absolute;
+	display: block;
+	top: 8px;
+	left: 8px;
+	fill: $black-text-high-emphasis;
+	@include breakpoint(m) {
+		top: 16px;
+		left: 16px;
+	}
+}
+
+.sticky-container .sticky .icon-arrow-right {
+	@include breakpoint(m) {
+		top: 24px;
+		left: 24px;
+	}
+}
+
+/* Social Icons */
+.social-header-nav .icon,
+.menu-social-container .icon {
+	fill: $white;
+	width: $spacing-3;
+	height: $spacing-3;
+ @include breakpoint(l) {
+		fill: $black-text-high-emphasis;
+	 }
+}
+
+/* Dropdown Icons - Main Menu */
+.main-navigation .icon {
+	display: none;
+	width: 14px;
+	height: 14px;
+	padding: 0;
+	margin-left: 0;
+	margin-top: -3px;
+	-webkit-transform: rotate(-90deg);
+	-ms-transform: rotate(-90deg);
+	transform: rotate(-90deg);
+	transition: transform 150ms ease-in-out;
+	transform-origin: center center;
+	@include breakpoint(l) {
+		display: inline;
+		position: relative;
+		right: auto;
+		top: auto;
+		padding: 0 0 0 3px;
+		margin-left: 3px;
+		-webkit-transform: rotate(0deg);
+		-ms-transform: rotate(0deg);
+		transform: rotate(0deg);
+	}
+}
+
+.main-navigation .dropdown-toggle .icon {
+	display: inline !important;
+	fill: $white;
+}
+
+.main-navigation .sub-menu .menu-item-has-children .icon {
+	display: none;
+	margin: 0;
+	padding: 0;
+	@include breakpoint(l) {
+		display: inline-block;
+		position: absolute;
+		top: 4px;
+		right: $spacing-2;
+		fill: currentcolor;
+		-webkit-transform: rotate(-90deg);
+		-ms-transform: rotate(-90deg);
+		transform: rotate(-90deg);
+		vertical-align: middle;
+	}
+}
+
+.main-navigation .dropdown-toggle.toggled-on .icon {
+			transform: rotate(0deg);
+}

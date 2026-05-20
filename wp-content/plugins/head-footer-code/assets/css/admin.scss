@@ -1,0 +1,84 @@
+$badge-border-radius: 30%;
+
+#head_footer_code_settings {
+    .ver {
+        font-size: 0.8rem;
+        line-height: 2rem;
+    }
+    .head_footer_code_wrapper {
+        display: table;
+        width: 100%;
+
+        .content_cell {
+            display: table-cell;
+        }
+
+        .sidebar_container {
+            display: table-cell;
+            padding: 0 0 0 20px;
+            width: 25%;
+
+            .auhfc-button {
+                display: block;
+                background: #fff;
+                border-radius: 7px;
+                border: 1px solid rgba(0,0,0,0.1);
+                box-shadow: 0 0 0 5px rgba(0,0,0,0.1);
+                padding: 11px 15px;
+                white-space: nowrap;
+                line-height: 18px;
+                color: #bdbdbd;
+                text-shadow: 1px 1px #fff;
+                text-decoration: none;
+                position: relative;
+                min-width: 120px;
+
+                &:hover {
+                    color: #6796a9;
+                    background-color: #c2edff;
+                }
+            }
+        }
+    }
+}
+
+.fixed .column-hfc {
+    width: 14%;
+    .n-a {
+        cursor: help;
+        opacity: 0.5;
+    }
+    .badges {
+        .badge {
+            background: transparent;
+            border: 1px solid #bfe7f3;
+            display: inline-block;
+            font-size: .6rem;
+            font-weight: 600;
+            height: 1.2rem;
+            margin: .2rem 0 0 0;
+            text-align: center;
+            width: 1.2rem;
+    
+            &:hover {
+                border-color: #007cba;
+            }
+        }
+        :first-child {
+            border-radius: $badge-border-radius 0 0 $badge-border-radius;
+        }
+        :last-child {
+            border-radius: 0 $badge-border-radius $badge-border-radius 0;
+        }
+        :only-child {
+            border-radius: $badge-border-radius;
+        }
+    }
+}
+
+// HFC Metabox
+#auhfc-head-footer-code {
+    .CodeMirror {
+        height: 150px;
+    }
+}

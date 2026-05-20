@@ -1,0 +1,296 @@
+a,
+form label,
+textarea .required {
+	color: inherit;
+}
+
+/* Text Links */
+.authorbox-content p a,
+.comment-content li a,
+.comment-content p a,
+.entry-content li a,
+.entry-content p a,
+.hero-text a,
+.wp-caption .wp-caption-text a,
+figcaption a {
+	color: $black-text-high-emphasis;
+	text-decoration: none;
+	-webkit-transition: box-shadow 270ms cubic-bezier(0.770, 0.000, 0.175, 1.000), color 270ms cubic-bezier(0.770, 0.000, 0.175, 1.000);
+	-moz-transition: box-shadow 270ms cubic-bezier(0.770, 0.000, 0.175, 1.000), color 270ms cubic-bezier(0.770, 0.000, 0.175, 1.000);
+	-o-transition: 	box-shadow 270ms cubic-bezier(0.770, 0.000, 0.175, 1.000), color 270ms cubic-bezier(0.770, 0.000, 0.175, 1.000);
+	transition: 	box-shadow 270ms cubic-bezier(0.770, 0.000, 0.175, 1.000), color 270ms cubic-bezier(0.770, 0.000, 0.175, 1.000);
+	box-shadow: inset 0 -0.06em 0 $primary;
+	box-shadow: inset 0 -0.07em 0 $primary;
+}
+
+.authorbox-content p a:hover,
+.comment-content li a:hover,
+.comment-content p a:hover,
+.entry-content li a:hover,
+.entry-content p a:hover,
+.hero-text a:hover,
+.wp-caption .wp-caption-text a:hover,
+figcaption a:hover {
+	box-shadow: inset 0 -1em 0 $primary;
+	color: $white-text-high-emphasis;
+}
+
+/* Improve readability of focused elements when they are also in an active/hover state. */
+a:active,
+a:hover {
+	outline: 0;
+}
+
+/* Only change link color links. */
+.comment-list b.fn a,
+label .required,
+.main-navigation a,
+.posts-container .hentry .entry-meta a,
+.single-post .entry-cats,
+.single-post .entry-cats a,
+.single-post .entry-meta,
+.single-post .entry-meta a,
+.site-title a,
+.teammember-social-wrap a,
+h2.entry-title a {
+	color: $black-text-high-emphasis;
+	fill: $black-text-high-emphasis;
+}
+
+h1 a:hover,
+h2 a:hover,
+h3 a:hover,
+h4 a:hover,
+h5 a:hover,
+h6 a:hover,
+.site-title a:hover,
+.single-post .navigation a:hover,
+.side-widgets li a:hover,
+.side-widgets p a:hover,
+.comment-body .reply a:hover,
+.comments-area h2.comments-title span a:hover,
+.posts-container .hentry .entry-meta a:hover,
+.posts-container .sticky-container .sticky .entry-footer a:hover,
+.related-entry-cats a:hover,
+.single-post .byline a:hover,
+.single-post .entry-cats a:hover,
+.single-post .entry-comments:hover .bubble-icon .icon,
+.single-post .entry-meta a:hover,
+.single-post .navigation .nav-title .nav-subtitle:hover,
+.comment-list .comment-metadata a:hover,
+.comment-reply-title #cancel-comment-reply-link:hover,
+.logged-in-as a:hover,
+#colophon a:hover,
+.site-footer a:hover,
+.social-footer-nav ul li a:hover .icon,
+.teammember-social-wrap a:hover .icon {
+	color: $primary;
+	fill: $primary;
+}
+
+#colophon .widget_mc4wp_form_widget a,
+#colophon a,
+.social-footer-nav .icon {
+	color: $white;
+	fill: $white;
+}
+
+/* Transitions */
+.site-branding a,
+.main-navigation a,
+#colophon .widget_mc4wp_form_widget a,
+#colophon a,
+.social-header-nav .icon,
+.social-footer-nav .icon,
+.teammember-social-wrap .icon,
+.sd-social-icon .sd-content ul li[class*='share-'] a {
+	@include transition-standard;
+}
+
+.blog .sticky-container .post-thumb-img,
+.entry-content .instagram-pics li a,
+.pagination a,
+.related-img,
+.widget .instagram-pics li a,
+.entry-link,
+.entry-link img,
+.post-edit-link {
+	@include transition-posthover;
+}
+
+/* Blog Cards and Card Hovers */
+.entry-link,
+.entry-link img,
+.post-edit-link {
+	background-color: transparent;
+	-webkit-transform: translateZ(0);
+	transform: translateZ(0);
+}
+
+.entry-link:hover,
+.entry-link:hover + .post-edit-link,
+.blog .sticky .post-thumb-img:hover,
+.post-thumb-img:hover + .post-edit-link,
+.related-img:hover,
+.single-post .navigation .nav-thumb:hover {
+	-webkit-transform: perspective(1200) translateZ(30px);
+	transform: perspective(1200) translateZ(30px);
+}
+
+.blogcards-moveup .entry-link:hover,
+.blogcards-moveup .entry-link:hover + .post-edit-link,
+.blog.blogcards-moveup .sticky .post-thumb-img:hover,
+.blogcards-moveup .post-thumb-img:hover + .post-edit-link,
+.blogcards-moveup .related-img:hover,
+.single-post.blogcards-moveup .navigation .nav-thumb:hover {
+	-webkit-transform: translateY(-12px);
+	-ms-transform: translateY(-12px);
+	transform: translateY(-12px);
+}
+
+.entry-link:hover img,
+.blog .sticky .post-thumb-img:hover,
+.related-img:hover,
+.single-post .navigation .nav-thumb:hover {
+	@include image-brightness;
+}
+
+
+/* Blog Cards Shadow Options */
+.blogcards-shadow-s .entry-link,
+.blogcards-shadowhover-s .entry-link:hover,
+.blog.blogcards-shadowhover-s .sticky .post-thumb-img:hover,
+.blogcards-shadowhover-s .related-img:hover,
+.single-post.blogcards-shadowhover-s .navigation .nav-thumb:hover,
+.single-post.blogcards-shadowhover-s .navigation a.nav-thumb:hover {
+	@include shadow-s-light;
+}
+
+.blogcards-shadow-m .entry-link,
+.blogcards-shadowhover-m .entry-link:hover,
+.blog.blogcards-shadowhover-m .sticky .post-thumb-img:hover,
+.blogcards-shadowhover-m .related-img:hover,
+.single-post.blogcards-shadowhover-m .navigation .nav-thumb:hover,
+.single-post.blogcards-shadowhover-m .navigation a.nav-thumb:hover {
+	@include shadow-m-regular;
+}
+
+.blogcards-shadow-l .entry-link,
+.blogcards-shadowhover-l .entry-link:hover,
+.blog.blogcards-shadowhover-l .sticky .post-thumb-img:hover,
+.blogcards-shadowhover-l .related-img:hover,
+.single-post.blogcards-shadowhover-l .navigation .nav-thumb:hover,
+.single-post.blogcards-shadowhover-l .navigation a.nav-thumb:hover {
+	@include shadow-l-regular;
+}
+
+/* Arrow Square Link Hovers */
+.sticky-container .sticky .post-thumb-img .sticky-more,
+.single-post .navigation .arrow-link {
+	display: block;
+	position: absolute;
+	bottom: $spacing-mobile-4;
+	left: $spacing-mobile-4;
+	background: $white;
+	width: $spacing-mobile-7;
+	height: $spacing-mobile-7;
+	text-indent: -99999px;
+	@include breakpoint(m) {
+		width: $spacing-desktop-7;
+		height: $spacing-desktop-7;
+		bottom: $spacing-desktop-4;
+		left: $spacing-desktop-4;
+	}
+}
+
+.sticky-container .sticky .post-thumb-img .sticky-more {
+	@include breakpoint(m) {
+		width: $spacing-desktop-8;
+		height: $spacing-desktop-8;
+	}
+}
+
+.single-post .navigation .nav-thumb .arrow-link:before,
+.sticky-container .sticky .post-thumb-img .sticky-more:before {
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	content: "";
+	display: block;
+	background: $border-dark;
+	-webkit-transform: scaleY(0);
+	transform: scaleY(0);
+	-webkit-transform-origin: center top;
+	transform-origin: center top;
+	transition: -webkit-transform 0.2s ease-in;
+	transition: transform 0.2s ease-in;
+	transition: transform 0.2s ease-in,-webkit-transform 0.2s ease-in;
+}
+
+.single-post .navigation .nav-thumb:hover .arrow-link:before,
+.sticky-container .sticky .post-thumb-img:hover .sticky-more:before {
+	-webkit-transform: scaleY(1);
+	transform: scaleY(1);
+	-webkit-transform-origin: center bottom;
+	transform-origin: center bottom;
+	fill: $black-text-high-emphasis;
+}
+
+/* Circle Shape, if avatars are rounded */
+.avatar-circle .sticky .post-thumb-img .sticky-more,
+.avatar-circle .sticky .post-thumb-img .sticky-more:before,
+.avatar-rounded .sticky .post-thumb-img .sticky-more,
+.avatar-rounded .sticky .post-thumb-img .sticky-more:before,
+.single-post.avatar-circle .navigation .nav-thumb .arrow-link,
+.single-post.avatar-circle .navigation .nav-thumb .arrow-link:before,
+.single-post.avatar-rounded .navigation .nav-thumb .arrow-link,
+.single-post.avatar-rounded .navigation .nav-thumb .arrow-link:before {
+	@include border-radius-100;
+}
+
+.single-post.avatar-circle .navigation .nav-thumb .arrow-link:before,
+.avatar-circle .sticky-container .sticky .post-thumb-img .sticky-more:before,
+.single-post.avatar-rounded .navigation .nav-thumb .arrow-link:before,
+.avatar-rounded .sticky-container .sticky .post-thumb-img .sticky-more:before {
+	-webkit-transform: scaleY(0);
+	transform: scale(0);
+	-webkit-transform-origin: center;
+	transform-origin: center;
+}
+
+.single-post.avatar-circle .navigation .nav-thumb:hover .arrow-link:before,
+.avatar-circle .sticky-container .sticky .post-thumb-img:hover .sticky-more:before,
+.single-post.avatar-rounded .navigation .nav-thumb:hover .arrow-link:before,
+.avatar-rounded .sticky-container .sticky .post-thumb-img:hover .sticky-more:before {
+	-webkit-transform: scaleY(1);
+	transform: scaleY(1);
+	fill: $black-text-high-emphasis;
+}
+
+/* Avatar Links */
+.author-avatar .author-avatar-link,
+.author-avatar {
+	display: block;
+	@include transition-standard
+}
+.sticky .author-avatar:hover,
+.author-avatar .author-avatar-link:hover {
+	@include shadow-m-regular;
+	@include image-brightness;
+	-webkit-transform: translate(0px, -2px);
+	-ms-transform: translate(0px, -2px);
+	transform: translate(0px, -2px);
+}
+.author-pic-link {
+	display: block;
+	@include transition-standard;
+}
+.author-pic-link:hover {
+	@include shadow-xl-heavy;
+	@include image-brightness;
+	-webkit-transform: translate(0px, -2px);
+	-ms-transform: translate(0px, -2px);
+	transform: translate(0px, -2px);
+}

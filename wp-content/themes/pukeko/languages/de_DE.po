@@ -1,0 +1,1228 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Pukeko\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-12-28 19:02+0000\n"
+"PO-Revision-Date: 2019-12-28 19:03+0000\n"
+"Last-Translator: admin <yourname@yourdomain.com>\n"
+"Language-Team: German\n"
+"Language: de_DE\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Loco https://localise.biz/\n"
+"X-Loco-Version: 2.3.1; wp-5.3.2"
+
+#: functions.php:67 inc/customizer.php:737 inc/customizer.php:756
+#: inc/customizer.php:775
+msgid "small"
+msgstr "klein"
+
+#: functions.php:68
+msgid "S"
+msgstr "S"
+
+#: functions.php:73 inc/customizer.php:738 inc/customizer.php:757
+#: inc/customizer.php:776
+msgid "medium"
+msgstr "mittel"
+
+#: functions.php:74
+msgid "M"
+msgstr "M"
+
+#: functions.php:79 inc/customizer.php:739 inc/customizer.php:758
+#: inc/customizer.php:777
+msgid "large"
+msgstr "groß"
+
+#: functions.php:80
+msgid "L"
+msgstr "L"
+
+#: functions.php:85
+msgid "extralarge"
+msgstr "extragroß"
+
+#: functions.php:86
+msgid "XL"
+msgstr "XL"
+
+#: functions.php:101
+msgid "Primary"
+msgstr "Hauptmenü"
+
+#: functions.php:102 inc/customizer.php:66
+msgid "Footer"
+msgstr "Footer"
+
+#: functions.php:103
+msgid "Header Social Icons"
+msgstr "Header Social Icons"
+
+#: functions.php:104
+msgid "Footer Social Icons"
+msgstr "Footer Social Icons"
+
+#: functions.php:105
+msgid "Header CTA Buttons"
+msgstr "Header CTA Buttons"
+
+#. If there are characters in your language that are not supported by the font, translate this to 'off'. Do not translate into your own language.
+#: functions.php:159
+msgctxt "Cardo font: on or off"
+msgid "on"
+msgstr ""
+
+#. If there are characters in your language that are not supported by the font, translate this to 'off'. Do not translate into your own language.
+#: functions.php:164
+msgctxt "Roboto font: on or off"
+msgid "on"
+msgstr ""
+
+#: functions.php:214 inc/customizer.php:489
+msgid "Blog Sidebar"
+msgstr "Blog Sidebar"
+
+#: functions.php:216
+msgid "Add widgets here to appear in your blog sidebar."
+msgstr "Die hier hinzugefügten Widgets erscheinen in der Blog Sidebar."
+
+#: functions.php:224
+msgid "Page Sidebar"
+msgstr "Seiten Sidebar"
+
+#: functions.php:226
+msgid "Add widgets here to appear in your page sidebar."
+msgstr "Die hier hinzugefügten Widgets erscheinen in der Seiten Sidebar."
+
+#: functions.php:234
+msgid "Footer 1"
+msgstr "Footer 1"
+
+#: functions.php:236
+msgid "Add widgets here to appear in the 1. column of your footer."
+msgstr "Die hier hinzugefügten Widgets erscheinen in der 1. Footerspalte."
+
+#: functions.php:244
+msgid "Footer 2"
+msgstr "Footer 2"
+
+#: functions.php:246
+msgid "Add widgets here to appear in the 2. column of your footer."
+msgstr "Die hier hinzugefügten Widgets erscheinen in der 2. Footerspalte."
+
+#: functions.php:254
+msgid "Footer 3"
+msgstr "Footer 3"
+
+#: functions.php:256
+msgid "Add widgets here to appear in the 3. column of your footer."
+msgstr "Die hier hinzugefügten Widgets erscheinen in der 3. Footerspalte."
+
+#: functions.php:264
+msgid "Footer 4"
+msgstr "Footer 4"
+
+#: functions.php:266
+msgid "Add widgets here to appear in the 4. column of your footer."
+msgstr "Die hier hinzugefügten Widgets erscheinen in der 4. Footerspalte."
+
+#: functions.php:274
+msgid "Footer 5"
+msgstr "Footer 5"
+
+#: functions.php:276
+msgid "Add widgets here to appear in the 5. column of your footer."
+msgstr "Die hier hinzugefügten Widgets erscheinen in der 5. Footerspalte."
+
+#: functions.php:284
+msgid "Footer 6"
+msgstr "Footer 6"
+
+#: functions.php:286
+msgid "Add widgets here to appear in the 6. column of your footer."
+msgstr "Die hier hinzugefügten Widgets erscheinen in der 6. Footerspalte."
+
+#: functions.php:308
+msgid "Expand child menu"
+msgstr "Untermenü aufklappen"
+
+#: functions.php:309
+msgid "Collapse child menu"
+msgstr "Untermenü einklappen"
+
+#: functions.php:381
+msgid "All posts by"
+msgstr "Alle Beiträge von"
+
+#: functions.php:384 functions.php:387
+msgid "Filed under"
+msgstr "Kategorie"
+
+#: functions.php:423
+#, php-format
+msgid "%s <span class=\"says\">says:</span>"
+msgstr "%s <span class=\"says\">sagt:</span>"
+
+#. 1: comment date, 2: comment time
+#: functions.php:435
+#, php-format
+msgid "%1$s at %2$s"
+msgstr "%1$s um %2$s"
+
+#: functions.php:448
+msgid "Edit"
+msgstr "Bearbeiten"
+
+#: functions.php:452
+msgid "Your comment is awaiting moderation."
+msgstr "Dein Kommentar befindet sich in der Moderation."
+
+#: 404.php:18
+msgid "Oops! Page Not Found"
+msgstr "Ups, Seite nicht gefunden"
+
+#: 404.php:22
+msgid ""
+"We can&rsquo;t seem to find the page you&rsquo;re looking for. The link you "
+"clicked may be broken or the page may have been removed."
+msgstr ""
+"Diese Seite kann nicht gefunden werden. Der Link scheint kaputt oder die "
+"Seite wurde entfernt."
+
+#: 404.php:23
+msgid "Maybe try a search instead?"
+msgstr "Vielleicht hilft eine Sucheingabe weiter?"
+
+#: index.php:27
+msgid "Posts"
+msgstr "Beiträge"
+
+#: index.php:78 index.php:79 archive.php:62 archive.php:63 search.php:49
+#: search.php:50
+msgid "Older posts"
+msgstr "Ältere Beiträge"
+
+#: index.php:80 index.php:81 archive.php:64 archive.php:65 search.php:51
+#: search.php:52
+msgid "Newer posts"
+msgstr "Neuere Beiträge"
+
+#: index.php:82 archive.php:66 search.php:53
+msgid "Page"
+msgstr "Seite"
+
+#: comments.php:33
+#, php-format
+msgctxt "comments title"
+msgid "1 comment"
+msgid_plural "%1$s Comments"
+msgstr[0] "1 Kommentar"
+msgstr[1] "%1$s Kommentare"
+
+#: comments.php:38
+msgid "Add New Comment"
+msgstr "Neuen Kommentar hinzufügen"
+
+#: comments.php:56
+msgid "Comment navigation"
+msgstr "Kommentar Navigation"
+
+#: comments.php:59
+msgid "Older Comments"
+msgstr "Ältere Kommentare"
+
+#: comments.php:60
+msgid "Newer Comments"
+msgstr "Neuere Kommentare"
+
+#: comments.php:73
+msgid "Comments are closed."
+msgstr "Kommentare sind geschlossen."
+
+#: search.php:18
+msgid "Search Results for:"
+msgstr "Suchergebnisse für:"
+
+#: header.php:25
+msgid "Skip to content"
+msgstr "Inhalte überspringen"
+
+#: searchform.php:14
+msgctxt "label"
+msgid "Search"
+msgstr "Suche"
+
+#: searchform.php:17
+msgctxt "placeholder"
+msgid "Search &hellip;"
+msgstr "Suche &hellip;"
+
+#: searchform.php:19
+msgctxt "label"
+msgid "Search for:"
+msgstr "Suche nach:"
+
+#: searchform.php:21
+msgctxt "submit button"
+msgid "Search"
+msgstr "Suche"
+
+#: inc/widgets.php:20
+msgid "Pukeko - Section Title"
+msgstr "Pukeko - Section Titel"
+
+#: inc/widgets.php:22
+msgid "Section title for Pukeko."
+msgstr "Section Titel für Pukeko."
+
+#: inc/widgets.php:95 inc/widgets.php:238 inc/widgets.php:435
+msgid "Title:"
+msgstr "Titel:"
+
+#: inc/widgets.php:100 inc/widgets.php:248 inc/widgets.php:445
+#: inc/widgets.php:679
+msgid "Text:"
+msgstr "Text:"
+
+#: inc/widgets.php:105 inc/widgets.php:450
+msgid "Button Label:"
+msgstr "Button Label:"
+
+#: inc/widgets.php:110 inc/widgets.php:455
+msgid "Button Link:"
+msgstr "Button Link:"
+
+#: inc/widgets.php:115 inc/widgets.php:460 inc/customizer.php:166
+msgid "Button Style"
+msgstr "Button Stil"
+
+#: inc/widgets.php:127 inc/widgets.php:253
+msgid "Alignment"
+msgstr "Ausrichtung"
+
+#: inc/widgets.php:179
+msgid "Pukeko - Page Title"
+msgstr "Pukeko - Seiten Titel"
+
+#: inc/widgets.php:181
+msgid "Page title for Pukeko."
+msgstr "Seiten Titel für Pukeko."
+
+#: inc/widgets.php:243 inc/widgets.php:440
+msgid "Subtitle:"
+msgstr "Untertitel:"
+
+#: inc/widgets.php:303
+msgid "Pukeko - Product"
+msgstr "Pukeko - Produkt"
+
+#: inc/widgets.php:305
+msgid "Product widget for Pukeko."
+msgstr "Produkt Widget für Pukeko."
+
+#: inc/widgets.php:472
+msgid "Quote Text:"
+msgstr "Zitat Text:"
+
+#: inc/widgets.php:477
+msgid "Quote Author:"
+msgstr "Zitat Autor:"
+
+#: inc/widgets.php:482
+msgid "Quote Author Avatar Email:"
+msgstr "Avatar Email des Zitatautors:"
+
+#: inc/widgets.php:487 inc/widgets.php:684
+msgid "Image:"
+msgstr "Bild:"
+
+#: inc/widgets.php:492
+msgid "Image Alignment"
+msgstr "Bild Ausrichtung"
+
+#: inc/widgets.php:504
+msgid "Layout"
+msgstr "Layout"
+
+#: inc/widgets.php:563
+msgid "Pukeko - Team Member"
+msgstr "Pukeko - Teammitglieder"
+
+#: inc/widgets.php:565
+msgid "Team Member widget for Pukeko."
+msgstr "Teammitglieder für Pukeko."
+
+#: inc/widgets.php:669
+msgid "Name:"
+msgstr "Name:"
+
+#: inc/widgets.php:674
+msgid "Role:"
+msgstr "Rolle:"
+
+#: inc/widgets.php:689
+msgid "Social Link One Label:"
+msgstr "Label Social Link 1:"
+
+#: inc/widgets.php:694
+msgid "Social Link One Link:"
+msgstr "Link Social Link 1:"
+
+#: inc/widgets.php:699
+msgid "Social Link Two Label:"
+msgstr "Label Social Link 2:"
+
+#: inc/widgets.php:704
+msgid "Social Link Two Link:"
+msgstr "Link Social Link 2:"
+
+#: inc/widgets.php:709
+msgid "Social Link Three Label:"
+msgstr "Label Social Link 3:"
+
+#: inc/widgets.php:714
+msgid "Social Link Three Link:"
+msgstr "Link Social Link 3:"
+
+#: inc/class-pukeko-nux-admin.php:83
+msgid "Settings"
+msgstr "Einstellungen"
+
+#: inc/class-pukeko-nux-admin.php:94
+#: inc/welcome-screen/sections/recommended-plugins.php:36
+msgid "Activate"
+msgstr "Aktivieren"
+
+#: inc/class-pukeko-nux-admin.php:109
+msgid "Install now"
+msgstr "Jetzt installieren"
+
+#: inc/icon-functions.php:39
+msgid "Please define default parameters in the form of an array."
+msgstr ""
+
+#: inc/icon-functions.php:44
+msgid "Please define an SVG icon filename."
+msgstr ""
+
+#: inc/customizer.php:28
+msgid "Theme"
+msgstr "Theme"
+
+#: inc/customizer.php:36
+msgid "Typography"
+msgstr "Typografie"
+
+#: inc/customizer.php:42
+msgid "Styles"
+msgstr "Styling"
+
+#: inc/customizer.php:48
+msgid "Colors"
+msgstr "Farben"
+
+#: inc/customizer.php:54
+msgid "Header"
+msgstr "Header"
+
+#: inc/customizer.php:60
+msgid "Featured Header"
+msgstr "Featured Header"
+
+#: inc/customizer.php:72
+msgid "Blog"
+msgstr "Blog"
+
+#: inc/customizer.php:78
+msgid "Blog Cards"
+msgstr "Blogkarten"
+
+#: inc/customizer.php:94
+msgid "Hide Tagline only"
+msgstr "Nur Beschreibungstext verbergen"
+
+#: inc/customizer.php:111
+msgid "Headline Font"
+msgstr "Überschriften Schriftart"
+
+#: inc/customizer.php:116
+msgid "serif"
+msgstr "serif"
+
+#: inc/customizer.php:117
+msgid "sans-serif"
+msgstr "serifenlos"
+
+#: inc/customizer.php:128
+msgid "Headline Font Weight"
+msgstr "Überschriften Schriftschnitt"
+
+#: inc/customizer.php:133
+msgid "regular"
+msgstr "normal"
+
+#: inc/customizer.php:134
+msgid "bold"
+msgstr "fett"
+
+#: inc/customizer.php:145
+msgid "Button and Menu Font Style"
+msgstr "Menü- und Button-Schriftstil"
+
+#: inc/customizer.php:150
+msgid "case sensitive"
+msgstr "Groß- und Kleinschreibung"
+
+#: inc/customizer.php:151
+msgid "uppercase"
+msgstr "Großbuchstaben"
+
+#: inc/customizer.php:171
+msgid "sharp"
+msgstr "eckig"
+
+#: inc/customizer.php:172 inc/customizer.php:190
+msgid "rounded"
+msgstr "abgerundet"
+
+#: inc/customizer.php:173
+msgid "round"
+msgstr "rund"
+
+#: inc/customizer.php:184
+msgid "Avatar Style"
+msgstr "Avatarstil"
+
+#: inc/customizer.php:189
+msgid "square"
+msgstr "Quadrat"
+
+#: inc/customizer.php:191
+msgid "circle"
+msgstr "Kreis"
+
+#: inc/customizer.php:206
+msgid "Background"
+msgstr "Hintergrund"
+
+#: inc/customizer.php:218
+msgid "Primary Link"
+msgstr "Hauptlink"
+
+#: inc/customizer.php:230
+msgid "Primary Link Hover"
+msgstr "Hauptlink Hover"
+
+#: inc/customizer.php:242
+msgid "Footer Background"
+msgstr "Footer Hintergrund"
+
+#: inc/customizer.php:255
+msgid "Footer Text"
+msgstr "Footer Text"
+
+#: inc/customizer.php:267
+msgid "Footer Link"
+msgstr "Footer Link"
+
+#: inc/customizer.php:279
+msgid "Footer Link Hover"
+msgstr "Footer Link Hover"
+
+#: inc/customizer.php:295
+msgid "Hide Search in Header"
+msgstr "Suche im Header verbergen"
+
+#: inc/customizer.php:310
+msgid ""
+"Add a subtitle, title, text and call to action buttons to your Featured "
+"Header."
+msgstr ""
+"Füge einen Untertitel, Titel, Text und Call to Action Button in den Featured "
+"Header hinzu."
+
+#: inc/customizer.php:323
+msgid "Subtitle"
+msgstr "Untertitel"
+
+#: inc/customizer.php:336
+msgid "Title"
+msgstr "Titel"
+
+#: inc/customizer.php:349
+msgid "Text"
+msgstr "Text"
+
+#: inc/customizer.php:362
+msgid "Primary Button Label"
+msgstr "Primary Button Label"
+
+#: inc/customizer.php:375
+msgid "Primary Button URL"
+msgstr "Primary Button URL"
+
+#: inc/customizer.php:388
+msgid "Content Alignment"
+msgstr "Ausrichtung des Inhalts"
+
+#: inc/customizer.php:393 inc/customizer.php:793
+msgid "left"
+msgstr "links"
+
+#: inc/customizer.php:394 inc/customizer.php:794
+msgid "center"
+msgstr "mittig"
+
+#: inc/customizer.php:395
+msgid "right"
+msgstr "rechts"
+
+#: inc/customizer.php:406 inc/customizer.php:692
+msgid "Text Color"
+msgstr "Textfarbe"
+
+#: inc/customizer.php:418
+msgid "Overlay Color"
+msgstr "Overlay Farbe"
+
+#: inc/customizer.php:430
+msgid "Overlay Opacity"
+msgstr "Overlay Transparenz"
+
+#: inc/customizer.php:431
+msgid "Set the opacity of the header overlay in percent."
+msgstr "Bestimme die Transparenz des Header Overlays in Prozent."
+
+#: inc/customizer.php:453
+msgid "Footer credit text"
+msgstr "Footer Credittext"
+
+#: inc/customizer.php:454
+msgid "Customize the footer credit text (HTML is allowed)."
+msgstr "Passe den Footer Credittext an (HTML ist möglich)."
+
+#: inc/customizer.php:471
+msgid "Blog Layout"
+msgstr "Bloglayout"
+
+#: inc/customizer.php:476
+msgid "1-column"
+msgstr "1-spaltig"
+
+#: inc/customizer.php:477
+msgid "2-column"
+msgstr "2-spaltig"
+
+#: inc/customizer.php:478
+msgid "3-column"
+msgstr "3-spaltig"
+
+#: inc/customizer.php:490
+msgid "Choose, where to show the blog sidebar."
+msgstr "Lege fest, wo du die Blog Sidebar zeigen möchtest."
+
+#: inc/customizer.php:495
+msgid "blog only"
+msgstr "nur Blog"
+
+#: inc/customizer.php:496
+msgid "posts only"
+msgstr "nur Beiträge"
+
+#: inc/customizer.php:497
+msgid "blog and posts"
+msgstr "Blog und Beiträge"
+
+#: inc/customizer.php:507
+msgid "Post Details"
+msgstr "Beitragsdetails"
+
+#: inc/customizer.php:520
+msgid "Display categories"
+msgstr "Kategorien anzeigen"
+
+#: inc/customizer.php:533
+msgid "Display date"
+msgstr "Datum anzeigen"
+
+#: inc/customizer.php:546
+msgid "Display comments count"
+msgstr "Kommentaranzahl anzeigen"
+
+#: inc/customizer.php:559
+msgid "Display reading time"
+msgstr "Lesezeit anzeigen"
+
+#: inc/customizer.php:572
+msgid "Display tags"
+msgstr "Schlagwörter anzeigen"
+
+#: inc/customizer.php:585
+msgid "Display author"
+msgstr "Autor anzeigen"
+
+#: inc/customizer.php:598
+msgid "Display related posts"
+msgstr "Ähnliche Beiträge anzeigen"
+
+#: inc/customizer.php:610
+msgid "Featured Images"
+msgstr "Beitragsbilder"
+
+#: inc/customizer.php:623 inc/customizer.php:648
+msgid "Display on single posts"
+msgstr "Auf Einzelbeiträgen anzeigen"
+
+#: inc/customizer.php:635
+msgid "Author Bio"
+msgstr "Autoren Bio"
+
+#: inc/customizer.php:661
+msgid "Post Excerpt Length"
+msgstr "Exzerptlänge Beiträge"
+
+#: inc/customizer.php:662 inc/customizer.php:676
+msgid "Choose number of words."
+msgstr "Wähle die Anzahl der Wörter"
+
+#: inc/customizer.php:675
+msgid "Sticky Post Excerpt Length"
+msgstr "Exzerptlänge hervorgehobener Beiträge"
+
+#: inc/customizer.php:705
+msgid "Background Color"
+msgstr "Hintergrundfarbe"
+
+#: inc/customizer.php:718
+msgid "Background Hover Color"
+msgstr "Hintergrund Hover-Farbe"
+
+#: inc/customizer.php:731
+msgid "Shadow"
+msgstr "Schatten"
+
+#: inc/customizer.php:736 inc/customizer.php:755 inc/customizer.php:774
+msgid "none"
+msgstr "kein"
+
+#: inc/customizer.php:750
+msgid "Shadow Hover"
+msgstr "Schatten Hover"
+
+#: inc/customizer.php:769
+msgid "Border Radius"
+msgstr "abgerundete Ecken"
+
+#: inc/customizer.php:788
+msgid "Text Alignment"
+msgstr "Textzentrierung"
+
+#: inc/customizer.php:805
+msgid "Hover Effect"
+msgstr "Hover Effekt"
+
+#: inc/customizer.php:810
+msgid "move in"
+msgstr "Bewegung nach vorne"
+
+#: inc/customizer.php:811
+msgid "move up"
+msgstr "Bewegung nach oben"
+
+#: inc/customizer.php:822
+msgid "Display author instead of categories"
+msgstr "Autor statt Kategorien anzeigen"
+
+#: inc/customizer.php:835
+msgid "Display author avatar"
+msgstr "Autorenavatar anzeigen"
+
+#: inc/custom-header.php:91
+msgid "Play background video"
+msgstr "Play Button Video"
+
+#: inc/custom-header.php:92
+msgid "Pause background video"
+msgstr "Pause Button Video"
+
+#: inc/template-tags.php:30
+#, php-format
+msgctxt "post author"
+msgid "%s "
+msgstr ""
+
+#: inc/template-tags.php:35 inc/template-tags.php:74
+#, php-format
+msgctxt "post date"
+msgid "%s"
+msgstr "%s"
+
+#. used between list items, there is a space after the comma
+#. used between list items, there is a space after the comma
+#: inc/template-tags.php:92 inc/template-tags.php:98
+msgid " "
+msgstr ""
+
+#: inc/template-tags.php:94 inc/template-tags.php:100
+#, php-format
+msgid "%1$s"
+msgstr "%1$s"
+
+#: inc/template-tags.php:132
+#, php-format
+msgctxt "Time to read"
+msgid "%s min read"
+msgid_plural "%s min read"
+msgstr[0] "%s min Lesezeit"
+msgstr[1] "%s min Lesezeit"
+
+#: inc/demo-installer.php:20
+msgid ""
+"Make sure you have the Elementor Page Builder plugin installed, before "
+"importing this demo!"
+msgstr ""
+"Vergewissere dich, dass du das Elementor Page Builder WordPress-Plugin "
+"aktiviert hast, bevor du die Demo-Inhalte importierst!"
+
+#. Name of the template
+msgid "Fullwidth"
+msgstr "Fullwidth"
+
+#. Name of the template
+msgid "Fullscreen"
+msgstr "Fullscreen"
+
+#. Name of the template
+msgid "No Title"
+msgstr "ohne Titel"
+
+#. Name of the template
+msgid "No Sidebar, No Title"
+msgstr "ohne Sidebar, ohne Titel"
+
+#. Name of the template
+msgid "Fullwidth, No Title"
+msgstr "Fullwidth, ohne Titel"
+
+#. Name of the template
+msgid "No Sidebar"
+msgstr "ohne Sidebar"
+
+#: inc/welcome-screen/class-mt-notify-system.php:164
+msgid "Install: One Click Demo Import Plugin"
+msgstr "Installiere: One Click Demo Import Plugin"
+
+#: inc/welcome-screen/class-mt-notify-system.php:169
+msgid "Activate: One Click Demo Import Plugin"
+msgstr "Aktiviere: One Click Demo Import Plugin"
+
+#: inc/welcome-screen/class-mt-notify-system.php:172
+msgid "Install: one-click-demo-import Plugin"
+msgstr "Installiere: one-click-demo-import Plugin"
+
+#: inc/welcome-screen/class-mt-notify-system.php:178
+#: inc/welcome-screen/class-mt-notify-system.php:186
+msgid "Install: One Click Demo Import"
+msgstr "Installiere: One Click Demo Import"
+
+#: inc/welcome-screen/class-mt-notify-system.php:183
+msgid "Activate: One Click Demo Import"
+msgstr "Aktiviere: One Click Demo Import"
+
+#: inc/welcome-screen/class-mt-notify-system.php:195
+#: inc/welcome-screen/class-mt-notify-system.php:203
+msgid ""
+"Please install the One Click Demo Import plugin to create the demo content."
+msgstr ""
+"Bitte installiere das One Click Demo Import Plugin, um die Demoinhalte zu "
+"importieren."
+
+#: inc/welcome-screen/class-mt-notify-system.php:200
+#: inc/welcome-screen/class-mt-notify-system.php:214
+msgid ""
+"Please activate the One Click Demo Import plugin to create the demo content."
+msgstr ""
+"Bitte aktiviere das One Click Demo Import Plugin, um die Demoinhalte zu "
+"importieren."
+
+#: inc/welcome-screen/class-mt-notify-system.php:209
+msgid ""
+"Please install theOne Click Demo Import plugin to create the demo content"
+msgstr ""
+"Bitte installiere das One Click Demo Import Plugin, um die Demoinhalte zu "
+"importieren."
+
+#: inc/welcome-screen/class-mt-notify-system.php:217
+msgid ""
+"Please install the One Click Demo Import plugin to create the demo content"
+msgstr ""
+"Bitte installiere das One Click Demo Import Plugin, um die Demoinhalte zu "
+"importieren."
+
+#: inc/welcome-screen/class-pukeko-welcome.php:105
+msgid "About Pukeko"
+msgstr "Über Pukeko"
+
+#: inc/welcome-screen/class-pukeko-welcome.php:134
+#, php-format
+msgid ""
+"Welcome and thank you for choosing Pukeko! To get started, please visit our "
+"%1$sWelcome page%2$s."
+msgstr ""
+"Herzlich Willkommen und danke, dass du Pukeko als dein Theme ausgewählt hast!"
+" Um loszulegen, schaue doch kurz auf unserer %1$sWillkommensseite%2$s vorbei."
+
+#: inc/welcome-screen/class-pukeko-welcome.php:136
+msgid "Get started with Pukeko"
+msgstr "Hilfreiche Pukeko Infos"
+
+#: inc/welcome-screen/class-pukeko-welcome.php:158
+msgid "Hooray! There are no required actions for you right now."
+msgstr "Prima, du musst nichts weiter erledigen."
+
+#: inc/welcome-screen/class-pukeko-welcome.php:340
+msgid "Welcome to Pukeko "
+msgstr "Willkommen bei Pukeko "
+
+#: inc/welcome-screen/class-pukeko-welcome.php:342
+msgid ""
+"Thank you for installing Pukeko! Your theme is now installed and ready. "
+"Follow the first steps below to get started building your dream website."
+msgstr ""
+"Vielen Dank, dass Du Pukeko für deine Webseite gewählt hast! Dein Theme ist "
+"jetzt fertig installiert. Folge am besten den unten beschriebenen ersten "
+"Schritten, um deine Traum-Webseite mit Pukeko zu bauen."
+
+#: inc/welcome-screen/class-pukeko-welcome.php:348
+msgid "Getting Started"
+msgstr "Los geht's"
+
+#: inc/welcome-screen/class-pukeko-welcome.php:350
+msgid "Recommended Plugins"
+msgstr "Empfohlene Plugins"
+
+#: inc/welcome-screen/class-pukeko-welcome.php:352
+msgid "Support"
+msgstr "Support"
+
+#: template-parts/footer/footer-menus.php:21
+msgid "Footer Menu"
+msgstr "Footer Menü"
+
+#: template-parts/footer/footer-menus.php:32
+msgid "Footer Social Links Menu"
+msgstr "Footer Social Links Menü"
+
+#: template-parts/footer/site-info.php:18
+#, php-format
+msgid "&copy; %1$s %2$s."
+msgstr "&copy; %1$s %2$s."
+
+#: template-parts/page/content-page.php:27
+#: template-parts/post/content-single.php:59
+msgid "Pages:"
+msgstr "Seiten:"
+
+#: template-parts/post/authorbox.php:24
+msgid "Author"
+msgstr "Autor"
+
+#: template-parts/post/content-single.php:22
+msgid "Leave a reply"
+msgstr "Antwort schreiben"
+
+#: template-parts/post/content-single.php:22
+#: template-parts/post/post-standard.php:53
+#: template-parts/post/post-sticky.php:63
+msgid "Comment 1"
+msgstr "Kommentar 1"
+
+#: template-parts/post/content-single.php:22
+#: template-parts/post/post-standard.php:53
+#: template-parts/post/post-sticky.php:63
+msgid "Comments %"
+msgstr "Kommentare %"
+
+#. %s: Name of current post.
+#: template-parts/post/content-single.php:54
+#, php-format
+msgid "Continue reading %s <span class=\"meta-nav\">&rarr;</span>"
+msgstr "Weiterlesen %s <span class=\"meta-nav\">&rarr;</span>"
+
+#: template-parts/post/nav-single.php:12
+msgid "Post navigation"
+msgstr "Beitragsnavigation"
+
+#: template-parts/post/nav-single.php:21 template-parts/post/nav-single.php:25
+msgid "Previous Post"
+msgstr "Vorheriger Beitrag"
+
+#: template-parts/post/nav-single.php:51 template-parts/post/nav-single.php:55
+msgid "Next Post"
+msgstr "Nächster Beitrag"
+
+#: template-parts/post/content-none.php:16
+msgid "Nothing Found"
+msgstr "Nichts gefunden"
+
+#: template-parts/post/content-none.php:23
+#, php-format
+msgid ""
+"Ready to publish your first post? <a href=\"%1$s\">Get started here</a>."
+msgstr ""
+"Bist du bereit deinen ersten Beitrag zu veröffentlichen? <a href=\"%1$s\">"
+"Hier loslegen</a>."
+
+#: template-parts/post/content-none.php:27
+msgid ""
+"Sorry, but nothing matched your search terms. Please try again with some "
+"different keywords."
+msgstr ""
+"Entschuldigung, wir konnten nichts zu diesem Suchbegriff finden. Bitte "
+"versuche es doch einmal mit einem anderen Suchbegriff."
+
+#: template-parts/post/content-none.php:32
+msgid ""
+"It seems we can&rsquo;t find what you&rsquo;re looking for. Perhaps "
+"searching can help."
+msgstr ""
+"Es scheint, als kann hierzu nichts gefunden werden. Vielleicht klappt es mit "
+"einem anderen Suchbegriff."
+
+#: template-parts/post/relatedposts.php:34
+msgid "Related Posts"
+msgstr "Weitere Beiträge"
+
+#: template-parts/post/relatedposts.php:34
+msgid "View more"
+msgstr "Mehr ansehen"
+
+#: template-parts/post/post-standard.php:53
+#: template-parts/post/post-sticky.php:63
+msgid "Comments 0"
+msgstr "Kommentare 0"
+
+#: template-parts/post/post-sticky.php:37
+msgid "Read More"
+msgstr "Weiterlesen"
+
+#: template-parts/navigation/navigation-main.php:12
+msgid "Top Menu"
+msgstr "Header Menü"
+
+#: template-parts/header/header-content.php:31
+msgid "Menu"
+msgstr "Menü"
+
+#: template-parts/header/header-content.php:57
+msgid "Header Social Links Menu"
+msgstr "Header Social Links Menü"
+
+#: inc/welcome-screen/sections/support.php:5
+msgid "Theme Documentation"
+msgstr "Theme Dokumentation"
+
+#: inc/welcome-screen/sections/support.php:7
+msgid ""
+"We prepared a detailed theme documentation for you including video tutorials,"
+" so that setting up Pukeko becomes as easy as it gets."
+msgstr ""
+"Wir haben eine detaillierte Theme Dokumentation und Video-Anleitungen "
+"vorbereitet, um dir die Einrichtung von Pukeko so leicht wie möglich zu "
+"machen."
+
+#: inc/welcome-screen/sections/support.php:10
+msgid "See the full documentation"
+msgstr "Schaue dir die komplette Dokumentation an"
+
+#: inc/welcome-screen/sections/support.php:15
+msgid "Contact Us"
+msgstr "Kontaktiere uns"
+
+#: inc/welcome-screen/sections/support.php:17
+msgid ""
+"If you have any questions regarding Pukeko or you need help setting up your "
+"theme, please contact us via our support forum. We are here to help you!"
+msgstr ""
+"Wenn du Fragen zu Pukeko hast oder du Hilfe bei der Theme-Einrichtung "
+"benötigst, kontaktiere uns einfach über unser Theme Support Forum. Wir sind "
+"da, um dir weiterzuhelfen!"
+
+#: inc/welcome-screen/sections/support.php:20
+msgid "Contact Support"
+msgstr "zum Theme Support »"
+
+#: inc/welcome-screen/sections/getting-started.php:10
+msgid "1. Install recommended plugins"
+msgstr "1. Empfohlene Plugins installieren"
+
+#: inc/welcome-screen/sections/getting-started.php:11
+msgid ""
+"To take full advantage of everything Pukeko has to offer, we receommend you "
+"to install a number of WordPress plugins."
+msgstr ""
+"Um alle Pukeko Optionen nutzen zu können, empfehlen wir eine Reihe von "
+"WordPress Plugins zu installieren."
+
+#: inc/welcome-screen/sections/getting-started.php:12
+msgid "See all recommended plugins"
+msgstr "Empfohlenen Plugins ansehen"
+
+#: inc/welcome-screen/sections/getting-started.php:17
+msgid "2. See the documentation"
+msgstr "2. Dokumention anschauen"
+
+#: inc/welcome-screen/sections/getting-started.php:18
+msgid ""
+"Even if you're a long-time WordPress user, we  still recommend you to have a "
+"look at our detailed theme documentation."
+msgstr ""
+"Auch wenn du WordPress schon lange verwendest, empfehlen wir dir die "
+"detaillierte Theme Dokumentation anzuschauen, die wir für dich vorbereitet "
+"haben."
+
+#: inc/welcome-screen/sections/getting-started.php:21
+msgid "https://www.elmastudio.de/en/themes/docs/pukeko/"
+msgstr "https://www.elmastudio.de/wordpress-themes/doks/pukeko/"
+
+#: inc/welcome-screen/sections/getting-started.php:21
+msgid "See detailed documentation"
+msgstr "Theme Dokumentation anschauen"
+
+#: inc/welcome-screen/sections/getting-started.php:26
+msgid "3. Start to Customize"
+msgstr "3. Theme anpassen"
+
+#: inc/welcome-screen/sections/getting-started.php:27
+msgid ""
+"With the help of the the WordPress Customizer, you can easily customize your "
+"Pukeko theme."
+msgstr ""
+"Mit Hilfe des WordPress Customizers kannst du dein Pukeko Theme leicht "
+"anpassen."
+
+#: inc/welcome-screen/sections/getting-started.php:29
+msgid "Go to the Customizer"
+msgstr "Gehe zum Customizer"
+
+#: inc/welcome-screen/sections/recommended-plugins.php:32
+msgid "Install"
+msgstr "Installieren"
+
+#: inc/welcome-screen/sections/recommended-plugins.php:40
+msgid "Deactivate"
+msgstr "Deaktivieren"
+
+#: inc/welcome-screen/sections/recommended-plugins.php:47
+msgid "Version:"
+msgstr "Version:"
+
+#. Name of the theme
+msgid "Pukeko"
+msgstr "Pukeko"
+
+#. Description of the theme
+msgid ""
+"Pukeko is a multi-purpose, Gutenberg-ready WordPress theme with a "
+"sofiticated design, easy-to-use options and detailled documentations."
+msgstr ""
+"Pukeko ist ein vielseitiges, für Gutenberg vorbereitetes WordPress Theme mit "
+"einem hochwertigem Design, benutzerfreundlichen Optionen und einer "
+"detaillierten Theme-Dokumentation."
+
+#. URI of the theme
+msgid "https://www.elmastudio.de/en/themes/pukeko/"
+msgstr "https://www.elmastudio.de/wordpress-themes/pukeko/"
+
+#. Author of the theme
+msgid "Elmastudio"
+msgstr "Elmastudio"
+
+#. Author URI of the theme
+msgid "http://www.elmastudio.de/en/"
+msgstr "http://www.elmastudio.de/"
+
+msgid ""
+"<strong>%s</strong> supports automatic updates using WordPress' update "
+"mechanism. To use this feature you need to activate the theme using your "
+"Product Key, which can be found in your Elmastudio account dashboard. The "
+"theme stays fully functional without activation and still can be updated "
+"manually. %sClick here%s to activate <strong>%s</strong>."
+msgstr ""
+"<strong>%s</strong> unterstützt automatische Updates über den "
+"Aktualisierungsmechanismus von WordPress. Dazu muss das Theme mit einem "
+"Produktschlüssel aktiviert werden, den du in deinem Elmastudio-Konto findest."
+" Das Theme funktioniert uneingeschränkt auch ohne diese Aktivierung und "
+"lässt sich jederzeit manuell aktualisieren. %sKlicke hier%s um <strong>"
+"%s</strong> zu aktivieren."
+
+msgid ""
+"<b>Warning!</b> You're blocking external requests which means you won't be "
+"able to get %s updates. Please add %s to %s."
+msgstr ""
+"<strong>Achtung!</strong> Du blockierst externe Anfragen, so dass keine %s-"
+"Updates geladen werden können. Bitte füge %s zu deinen %s hinzu."
+
+msgid " Activation"
+msgstr "-Aktivierung"
+
+msgid " Product Key Activation"
+msgstr "-Produktschlüssel-Aktivierung"
+
+msgid "Product Key Activation"
+msgstr "Produktschlüssel-Aktivierung"
+
+msgid "Product Key Deactivation"
+msgstr "Produktschlüssel-Deaktivierung"
+
+msgid "Product Key"
+msgstr "Produktschlüssel"
+
+msgid "Product ID"
+msgstr "Produkt-ID"
+
+msgid "Product Key Status"
+msgstr "Produktschlüssel-Status"
+
+msgid "Deactivate Product Key"
+msgstr "Deaktiviere Produktschlüssel"
+
+msgid "Save Changes"
+msgstr "Änderungen speichern"
+
+msgid "Activated"
+msgstr "Aktiviert"
+
+msgid "Deactivated"
+msgstr "Deaktiviert"
+
+msgid ""
+"Connection failed to the Elmastudio server. Try again later. There may be a "
+"problem on your server preventing outgoing requests."
+msgstr ""
+"Die Verbindung zum Elmastudio-Server konnte nicht hergestellt werden. Bitte "
+"versuche es später erneut. Auf deinem Server könnte es ein Problem geben, "
+"welches ausgehende Verbindungen einschränkt."
+
+msgid "Product Key deactivated."
+msgstr "Produktschlüssel deaktiviert."
+
+msgid ""
+"The Product Key could not be deactivated. Use the Product Key Deactivation "
+"tab to manually deactivate the Product Key before activating a new Product "
+"Key."
+msgstr ""
+"Der Produktschlüssel konnte nicht deaktiviert werden. Klicke auf "
+"Produktschlüssel-Deaktivierung und deaktiviere den Produktschlüssel manuell "
+"bevor du den neuen Produktschlüssel aktivierst."
+
+msgid "Deactivates an Product Key so it can be used on another blog."
+msgstr ""
+"Deaktiviert einen Produktschlüssel, so dass dieser auf einer anderen Seite "
+"verwendet werden kann."
+
+msgid "%s activated."
+msgstr "%s aktiviert."
