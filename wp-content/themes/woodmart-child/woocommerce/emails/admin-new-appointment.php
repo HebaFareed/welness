@@ -35,8 +35,9 @@ if ( empty( $client_name ) ) {
 
 // ── Appointment date & time ───────────────────────────────────────────────────
 $start_timestamp = $appointment->get_start( 'timestamp' );
-$date_display    = $start_timestamp ? date_i18n( 'F j, Y', $start_timestamp )                    : $appointment->get_start_date();
-$time_display    = $start_timestamp ? date_i18n( 'g:i A', $start_timestamp ) . ' (Cairo time)'   : '';
+$staff_tz        = wellness_get_staff_tz( $appointment );
+$date_display    = $start_timestamp ? date_i18n( 'F j, Y', $start_timestamp )         : $appointment->get_start_date();
+$time_display    = $start_timestamp ? wellness_tz_format( $start_timestamp, $staff_tz ) : '';
 
 // ── Duration ──────────────────────────────────────────────────────────────────
 $duration_raw     = $appointment->get_duration();

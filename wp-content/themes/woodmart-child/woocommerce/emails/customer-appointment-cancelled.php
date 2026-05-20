@@ -62,8 +62,9 @@ $therapist_display = implode( '<br>', $staff_names );
 
 // ── Appointment date & time ───────────────────────────────────────────────────
 $start_timestamp   = $appointment->get_start( 'timestamp' );
+$customer_tz       = wellness_get_customer_tz( $appointment );
 $datetime_display  = $start_timestamp
-	? date_i18n( 'F j, Y', $start_timestamp ) . ' at ' . date_i18n( 'g:i A', $start_timestamp )
+	? date_i18n( 'F j, Y', $start_timestamp ) . ' at ' . wellness_tz_format( $start_timestamp, $customer_tz )
 	: $appointment->get_start_date();
 
 // ── Cancellation allowed period ───────────────────────────────────────────────

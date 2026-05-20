@@ -44,8 +44,9 @@ if ( empty( $customer_first_name ) && $customer_full_name ) {
 
 // ── Appointment date / time ──────────────────────────────────────────────────
 $start_timestamp  = $appointment->get_start( 'timestamp' );
+$customer_tz      = wellness_get_customer_tz( $appointment );
 $start_formatted  = $start_timestamp
-	? date_i18n( 'F j, Y \a\t g:i A', $start_timestamp ) . ' (Cairo time)'
+	? wellness_tz_format( $start_timestamp, $customer_tz, 'F j, Y \a\t g:i A' )
 	: $appointment->get_start_date();
 
 // ── Duration ─────────────────────────────────────────────────────────────────

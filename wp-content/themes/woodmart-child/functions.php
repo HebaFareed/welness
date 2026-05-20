@@ -2085,3 +2085,252 @@ add_action('admin_head', function () {
 	</style>
 <?php
 });
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Phase 1 — Timezone-aware appointment time formatting
+// Used by all 6 child-theme email templates so the logic lives in one place.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Format a raw appointment timestamp in a given timezone and append its label.
+ *
+ * For same-timezone output uses date_i18n() (WordPress i18n-aware).
+ * For cross-timezone conversion delegates to wc_appointment_timezone_locale()
+ * which is the same function the plugin's own get_start_date() uses.
+ *
+ * @param int    $timestamp   Raw value from $appointment->get_start('timestamp').
+ * @param string $tz_string   IANA timezone string, e.g. 'America/New_York'.
+ * @param string $format      PHP date() format string.
+ * @return string             e.g. "4:00 PM (Cairo)" or "9:00 AM (New York)"
+ */
+function wellness_tz_format( $timestamp, $tz_string, $format = 'g:i A' ) {
+	if ( ! $timestamp ) {
+		return '';
+	}
+	$site_tz = wc_timezone_string();
+	$tz      = ( $tz_string !== '' && $tz_string !== null ) ? $tz_string : $site_tz;
+	$label   = wc_appointment_get_timezone_name( $tz );
+
+	// wc_appointment_get_timezone_name() returns '' for Etc/GMT±N offsets,
+	// raw ±HH:MM offsets (what wc_timezone_string() returns when WP timezone
+	// is set to UTC+N rather than a city), and plain 'UTC'.
+	// Build a readable fallback so we never render an empty label like "10 AM ()".
+	if ( ! $label ) {
+		if ( preg_match( '/^Etc\/GMT([+-])(\d+)$/', $tz, $m ) ) {
+			// POSIX Etc/GMT sign is inverted vs UTC convention: Etc/GMT-2 = UTC+2.
+			$label = 'UTC' . ( $m[1] === '+' ? '-' : '+' ) . $m[2];
+		} elseif ( preg_match( '/^([+-])(\d{1,2}):(\d{2})$/', $tz, $m ) ) {
+			// Raw offset from wc_timezone_string(): '+03:00', '-05:30', etc.
+			$h     = (int) $m[2];
+			$min   = (int) $m[3];
+			$label = 'UTC' . $m[1] . $h . ( $min > 0 ? ':' . str_pad( $min, 2, '0', STR_PAD_LEFT ) : '' );
+		} elseif ( strpos( $tz, '/' ) !== false ) {
+			// Generic IANA: use the last segment, e.g. 'Africa/Cairo' → 'Cairo'.
+			$parts = explode( '/', $tz );
+			$label = str_replace( '_', ' ', end( $parts ) );
+		} else {
+			$label = $tz ?: 'UTC'; // 'UTC', 'UTC+2', etc.
+		}
+	}
+
+	if ( $tz === $site_tz ) {
+		return date_i18n( $format, $timestamp ) . ' (' . $label . ')';
+	}
+
+	// Plugin's own offset-arithmetic conversion — same path as get_start_date().
+	$formatted = wc_appointment_timezone_locale( 'site', 'user', $timestamp, $format, $tz );
+	return $formatted . ' (' . $label . ')';
+}
+
+/**
+ * Resolve the timezone to display to a customer.
+ * Priority: _local_timezone on appointment → _customer_timezone on order → site tz.
+ *
+ * @param WC_Appointment $appointment
+ * @return string IANA timezone string
+ */
+function wellness_get_customer_tz( $appointment ) {
+	$tz = method_exists( $appointment, 'get_local_timezone' ) ? $appointment->get_local_timezone() : '';
+	if ( ! $tz ) {
+		$order = $appointment->get_order();
+		if ( $order ) {
+			$tz = $order->get_meta( '_customer_timezone', true );
+		}
+	}
+	return $tz ?: wc_timezone_string();
+}
+
+/**
+ * Resolve the timezone to display to staff/admin.
+ * Uses the first assigned staff member's timezone_string user meta; falls back to site tz.
+ *
+ * @param WC_Appointment $appointment
+ * @return string IANA timezone string
+ */
+function wellness_get_staff_tz( $appointment ) {
+	foreach ( (array) $appointment->get_staff_ids() as $staff_id ) {
+		$tz = get_user_meta( (int) $staff_id, 'timezone_string', true );
+		if ( $tz ) {
+			return $tz;
+		}
+	}
+	return wc_timezone_string();
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Phase 2 — Client timezone detection & order meta storage
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Step 2a — On every front-end page, write the browser's IANA timezone string
+ * into the 'appointments_time_zone' cookie that the WooCommerce Appointments
+ * plugin already reads.  Only fires when the cookie is absent — an explicit
+ * timezone selection on the booking form always wins.
+ */
+add_action( 'wp_footer', function () {
+	?>
+	<script id="wellness-tz-detect">
+	(function () {
+		var name = 'appointments_time_zone';
+		var has  = document.cookie.split(';').some( function(c) {
+			return c.trim().substring( 0, name.length + 1 ) === name + '=';
+		} );
+		if ( has ) return;
+		try {
+			var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+			if ( tz ) {
+				document.cookie = name + '=' + tz
+					+ '; path=/; max-age=2592000; SameSite=Lax';
+			}
+		} catch(e) {}
+	})();
+	</script>
+	<?php
+}, 20 );
+
+/**
+ * Step 2b — When a WooCommerce order is created at checkout, persist the
+ * detected timezone into '_customer_timezone' order meta.  This is the
+ * fallback that Phase 1 email templates read when the appointment itself
+ * carries no _local_timezone (guest checkout, old orders, or products with
+ * the customer_timezones product setting disabled).
+ *
+ * The value is validated against PHP's timezone_identifiers_list() before
+ * storage, so a tampered cookie cannot inject arbitrary data.
+ */
+add_action( 'woocommerce_checkout_order_created', function ( $order ) {
+	if ( empty( $_COOKIE['appointments_time_zone'] ) ) {
+		return;
+	}
+	$tz = sanitize_text_field( wp_unslash( $_COOKIE['appointments_time_zone'] ) );
+	if ( ! in_array( $tz, timezone_identifiers_list(), true ) ) {
+		return;
+	}
+	$order->update_meta_data( '_customer_timezone', $tz );
+	$order->save();
+} );
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Phase 3 — Staff timezone UI
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Render a timezone <select> on the shop_staff user profile page.
+ * The plugin already saves 'timezone_string' user meta when the field is
+ * present — we only need to render the field from the child theme.
+ */
+add_action( 'show_user_profile', 'wellness_staff_timezone_field' );
+add_action( 'edit_user_profile', 'wellness_staff_timezone_field' );
+
+function wellness_staff_timezone_field( $user ) {
+	if ( ! in_array( 'shop_staff', (array) $user->roles, true ) ) {
+		return;
+	}
+	$current_tz = get_user_meta( $user->ID, 'timezone_string', true ) ?: wc_timezone_string();
+	?>
+	<h3><?php esc_html_e( 'Appointment Timezone', 'woodmart-child' ); ?></h3>
+	<table class="form-table" role="presentation">
+		<tr>
+			<th><label for="timezone_string"><?php esc_html_e( 'Your timezone', 'woodmart-child' ); ?></label></th>
+			<td>
+				<select name="timezone_string" id="timezone_string">
+					<?php echo wp_timezone_choice( $current_tz, get_user_locale( $user ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+				</select>
+				<p class="description">
+					<?php esc_html_e( 'Appointment times in notification emails and the admin dashboard will display in this timezone.', 'woodmart-child' ); ?>
+				</p>
+			</td>
+		</tr>
+	</table>
+	<?php
+	wp_nonce_field( 'wellness_staff_tz_' . $user->ID, '_wellness_tz_nonce' );
+}
+
+/**
+ * Save the timezone field submitted from the staff profile page.
+ * Validates against PHP's timezone list and WordPress UTC offset strings.
+ */
+add_action( 'personal_options_update',  'wellness_save_staff_timezone' );
+add_action( 'edit_user_profile_update', 'wellness_save_staff_timezone' );
+
+function wellness_save_staff_timezone( $user_id ) {
+	if ( ! isset( $_POST['_wellness_tz_nonce'] )
+		|| ! wp_verify_nonce(
+			sanitize_text_field( wp_unslash( $_POST['_wellness_tz_nonce'] ) ),
+			'wellness_staff_tz_' . $user_id
+		)
+	) {
+		return;
+	}
+	if ( ! current_user_can( 'edit_user', $user_id ) ) {
+		return;
+	}
+	if ( empty( $_POST['timezone_string'] ) ) {
+		return;
+	}
+	$tz = sanitize_text_field( wp_unslash( $_POST['timezone_string'] ) );
+	// Accept IANA strings and WordPress-style UTC offset strings (UTC, UTC+2, UTC-5.5 …).
+	if ( in_array( $tz, timezone_identifiers_list(), true )
+		|| preg_match( '/^UTC[+-]?[\d.]*$/', $tz )
+	) {
+		update_user_meta( $user_id, 'timezone_string', $tz );
+	}
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Phase 4 — Appointment list shows times in staff's own timezone
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * When a shop_staff user views appointments in wp-admin, convert the displayed
+ * start/end times from site timezone to their configured timezone.
+ *
+ * Mirrors the plugin's adjust_appointment_to_timezone() (class-wc-appointments-
+ * init.php:372) whose filter hooks are commented out. We re-attach them here so
+ * no plugin files are modified.
+ */
+add_filter( 'woocommerce_appointments_get_start_date_with_time', 'wellness_admin_appointment_tz', 15, 3 );
+add_filter( 'woocommerce_appointments_get_end_date_with_time',   'wellness_admin_appointment_tz', 15, 3 );
+
+function wellness_admin_appointment_tz( $timestring, $appointment, $timestamp ) {
+	if ( ! is_user_logged_in() || ! is_admin() ) {
+		return $timestring;
+	}
+	$user = wp_get_current_user();
+	if ( ! in_array( 'shop_staff', (array) $user->roles, true ) ) {
+		return $timestring;
+	}
+	$tzstring = get_user_meta( $user->ID, 'timezone_string', true );
+	if ( ! $tzstring ) {
+		return $timestring; // No timezone set — show site timezone unchanged.
+	}
+	return wellness_tz_format(
+		$timestamp,
+		$tzstring,
+		wc_appointments_date_format() . ', ' . wc_appointments_time_format()
+	);
+}

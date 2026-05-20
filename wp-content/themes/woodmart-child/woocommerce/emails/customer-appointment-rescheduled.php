@@ -37,11 +37,12 @@ if ( empty( $customer_full_name ) && $wc_order ) {
 
 // ── Dates ─────────────────────────────────────────────────────────────────────
 $start_timestamp  = $appointment->get_start( 'timestamp' );
+$customer_tz      = wellness_get_customer_tz( $appointment );
 $new_date_display = $start_timestamp
 	? date_i18n( 'F j, Y', $start_timestamp )
 	: $appointment->get_start_date();
 $new_time_display = $start_timestamp
-	? date_i18n( 'g:i A', $start_timestamp ) . ' (Cairo time)'
+	? wellness_tz_format( $start_timestamp, $customer_tz )
 	: '';
 
 // Previous date — passed in as a formatted string from the trigger
