@@ -2334,3 +2334,223 @@ function wellness_admin_appointment_tz( $timestring, $appointment, $timestamp ) 
 		wc_appointments_date_format() . ', ' . wc_appointments_time_format()
 	);
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Phase 5 — Availability time-entry hints for shop_staff users
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * On the staff profile edit page, inject:
+ *   1. A yellow notice above the availability table reminding the staff that
+ *      times are stored in site timezone.
+ *   2. A live hint below every "from" / "to" time input that converts the
+ *      entered site time to the staff member's own timezone, so they can
+ *      verify what the slot means in their local time.
+ *
+ * Uses admin_footer so we can read GET params and current user safely.
+ * Only activates when:
+ *   - The current screen is a user-edit or profile page.
+ *   - The profile being edited belongs to a shop_staff member.
+ *   - That staff member has an IANA timezone set that differs from the site tz.
+ */
+add_action( 'admin_footer', 'wellness_staff_avail_tz_hints', 20 );
+
+function wellness_staff_avail_tz_hints() {
+	if ( ! is_admin() ) {
+		return;
+	}
+
+	$screen = get_current_screen();
+	if ( ! $screen || ! in_array( $screen->base, array( 'user-edit', 'profile' ), true ) ) {
+		return;
+	}
+
+	// Profile being edited (own profile or another user's).
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+	$user_id = isset( $_GET['user_id'] ) ? (int) $_GET['user_id'] : get_current_user_id();
+	$user    = get_user_by( 'ID', $user_id );
+	if ( ! $user || ! in_array( 'shop_staff', (array) $user->roles, true ) ) {
+		return;
+	}
+
+	$staff_tz = get_user_meta( $user_id, 'timezone_string', true );
+
+	// Only proceed with valid IANA strings — Intl.DateTimeFormat in browsers
+	// does not accept 'UTC+3' style strings, only 'Africa/Cairo' etc.
+	if ( ! $staff_tz || ! in_array( $staff_tz, timezone_identifiers_list(), true ) ) {
+		return;
+	}
+
+	$site_tz_str = wc_timezone_string(); // e.g. '+03:00' or 'Africa/Cairo'
+
+	if ( $staff_tz === $site_tz_str ) {
+		return; // Already in site timezone — no hint needed.
+	}
+
+	// ── Site offset in minutes (DST-aware for today) ────────────────────────
+	try {
+		$site_tz_obj     = new DateTimeZone( $site_tz_str );
+		$site_offset_min = (int) round( $site_tz_obj->getOffset( new DateTime( 'now', $site_tz_obj ) ) / 60 );
+	} catch ( Exception $e ) {
+		$site_offset_min = (int) round( (float) get_option( 'gmt_offset' ) * 60 );
+	}
+
+	// ── Human-readable label for the site timezone ──────────────────────────
+	$site_label = wc_appointment_get_timezone_name( $site_tz_str );
+	if ( ! $site_label ) {
+		if ( preg_match( '/^Etc\/GMT([+-])(\d+)$/', $site_tz_str, $m ) ) {
+			$site_label = 'UTC' . ( $m[1] === '+' ? '-' : '+' ) . $m[2];
+		} elseif ( preg_match( '/^([+-])(\d{1,2}):(\d{2})$/', $site_tz_str, $m ) ) {
+			$h          = (int) $m[2];
+			$min        = (int) $m[3];
+			$site_label = 'UTC' . $m[1] . $h . ( $min > 0 ? ':' . str_pad( $min, 2, '0', STR_PAD_LEFT ) : '' );
+		} else {
+			$site_label = $site_tz_str ?: 'site timezone';
+		}
+	}
+
+	// ── Staff offset in minutes (DST-aware for today) ──────────────────────
+	try {
+		$staff_tz_obj     = new DateTimeZone( $staff_tz );
+		$staff_offset_min = (int) round( $staff_tz_obj->getOffset( new DateTime( 'now', $staff_tz_obj ) ) / 60 );
+	} catch ( Exception $e ) {
+		$staff_offset_min = $site_offset_min;
+	}
+	$diff_min = $staff_offset_min - $site_offset_min;
+
+	// ── City label for the staff member (last segment of IANA string) ────────
+	$staff_parts = explode( '/', $staff_tz );
+	$staff_city  = str_replace( '_', ' ', end( $staff_parts ) );
+
+	?>
+	<script id="wellness-avail-tz-hint">
+	(function($) {
+		'use strict';
+
+		// diffMin = staffOffsetMin - siteOffsetMin  (positive → staff is ahead of site)
+		var diffMin   = <?php echo (int) $diff_min; ?>;
+		var siteLabel = <?php echo wp_json_encode( $site_label ); ?>;
+		var staffCity = <?php echo wp_json_encode( $staff_city ); ?>;
+
+		// ── Helpers ────────────────────────────────────────────────────────
+
+		function pad2( n ) { return n < 10 ? '0' + n : '' + n; }
+
+		/** Wrap raw minutes into 0–1439. */
+		function wrap( m ) { return ( ( m % 1440 ) + 1440 ) % 1440; }
+
+		/** Parse "H:MM" or "HH:MM" → total minutes, or null if blank/invalid. */
+		function parseHHMM( s ) {
+			if ( ! s || ! /^\d{1,2}:\d{2}$/.test( s ) ) { return null; }
+			var p = s.split(':');
+			return parseInt( p[0], 10 ) * 60 + parseInt( p[1], 10 );
+		}
+
+		/** Total minutes (may be negative or > 1439) → "HH:MM" for <input type="time">. */
+		function toHHMM( m ) {
+			m = wrap( m );
+			return pad2( Math.floor( m / 60 ) ) + ':' + pad2( m % 60 );
+		}
+
+		/** Total minutes → "h:mm AM/PM" for display hints. */
+		function toDisplay( m ) {
+			m = wrap( m );
+			var h = Math.floor( m / 60 ), min = m % 60;
+			var ampm = h >= 12 ? 'PM' : 'AM';
+			h = h % 12 || 12;
+			return h + ':' + pad2( min ) + ' ' + ampm;
+		}
+
+		// ── Per-field hint (shows site-tz equivalent of what staff typed) ──
+
+		function updateHint( $inp ) {
+			var staffMin = parseHHMM( $inp.val() );
+			var $hint    = $inp.next( '.wellness-tz-hint' );
+			if ( ! $hint.length ) {
+				$hint = $( '<span>', { 'class': 'wellness-tz-hint' } ).css({
+					display   : 'block',
+					fontSize  : '11px',
+					color     : '#777',
+					marginTop : '3px',
+					fontStyle : 'italic'
+				});
+				$inp.after( $hint );
+			}
+			if ( staffMin === null ) { $hint.text(''); return; }
+
+			// rawSite is not yet wrapped — allows detecting day rollover.
+			var rawSite  = staffMin - diffMin;
+			var dayLabel = rawSite < 0 ? ' · prev day' : ( rawSite >= 1440 ? ' · next day' : '' );
+			$hint.text( '= ' + toDisplay( rawSite ) + ' (' + siteLabel + dayLabel + ')' );
+		}
+
+		// ── Attach hints & convert displayed values on first encounter ─────
+
+		function attachHints() {
+			$( '.from_time .time-picker, .to_time .time-picker' ).each( function() {
+				var $inp = $( this );
+				// First encounter: the stored value is in site tz — show it in staff tz.
+				if ( ! $inp.data( 'wellness-tz-bound' ) ) {
+					var siteMin = parseHHMM( $inp.val() );
+					if ( siteMin !== null ) {
+						$inp.val( toHHMM( siteMin + diffMin ) );
+					}
+					$inp.data( 'wellness-tz-bound', true )
+					    .on( 'input.wellness-tz change.wellness-tz', function() {
+					        updateHint( $( this ) );
+					    });
+				}
+				updateHint( $inp );
+			});
+		}
+
+		// ── Boot ───────────────────────────────────────────────────────────
+
+		$( function() {
+
+			var $avail = $( '#appointments_availability' );
+
+			// Banner notice.
+			if ( $avail.length && ! $avail.find( '.wellness-tz-notice' ).length ) {
+				$( '<p>', { 'class': 'wellness-tz-notice' } )
+					.css({
+						background : '#fff8c5',
+						borderLeft : '4px solid #e6a700',
+						padding    : '8px 12px',
+						margin     : '0 0 12px',
+						fontSize   : '12px'
+					})
+					.html(
+						'<strong>&#9888; Use your local time (' +
+						$( '<span>' ).text( staffCity ).html() +
+						' time) when entering these hours.</strong> ' +
+						'Everything will be adjusted automatically when you save. ' +
+						'The small note below each field is just for your reference.'
+					)
+					.prependTo( $avail );
+			}
+
+			// Initial pass: convert + attach hints.
+			attachHints();
+
+			// Re-run after "Add Rule" inserts a new table row (new rows are empty — no conversion needed).
+			$( document ).on( 'click', '.add_grid_row', function() {
+				setTimeout( attachHints, 150 );
+			});
+
+			// Before save: convert all staff-tz input values back to site tz for storage.
+			$avail.closest( 'form' ).on( 'submit.wellness-tz', function() {
+				$( '.from_time .time-picker, .to_time .time-picker' ).each( function() {
+					var staffMin = parseHHMM( $( this ).val() );
+					if ( staffMin !== null ) {
+						$( this ).val( toHHMM( staffMin - diffMin ) );
+					}
+				});
+			});
+		});
+
+	})(jQuery);
+	</script>
+	<?php
+}
