@@ -2104,42 +2104,43 @@ add_action('admin_head', function () {
  * @param string $format      PHP date() format string.
  * @return string             e.g. "4:00 PM (Cairo)" or "9:00 AM (New York)"
  */
-function wellness_tz_format( $timestamp, $tz_string, $format = 'g:i A' ) {
-	if ( ! $timestamp ) {
+function wellness_tz_format($timestamp, $tz_string, $format = 'g:i A')
+{
+	if (! $timestamp) {
 		return '';
 	}
 	$site_tz = wc_timezone_string();
-	$tz      = ( $tz_string !== '' && $tz_string !== null ) ? $tz_string : $site_tz;
-	$label   = wc_appointment_get_timezone_name( $tz );
+	$tz      = ($tz_string !== '' && $tz_string !== null) ? $tz_string : $site_tz;
+	$label   = wc_appointment_get_timezone_name($tz);
 
 	// wc_appointment_get_timezone_name() returns '' for Etc/GMT±N offsets,
 	// raw ±HH:MM offsets (what wc_timezone_string() returns when WP timezone
 	// is set to UTC+N rather than a city), and plain 'UTC'.
 	// Build a readable fallback so we never render an empty label like "10 AM ()".
-	if ( ! $label ) {
-		if ( preg_match( '/^Etc\/GMT([+-])(\d+)$/', $tz, $m ) ) {
+	if (! $label) {
+		if (preg_match('/^Etc\/GMT([+-])(\d+)$/', $tz, $m)) {
 			// POSIX Etc/GMT sign is inverted vs UTC convention: Etc/GMT-2 = UTC+2.
-			$label = 'UTC' . ( $m[1] === '+' ? '-' : '+' ) . $m[2];
-		} elseif ( preg_match( '/^([+-])(\d{1,2}):(\d{2})$/', $tz, $m ) ) {
+			$label = 'UTC' . ($m[1] === '+' ? '-' : '+') . $m[2];
+		} elseif (preg_match('/^([+-])(\d{1,2}):(\d{2})$/', $tz, $m)) {
 			// Raw offset from wc_timezone_string(): '+03:00', '-05:30', etc.
 			$h     = (int) $m[2];
 			$min   = (int) $m[3];
-			$label = 'UTC' . $m[1] . $h . ( $min > 0 ? ':' . str_pad( $min, 2, '0', STR_PAD_LEFT ) : '' );
-		} elseif ( strpos( $tz, '/' ) !== false ) {
+			$label = 'UTC' . $m[1] . $h . ($min > 0 ? ':' . str_pad($min, 2, '0', STR_PAD_LEFT) : '');
+		} elseif (strpos($tz, '/') !== false) {
 			// Generic IANA: use the last segment, e.g. 'Africa/Cairo' → 'Cairo'.
-			$parts = explode( '/', $tz );
-			$label = str_replace( '_', ' ', end( $parts ) );
+			$parts = explode('/', $tz);
+			$label = str_replace('_', ' ', end($parts));
 		} else {
 			$label = $tz ?: 'UTC'; // 'UTC', 'UTC+2', etc.
 		}
 	}
 
-	if ( $tz === $site_tz ) {
-		return date_i18n( $format, $timestamp ) . ' (' . $label . ')';
+	if ($tz === $site_tz) {
+		return date_i18n($format, $timestamp) . ' (' . $label . ')';
 	}
 
 	// Plugin's own offset-arithmetic conversion — same path as get_start_date().
-	$formatted = wc_appointment_timezone_locale( 'site', 'user', $timestamp, $format, $tz );
+	$formatted = wc_appointment_timezone_locale('site', 'user', $timestamp, $format, $tz);
 	return $formatted . ' (' . $label . ')';
 }
 
@@ -2150,12 +2151,13 @@ function wellness_tz_format( $timestamp, $tz_string, $format = 'g:i A' ) {
  * @param WC_Appointment $appointment
  * @return string IANA timezone string
  */
-function wellness_get_customer_tz( $appointment ) {
-	$tz = method_exists( $appointment, 'get_local_timezone' ) ? $appointment->get_local_timezone() : '';
-	if ( ! $tz ) {
+function wellness_get_customer_tz($appointment)
+{
+	$tz = method_exists($appointment, 'get_local_timezone') ? $appointment->get_local_timezone() : '';
+	if (! $tz) {
 		$order = $appointment->get_order();
-		if ( $order ) {
-			$tz = $order->get_meta( '_customer_timezone', true );
+		if ($order) {
+			$tz = $order->get_meta('_customer_timezone', true);
 		}
 	}
 	return $tz ?: wc_timezone_string();
@@ -2168,10 +2170,11 @@ function wellness_get_customer_tz( $appointment ) {
  * @param WC_Appointment $appointment
  * @return string IANA timezone string
  */
-function wellness_get_staff_tz( $appointment ) {
-	foreach ( (array) $appointment->get_staff_ids() as $staff_id ) {
-		$tz = get_user_meta( (int) $staff_id, 'timezone_string', true );
-		if ( $tz ) {
+function wellness_get_staff_tz($appointment)
+{
+	foreach ((array) $appointment->get_staff_ids() as $staff_id) {
+		$tz = get_user_meta((int) $staff_id, 'timezone_string', true);
+		if ($tz) {
 			return $tz;
 		}
 	}
@@ -2189,26 +2192,26 @@ function wellness_get_staff_tz( $appointment ) {
  * plugin already reads.  Only fires when the cookie is absent — an explicit
  * timezone selection on the booking form always wins.
  */
-add_action( 'wp_footer', function () {
-	?>
+add_action('wp_footer', function () {
+?>
 	<script id="wellness-tz-detect">
-	(function () {
-		var name = 'appointments_time_zone';
-		var has  = document.cookie.split(';').some( function(c) {
-			return c.trim().substring( 0, name.length + 1 ) === name + '=';
-		} );
-		if ( has ) return;
-		try {
-			var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-			if ( tz ) {
-				document.cookie = name + '=' + tz
-					+ '; path=/; max-age=2592000; SameSite=Lax';
-			}
-		} catch(e) {}
-	})();
+		(function() {
+			var name = 'appointments_time_zone';
+			var has = document.cookie.split(';').some(function(c) {
+				return c.trim().substring(0, name.length + 1) === name + '=';
+			});
+			if (has) return;
+			try {
+				var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+				if (tz) {
+					document.cookie = name + '=' + tz +
+						'; path=/; max-age=2592000; SameSite=Lax';
+				}
+			} catch (e) {}
+		})();
 	</script>
-	<?php
-}, 20 );
+<?php
+}, 20);
 
 /**
  * Step 2b — When a WooCommerce order is created at checkout, persist the
@@ -2220,17 +2223,17 @@ add_action( 'wp_footer', function () {
  * The value is validated against PHP's timezone_identifiers_list() before
  * storage, so a tampered cookie cannot inject arbitrary data.
  */
-add_action( 'woocommerce_checkout_order_created', function ( $order ) {
-	if ( empty( $_COOKIE['appointments_time_zone'] ) ) {
+add_action('woocommerce_checkout_order_created', function ($order) {
+	if (empty($_COOKIE['appointments_time_zone'])) {
 		return;
 	}
-	$tz = sanitize_text_field( wp_unslash( $_COOKIE['appointments_time_zone'] ) );
-	if ( ! in_array( $tz, timezone_identifiers_list(), true ) ) {
+	$tz = sanitize_text_field(wp_unslash($_COOKIE['appointments_time_zone']));
+	if (! in_array($tz, timezone_identifiers_list(), true)) {
 		return;
 	}
-	$order->update_meta_data( '_customer_timezone', $tz );
+	$order->update_meta_data('_customer_timezone', $tz);
 	$order->save();
-} );
+});
 
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -2242,61 +2245,66 @@ add_action( 'woocommerce_checkout_order_created', function ( $order ) {
  * The plugin already saves 'timezone_string' user meta when the field is
  * present — we only need to render the field from the child theme.
  */
-add_action( 'show_user_profile', 'wellness_staff_timezone_field' );
-add_action( 'edit_user_profile', 'wellness_staff_timezone_field' );
+add_action('show_user_profile', 'wellness_staff_timezone_field');
+add_action('edit_user_profile', 'wellness_staff_timezone_field');
 
-function wellness_staff_timezone_field( $user ) {
-	if ( ! in_array( 'shop_staff', (array) $user->roles, true ) ) {
+function wellness_staff_timezone_field($user)
+{
+	if (! in_array('shop_staff', (array) $user->roles, true)) {
 		return;
 	}
-	$current_tz = get_user_meta( $user->ID, 'timezone_string', true ) ?: wc_timezone_string();
-	?>
-	<h3><?php esc_html_e( 'Appointment Timezone', 'woodmart-child' ); ?></h3>
+	$current_tz = get_user_meta($user->ID, 'timezone_string', true) ?: wc_timezone_string();
+?>
+	<h3><?php esc_html_e('Appointment Timezone', 'woodmart-child'); ?></h3>
 	<table class="form-table" role="presentation">
 		<tr>
-			<th><label for="timezone_string"><?php esc_html_e( 'Your timezone', 'woodmart-child' ); ?></label></th>
+			<th><label for="timezone_string"><?php esc_html_e('Your timezone', 'woodmart-child'); ?></label></th>
 			<td>
 				<select name="timezone_string" id="timezone_string">
-					<?php echo wp_timezone_choice( $current_tz, get_user_locale( $user ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+					<?php echo wp_timezone_choice($current_tz, get_user_locale($user)); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped 
+					?>
 				</select>
 				<p class="description">
-					<?php esc_html_e( 'Appointment times in notification emails and the admin dashboard will display in this timezone.', 'woodmart-child' ); ?>
+					<?php esc_html_e('Appointment times in notification emails and the admin dashboard will display in this timezone.', 'woodmart-child'); ?>
 				</p>
 			</td>
 		</tr>
 	</table>
-	<?php
-	wp_nonce_field( 'wellness_staff_tz_' . $user->ID, '_wellness_tz_nonce' );
+<?php
+	wp_nonce_field('wellness_staff_tz_' . $user->ID, '_wellness_tz_nonce');
 }
 
 /**
  * Save the timezone field submitted from the staff profile page.
  * Validates against PHP's timezone list and WordPress UTC offset strings.
  */
-add_action( 'personal_options_update',  'wellness_save_staff_timezone' );
-add_action( 'edit_user_profile_update', 'wellness_save_staff_timezone' );
+add_action('personal_options_update',  'wellness_save_staff_timezone');
+add_action('edit_user_profile_update', 'wellness_save_staff_timezone');
 
-function wellness_save_staff_timezone( $user_id ) {
-	if ( ! isset( $_POST['_wellness_tz_nonce'] )
+function wellness_save_staff_timezone($user_id)
+{
+	if (
+		! isset($_POST['_wellness_tz_nonce'])
 		|| ! wp_verify_nonce(
-			sanitize_text_field( wp_unslash( $_POST['_wellness_tz_nonce'] ) ),
+			sanitize_text_field(wp_unslash($_POST['_wellness_tz_nonce'])),
 			'wellness_staff_tz_' . $user_id
 		)
 	) {
 		return;
 	}
-	if ( ! current_user_can( 'edit_user', $user_id ) ) {
+	if (! current_user_can('edit_user', $user_id)) {
 		return;
 	}
-	if ( empty( $_POST['timezone_string'] ) ) {
+	if (empty($_POST['timezone_string'])) {
 		return;
 	}
-	$tz = sanitize_text_field( wp_unslash( $_POST['timezone_string'] ) );
+	$tz = sanitize_text_field(wp_unslash($_POST['timezone_string']));
 	// Accept IANA strings and WordPress-style UTC offset strings (UTC, UTC+2, UTC-5.5 …).
-	if ( in_array( $tz, timezone_identifiers_list(), true )
-		|| preg_match( '/^UTC[+-]?[\d.]*$/', $tz )
+	if (
+		in_array($tz, timezone_identifiers_list(), true)
+		|| preg_match('/^UTC[+-]?[\d.]*$/', $tz)
 	) {
-		update_user_meta( $user_id, 'timezone_string', $tz );
+		update_user_meta($user_id, 'timezone_string', $tz);
 	}
 }
 
@@ -2313,19 +2321,20 @@ function wellness_save_staff_timezone( $user_id ) {
  * init.php:372) whose filter hooks are commented out. We re-attach them here so
  * no plugin files are modified.
  */
-add_filter( 'woocommerce_appointments_get_start_date_with_time', 'wellness_admin_appointment_tz', 15, 3 );
-add_filter( 'woocommerce_appointments_get_end_date_with_time',   'wellness_admin_appointment_tz', 15, 3 );
+add_filter('woocommerce_appointments_get_start_date_with_time', 'wellness_admin_appointment_tz', 15, 3);
+add_filter('woocommerce_appointments_get_end_date_with_time',   'wellness_admin_appointment_tz', 15, 3);
 
-function wellness_admin_appointment_tz( $timestring, $appointment, $timestamp ) {
-	if ( ! is_user_logged_in() || ! is_admin() ) {
+function wellness_admin_appointment_tz($timestring, $appointment, $timestamp)
+{
+	if (! is_user_logged_in() || ! is_admin()) {
 		return $timestring;
 	}
 	$user = wp_get_current_user();
-	if ( ! in_array( 'shop_staff', (array) $user->roles, true ) ) {
+	if (! in_array('shop_staff', (array) $user->roles, true)) {
 		return $timestring;
 	}
-	$tzstring = get_user_meta( $user->ID, 'timezone_string', true );
-	if ( ! $tzstring ) {
+	$tzstring = get_user_meta($user->ID, 'timezone_string', true);
+	if (! $tzstring) {
 		return $timestring; // No timezone set — show site timezone unchanged.
 	}
 	return wellness_tz_format(
@@ -2366,51 +2375,53 @@ function wellness_admin_appointment_tz( $timestring, $appointment, $timestamp ) 
 // We can't touch the plugin, so we normalise the value on read.
 // `+07:00` is a valid DateTimeZone argument and round-trips through WP fine.
 // ─────────────────────────────────────────────────────────────────────────────
-function wellness_normalise_user_timezone_meta( $value, $object_id, $meta_key, $single ) {
+function wellness_normalise_user_timezone_meta($value, $object_id, $meta_key, $single)
+{
 	static $busy = false;
-	if ( $busy || 'timezone_string' !== $meta_key ) {
+	if ($busy || 'timezone_string' !== $meta_key) {
 		return $value;
 	}
 
 	$busy = true;
-	$raw  = get_user_meta( $object_id, 'timezone_string', true );
+	$raw  = get_user_meta($object_id, 'timezone_string', true);
 	$busy = false;
 
-	if ( ! is_string( $raw ) || '' === $raw ) {
+	if (! is_string($raw) || '' === $raw) {
 		return $value;
 	}
 	// Already an IANA name or strict offset — pass through.
-	if ( in_array( $raw, timezone_identifiers_list(), true ) ) {
+	if (in_array($raw, timezone_identifiers_list(), true)) {
 		return $value;
 	}
-	if ( preg_match( '/^[+-]\d{2}:\d{2}$/', $raw ) ) {
+	if (preg_match('/^[+-]\d{2}:\d{2}$/', $raw)) {
 		return $value;
 	}
 
-	if ( 'UTC' === $raw ) {
+	if ('UTC' === $raw) {
 		$fixed = '+00:00';
-	} elseif ( preg_match( '/^UTC([+-])([\d.]+)$/', $raw, $m ) ) {
+	} elseif (preg_match('/^UTC([+-])([\d.]+)$/', $raw, $m)) {
 		$hours = (float) $m[2];
-		$h     = (int) floor( $hours );
-		$min   = (int) round( ( $hours - $h ) * 60 );
-		$fixed = $m[1] . sprintf( '%02d:%02d', $h, $min );
+		$h     = (int) floor($hours);
+		$min   = (int) round(($hours - $h) * 60);
+		$fixed = $m[1] . sprintf('%02d:%02d', $h, $min);
 	} else {
 		return $value;
 	}
 
-	return $single ? $fixed : array( $fixed );
+	return $single ? $fixed : array($fixed);
 }
-add_filter( 'get_user_metadata', 'wellness_normalise_user_timezone_meta', 10, 4 );
+add_filter('get_user_metadata', 'wellness_normalise_user_timezone_meta', 10, 4);
 
-add_action( 'admin_footer', 'wellness_staff_avail_tz_hints', 20 );
+add_action('admin_footer', 'wellness_staff_avail_tz_hints', 20);
 
-function wellness_staff_avail_tz_hints() {
-	if ( ! is_admin() ) {
+function wellness_staff_avail_tz_hints()
+{
+	if (! is_admin()) {
 		return;
 	}
 
 	$screen = get_current_screen();
-	if ( ! $screen || ! in_array( $screen->base, array( 'user-edit', 'profile' ), true ) ) {
+	if (! $screen || ! in_array($screen->base, array('user-edit', 'profile'), true)) {
 		return;
 	}
 
@@ -2418,25 +2429,25 @@ function wellness_staff_avail_tz_hints() {
 	// straight from Google and the plugin can store times outside 0–23:59 to
 	// represent multi-day events.  Touching them would corrupt the display.
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	if ( isset( $_GET['view'] ) && 'synced' === $_GET['view'] ) {
+	if (isset($_GET['view']) && 'synced' === $_GET['view']) {
 		return;
 	}
 
 	// Profile being edited (own profile or another user's).
 	// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-	$user_id = isset( $_GET['user_id'] ) ? (int) $_GET['user_id'] : get_current_user_id();
-	$user    = get_user_by( 'ID', $user_id );
-	if ( ! $user || ! in_array( 'shop_staff', (array) $user->roles, true ) ) {
+	$user_id = isset($_GET['user_id']) ? (int) $_GET['user_id'] : get_current_user_id();
+	$user    = get_user_by('ID', $user_id);
+	if (! $user || ! in_array('shop_staff', (array) $user->roles, true)) {
 		return;
 	}
 
-	$staff_tz_raw = get_user_meta( $user_id, 'timezone_string', true );
+	$staff_tz_raw = get_user_meta($user_id, 'timezone_string', true);
 
-	if ( ! $staff_tz_raw ) {
+	if (! $staff_tz_raw) {
 		return;
 	}
 
-	$staff_tz = trim( (string) $staff_tz_raw );
+	$staff_tz = trim((string) $staff_tz_raw);
 
 	// Accept any of:
 	//   IANA              'Pacific/Auckland', 'Africa/Cairo'
@@ -2444,13 +2455,13 @@ function wellness_staff_avail_tz_hints() {
 	//   WP UTC w/ decimal 'UTC+0', 'UTC+3', 'UTC-5.5', 'UTC+13'
 	//   WP UTC w/ colon   'UTC+5:30', 'UTC-07:00'
 	//   bare offset       '+05:00', '-07:00', '+03:00'
-	$is_iana = in_array( $staff_tz, timezone_identifiers_list(), true );
+	$is_iana = in_array($staff_tz, timezone_identifiers_list(), true);
 	$is_utc_offset = (
 		'UTC' === $staff_tz ||
-		preg_match( '/^UTC[+-][\d.:]+$/', $staff_tz ) ||
-		preg_match( '/^[+-]\d{1,2}(:\d{2})?$/', $staff_tz )
+		preg_match('/^UTC[+-][\d.:]+$/', $staff_tz) ||
+		preg_match('/^[+-]\d{1,2}(:\d{2})?$/', $staff_tz)
 	);
-	if ( ! $is_iana && ! $is_utc_offset ) {
+	if (! $is_iana && ! $is_utc_offset) {
 		return;
 	}
 
@@ -2458,206 +2469,225 @@ function wellness_staff_avail_tz_hints() {
 
 	// ── Site offset in minutes (DST-aware for today) ────────────────────────
 	try {
-		$site_tz_obj     = new DateTimeZone( $site_tz_str );
-		$site_offset_min = (int) round( $site_tz_obj->getOffset( new DateTime( 'now', $site_tz_obj ) ) / 60 );
-	} catch ( Exception $e ) {
-		$site_offset_min = (int) round( (float) get_option( 'gmt_offset' ) * 60 );
+		$site_tz_obj     = new DateTimeZone($site_tz_str);
+		$site_offset_min = (int) round($site_tz_obj->getOffset(new DateTime('now', $site_tz_obj)) / 60);
+	} catch (Exception $e) {
+		$site_offset_min = (int) round((float) get_option('gmt_offset') * 60);
 	}
 
 	// ── Human-readable label for the site timezone ──────────────────────────
-	$site_label = wc_appointment_get_timezone_name( $site_tz_str );
-	if ( ! $site_label ) {
-		if ( preg_match( '/^Etc\/GMT([+-])(\d+)$/', $site_tz_str, $m ) ) {
-			$site_label = 'UTC' . ( $m[1] === '+' ? '-' : '+' ) . $m[2];
-		} elseif ( preg_match( '/^([+-])(\d{1,2}):(\d{2})$/', $site_tz_str, $m ) ) {
+	$site_label = wc_appointment_get_timezone_name($site_tz_str);
+	if (! $site_label) {
+		if (preg_match('/^Etc\/GMT([+-])(\d+)$/', $site_tz_str, $m)) {
+			$site_label = 'UTC' . ($m[1] === '+' ? '-' : '+') . $m[2];
+		} elseif (preg_match('/^([+-])(\d{1,2}):(\d{2})$/', $site_tz_str, $m)) {
 			$h          = (int) $m[2];
 			$min        = (int) $m[3];
-			$site_label = 'UTC' . $m[1] . $h . ( $min > 0 ? ':' . str_pad( $min, 2, '0', STR_PAD_LEFT ) : '' );
+			$site_label = 'UTC' . $m[1] . $h . ($min > 0 ? ':' . str_pad($min, 2, '0', STR_PAD_LEFT) : '');
 		} else {
 			$site_label = $site_tz_str ?: 'site timezone';
 		}
 	}
 
 	// ── Staff offset in minutes ───────────────────────────────────────────────
-	if ( $is_iana ) {
+	if ($is_iana) {
 		// DST-aware for IANA strings.
 		try {
-			$staff_tz_obj     = new DateTimeZone( $staff_tz );
-			$staff_offset_min = (int) round( $staff_tz_obj->getOffset( new DateTime( 'now', $staff_tz_obj ) ) / 60 );
-		} catch ( Exception $e ) {
+			$staff_tz_obj     = new DateTimeZone($staff_tz);
+			$staff_offset_min = (int) round($staff_tz_obj->getOffset(new DateTime('now', $staff_tz_obj)) / 60);
+		} catch (Exception $e) {
 			$staff_offset_min = $site_offset_min;
 		}
-	} elseif ( 'UTC' === $staff_tz ) {
+	} elseif ('UTC' === $staff_tz) {
 		$staff_offset_min = 0;
-	} elseif ( preg_match( '/^UTC([+-])(\d{1,2}):(\d{2})$/', $staff_tz, $m ) ) {
+	} elseif (preg_match('/^UTC([+-])(\d{1,2}):(\d{2})$/', $staff_tz, $m)) {
 		// 'UTC+5:30' colon format.
 		$sign             = '+' === $m[1] ? 1 : -1;
-		$staff_offset_min = $sign * ( (int) $m[2] * 60 + (int) $m[3] );
-	} elseif ( preg_match( '/^UTC([+-])([\d.]+)$/', $staff_tz, $m ) ) {
+		$staff_offset_min = $sign * ((int) $m[2] * 60 + (int) $m[3]);
+	} elseif (preg_match('/^UTC([+-])([\d.]+)$/', $staff_tz, $m)) {
 		// 'UTC+3', 'UTC-5.5' decimal format.
 		$sign             = '+' === $m[1] ? 1 : -1;
-		$staff_offset_min = (int) round( $sign * (float) $m[2] * 60 );
-	} elseif ( preg_match( '/^([+-])(\d{1,2})(?::(\d{2}))?$/', $staff_tz, $m ) ) {
+		$staff_offset_min = (int) round($sign * (float) $m[2] * 60);
+	} elseif (preg_match('/^([+-])(\d{1,2})(?::(\d{2}))?$/', $staff_tz, $m)) {
 		// Bare '+05:00' / '-7' format.
 		$sign             = '+' === $m[1] ? 1 : -1;
-		$min              = isset( $m[3] ) && '' !== $m[3] ? (int) $m[3] : 0;
-		$staff_offset_min = $sign * ( (int) $m[2] * 60 + $min );
+		$min              = isset($m[3]) && '' !== $m[3] ? (int) $m[3] : 0;
+		$staff_offset_min = $sign * ((int) $m[2] * 60 + $min);
 	} else {
 		$staff_offset_min = 0;
 	}
 
 	$diff_min = $staff_offset_min - $site_offset_min;
 
-	if ( 0 === $diff_min ) {
+	if (0 === $diff_min) {
 		return; // Same effective offset — no conversion or hint needed.
 	}
 
 	// ── Display label for the staff timezone ─────────────────────────────────
-	if ( strpos( $staff_tz, '/' ) !== false ) {
+	if (strpos($staff_tz, '/') !== false) {
 		// IANA: use the city segment (e.g. 'Pacific/Auckland' → 'Auckland').
-		$staff_parts = explode( '/', $staff_tz );
-		$staff_city  = str_replace( '_', ' ', end( $staff_parts ) );
+		$staff_parts = explode('/', $staff_tz);
+		$staff_city  = str_replace('_', ' ', end($staff_parts));
 	} else {
 		// UTC / UTC+3 / UTC-5.5 — use as-is.
 		$staff_city = $staff_tz;
 	}
 
-	?>
+?>
 	<script id="wellness-avail-tz-hint">
-	(function($) {
-		'use strict';
+		(function($) {
+			'use strict';
 
-		// diffMin = staffOffsetMin - siteOffsetMin  (positive → staff is ahead of site)
-		var diffMin   = <?php echo (int) $diff_min; ?>;
-		var siteLabel = <?php echo wp_json_encode( $site_label ); ?>;
-		var staffCity = <?php echo wp_json_encode( $staff_city ); ?>;
+			// diffMin = staffOffsetMin - siteOffsetMin  (positive → staff is ahead of site)
+			var diffMin = <?php echo (int) $diff_min; ?>;
+			var siteLabel = <?php echo wp_json_encode($site_label); ?>;
+			var staffCity = <?php echo wp_json_encode($staff_city); ?>;
 
-		// ── Helpers ────────────────────────────────────────────────────────
+			// ── Helpers ────────────────────────────────────────────────────────
 
-		function pad2( n ) { return n < 10 ? '0' + n : '' + n; }
-
-		/** Wrap raw minutes into 0–1439. */
-		function wrap( m ) { return ( ( m % 1440 ) + 1440 ) % 1440; }
-
-		/** Parse "H:MM" or "HH:MM" → total minutes, or null if blank/invalid. */
-		function parseHHMM( s ) {
-			if ( ! s || ! /^\d{1,2}:\d{2}$/.test( s ) ) { return null; }
-			var p = s.split(':');
-			var h = parseInt(p[0], 10), m = parseInt(p[1], 10);
-			// Reject obviously broken stored values (>23h, >59m) so we don't
-			// double-convert garbage left in the DB by previous bugs.
-			if ( h > 23 || m > 59 ) { return null; }
-			return h * 60 + m;
-		}
-
-		/** Total minutes (may be negative or > 1439) → "HH:MM" for <input type="time">. */
-		function toHHMM( m ) {
-			m = wrap( m );
-			return pad2( Math.floor( m / 60 ) ) + ':' + pad2( m % 60 );
-		}
-
-		/** Total minutes → "h:mm AM/PM" for display hints. */
-		function toDisplay( m ) {
-			m = wrap( m );
-			var h = Math.floor( m / 60 ), min = m % 60;
-			var ampm = h >= 12 ? 'PM' : 'AM';
-			h = h % 12 || 12;
-			return h + ':' + pad2( min ) + ' ' + ampm;
-		}
-
-		// ── Per-field hint (shows site-tz equivalent of what staff typed) ──
-
-		function updateHint( $inp ) {
-			var staffMin = parseHHMM( $inp.val() );
-			var $hint    = $inp.next( '.wellness-tz-hint' );
-			if ( ! $hint.length ) {
-				$hint = $( '<span>', { 'class': 'wellness-tz-hint' } ).css({
-					display   : 'block',
-					fontSize  : '11px',
-					color     : '#777',
-					marginTop : '3px',
-					fontStyle : 'italic'
-				});
-				$inp.after( $hint );
+			function pad2(n) {
+				return n < 10 ? '0' + n : '' + n;
 			}
-			if ( staffMin === null ) { $hint.text(''); return; }
 
-			// rawSite is not yet wrapped — allows detecting day rollover.
-			var rawSite  = staffMin - diffMin;
-			var dayLabel = rawSite < 0 ? ' · prev day' : ( rawSite >= 1440 ? ' · next day' : '' );
-			$hint.text( '= ' + toDisplay( rawSite ) + ' (' + siteLabel + dayLabel + ')' );
-		}
+			/** Wrap raw minutes into 0–1439. */
+			function wrap(m) {
+				return ((m % 1440) + 1440) % 1440;
+			}
 
-		// ── Attach hints & convert displayed values on first encounter ─────
-
-		function attachHints() {
-			$( '.from_time .time-picker, .to_time .time-picker' ).each( function() {
-				var $inp = $( this );
-				// First encounter: the stored value is in site tz — show it in staff tz.
-				if ( ! $inp.data( 'wellness-tz-bound' ) ) {
-					var siteMin = parseHHMM( $inp.val() );
-					if ( siteMin !== null ) {
-						$inp.val( toHHMM( siteMin + diffMin ) );
-					}
-					$inp.data( 'wellness-tz-bound', true )
-					    .on( 'input.wellness-tz change.wellness-tz', function() {
-					        updateHint( $( this ) );
-					    });
+			/** Parse "H:MM" or "HH:MM" → total minutes, or null if blank/invalid. */
+			function parseHHMM(s) {
+				if (!s || !/^\d{1,2}:\d{2}$/.test(s)) {
+					return null;
 				}
-				updateHint( $inp );
-			});
-		}
-
-		// ── Boot ───────────────────────────────────────────────────────────
-
-		$( function() {
-
-			var $avail = $( '#appointments_availability' );
-			if ( ! $avail.length ) { return; }
-
-			// Banner notice — placed BEFORE the panel-wrap so the plugin's
-			// layout CSS inside the panel is not disturbed.
-			if ( ! $avail.prev( '.wellness-tz-notice' ).length ) {
-				$( '<p>', { 'class': 'wellness-tz-notice' } )
-					.css({
-						background : '#fff8c5',
-						borderLeft : '4px solid #e6a700',
-						padding    : '8px 12px',
-						margin     : '0 0 12px',
-						fontSize   : '12px'
-					})
-					.html(
-						'<strong>&#9888; Use your local time (' +
-						$( '<span>' ).text( staffCity ).html() +
-						' time) when entering these hours.</strong> ' +
-						'Everything will be adjusted automatically when you save. ' +
-						'The small note below each field is just for your reference.'
-					)
-					.insertBefore( $avail );
+				var p = s.split(':');
+				var h = parseInt(p[0], 10),
+					m = parseInt(p[1], 10);
+				// Reject obviously broken stored values (>23h, >59m) so we don't
+				// double-convert garbage left in the DB by previous bugs.
+				if (h > 23 || m > 59) {
+					return null;
+				}
+				return h * 60 + m;
 			}
 
-			// Initial pass: convert + attach hints.
-			attachHints();
+			/** Total minutes (may be negative or > 1439) → "HH:MM" for <input type="time">. */
+			function toHHMM(m) {
+				m = wrap(m);
+				return pad2(Math.floor(m / 60)) + ':' + pad2(m % 60);
+			}
 
-			// Re-run after "Add Rule" inserts a new table row (new rows are empty — no conversion needed).
-			$( document ).on( 'click', '.add_grid_row', function() {
-				setTimeout( attachHints, 150 );
-			});
+			/** Total minutes → "h:mm AM/PM" for display hints. */
+			function toDisplay(m) {
+				m = wrap(m);
+				var h = Math.floor(m / 60),
+					min = m % 60;
+				var ampm = h >= 12 ? 'PM' : 'AM';
+				h = h % 12 || 12;
+				return h + ':' + pad2(min) + ' ' + ampm;
+			}
 
-			// Before save: convert all staff-tz input values back to site tz for storage.
-			$avail.closest( 'form' ).on( 'submit.wellness-tz', function() {
-				$( '.from_time .time-picker, .to_time .time-picker' ).each( function() {
-					var staffMin = parseHHMM( $( this ).val() );
-					if ( staffMin !== null ) {
-						$( this ).val( toHHMM( staffMin - diffMin ) );
+			// ── Per-field hint (shows site-tz equivalent of what staff typed) ──
+
+			function updateHint($inp) {
+				var staffMin = parseHHMM($inp.val());
+				var $hint = $inp.next('.wellness-tz-hint');
+				if (!$hint.length) {
+					$hint = $('<span>', {
+						'class': 'wellness-tz-hint'
+					}).css({
+						display: 'block',
+						fontSize: '11px',
+						color: '#777',
+						marginTop: '3px',
+						fontStyle: 'italic'
+					});
+					$inp.after($hint);
+				}
+				if (staffMin === null) {
+					$hint.text('');
+					return;
+				}
+
+				// rawSite is not yet wrapped — allows detecting day rollover.
+				var rawSite = staffMin - diffMin;
+				var dayLabel = rawSite < 0 ? ' · prev day' : (rawSite >= 1440 ? ' · next day' : '');
+				$hint.text('= ' + toDisplay(rawSite) + ' (' + siteLabel + dayLabel + ')');
+			}
+
+			// ── Attach hints & convert displayed values on first encounter ─────
+
+			function attachHints() {
+				$('.from_time .time-picker, .to_time .time-picker').each(function() {
+					var $inp = $(this);
+					// First encounter: the stored value is in site tz — show it in staff tz.
+					if (!$inp.data('wellness-tz-bound')) {
+						var siteMin = parseHHMM($inp.val());
+						if (siteMin !== null) {
+							$inp.val(toHHMM(siteMin + diffMin));
+						}
+						$inp.data('wellness-tz-bound', true)
+							.on('input.wellness-tz change.wellness-tz', function() {
+								updateHint($(this));
+							});
 					}
+					updateHint($inp);
+				});
+			}
+
+			// ── Boot ───────────────────────────────────────────────────────────
+
+			$(function() {
+
+				var $avail = $('#appointments_availability');
+				if (!$avail.length) {
+					return;
+				}
+
+				// Banner notice — placed BEFORE the panel-wrap so the plugin's
+				// layout CSS inside the panel is not disturbed.
+				if (!$avail.prev('.wellness-tz-notice').length) {
+					$('<p>', {
+							'class': 'wellness-tz-notice'
+						})
+						.css({
+							background: '#fff8c5',
+							borderLeft: '4px solid #e6a700',
+							padding: '8px 12px',
+							margin: '0 0 12px',
+							fontSize: '12px'
+						})
+						.html(
+							'<strong>&#9888; Use your local time (' +
+							$('<span>').text(staffCity).html() +
+							' time) when entering these hours.</strong> ' +
+							'Everything will be adjusted automatically when you save. ' +
+							'The small note below each field is just for your reference.'
+						)
+						.insertBefore($avail);
+				}
+
+				// Initial pass: convert + attach hints.
+				attachHints();
+
+				// Re-run after "Add Rule" inserts a new table row (new rows are empty — no conversion needed).
+				$(document).on('click', '.add_grid_row', function() {
+					setTimeout(attachHints, 150);
+				});
+
+				// Before save: convert all staff-tz input values back to site tz for storage.
+				$avail.closest('form').on('submit.wellness-tz', function() {
+					$('.from_time .time-picker, .to_time .time-picker').each(function() {
+						var staffMin = parseHHMM($(this).val());
+						if (staffMin !== null) {
+							$(this).val(toHHMM(staffMin - diffMin));
+						}
+					});
 				});
 			});
-		});
 
-	})(jQuery);
+		})(jQuery);
 	</script>
-	<?php
+<?php
 }
 
 
@@ -2665,25 +2695,25 @@ function wellness_staff_avail_tz_hints() {
 // Users list — Timezone column
 // ═══════════════════════════════════════════════════════════════════════════════
 
-add_filter( 'manage_users_columns', function ( $columns ) {
-	$columns['wellness_timezone'] = __( 'Timezone', 'woodmart-child' );
+add_filter('manage_users_columns', function ($columns) {
+	$columns['wellness_timezone'] = __('Timezone', 'woodmart-child');
 	return $columns;
-} );
+});
 
-add_filter( 'manage_users_custom_column', function ( $output, $column_name, $user_id ) {
-	if ( $column_name !== 'wellness_timezone' ) {
+add_filter('manage_users_custom_column', function ($output, $column_name, $user_id) {
+	if ($column_name !== 'wellness_timezone') {
 		return $output;
 	}
-	$tz = get_user_meta( $user_id, 'timezone_string', true );
-	if ( ! $tz ) {
+	$tz = get_user_meta($user_id, 'timezone_string', true);
+	if (! $tz) {
 		return '<span style="color:#aaa;">—</span>';
 	}
 	// City name for IANA strings, raw value for UTC offset strings.
-	if ( strpos( $tz, '/' ) !== false ) {
-		$parts = explode( '/', $tz );
-		$label = str_replace( '_', ' ', end( $parts ) );
+	if (strpos($tz, '/') !== false) {
+		$parts = explode('/', $tz);
+		$label = str_replace('_', ' ', end($parts));
 	} else {
 		$label = $tz;
 	}
-	return '<span title="' . esc_attr( $tz ) . '">' . esc_html( $label ) . '</span>';
-}, 10, 3 );
+	return '<span title="' . esc_attr($tz) . '">' . esc_html($label) . '</span>';
+}, 10, 3);
