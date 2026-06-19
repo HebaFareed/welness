@@ -72,6 +72,33 @@ $cancellation_hours = function_exists( 'get_wc_appointment_cancellation_policy_a
 	? (int) get_wc_appointment_cancellation_policy_allowed_period()
 	: 24;
 
+// ── Price & discount ─────────────────────────────────────────────────────────
+$price_display    = '';
+$discount_display = '';
+$coupon_codes     = [];
+
+if ( $wc_order ) {
+	foreach ( $wc_order->get_items() as $item ) {
+		$line_total    = floatval( $item->get_total() );
+		$line_subtotal = floatval( $item->get_subtotal() );
+		if ( $line_total > 0 || $line_subtotal > 0 ) {
+			$price_display = wc_price( $line_subtotal, [ 'currency' => $wc_order->get_currency() ] );
+			$item_discount = $line_subtotal - $line_total;
+			if ( $item_discount > 0.001 ) {
+				$discount_display = wc_price( $item_discount, [ 'currency' => $wc_order->get_currency() ] );
+			}
+			break;
+		}
+	}
+	$coupon_codes = $wc_order->get_coupon_codes();
+	if ( empty( $discount_display ) ) {
+		$order_discount = floatval( $wc_order->get_discount_total() );
+		if ( $order_discount > 0.001 ) {
+			$discount_display = wc_price( $order_discount, [ 'currency' => $wc_order->get_currency() ] );
+		}
+	}
+}
+
 // ── Book again URL ────────────────────────────────────────────────────────────
 $book_again_url = wc_get_page_permalink( 'shop' );
 ?>
@@ -123,6 +150,25 @@ $book_again_url = wc_get_page_permalink( 'shop' );
 			<th style="text-align: left; background: #f7f7f7; width: 38%; padding: 10px 14px; font-weight: 600;">Session date</th>
 			<td style="padding: 10px 14px;"><?php echo esc_html( $datetime_display ); ?></td>
 		</tr>
+
+		<?php if ( $price_display ) : ?>
+		<tr>
+			<th style="text-align: left; background: #f7f7f7; width: 38%; padding: 10px 14px; font-weight: 600;">Price</th>
+			<td style="padding: 10px 14px;"><?php echo $price_display; // wc_price returns pre-escaped HTML ?></td>
+		</tr>
+		<?php endif; ?>
+
+		<?php if ( $discount_display ) : ?>
+		<tr>
+			<th style="text-align: left; background: #f7f7f7; width: 38%; padding: 10px 14px; font-weight: 600;">Discount</th>
+			<td style="padding: 10px 14px;">
+				&minus;<?php echo $discount_display; // wc_price returns pre-escaped HTML ?>
+				<?php if ( ! empty( $coupon_codes ) ) : ?>
+					<span style="color: #666; font-size: 12px;">(<?php echo esc_html( implode( ', ', $coupon_codes ) ); ?>)</span>
+				<?php endif; ?>
+			</td>
+		</tr>
+		<?php endif; ?>
 
 	</tbody>
 </table>

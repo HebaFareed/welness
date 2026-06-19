@@ -1,8 +1,9 @@
 <?php
 /**
- * Customer appointment confirmed email — Wellness Hub custom override
+ * Customer appointment follow-up email — Wellness Hub custom template
  *
- * Overrides: woocommerce-appointments/templates/emails/customer-appointment-confirmed.php
+ * Sent to the client after their therapy session to check in and encourage
+ * continued care.
  *
  * @version 1.0.0
  */
@@ -13,11 +14,11 @@ $text_align  = is_rtl() ? 'right' : 'left';
 $appointment = wc_appointments_maybe_appointment_object( $appointment );
 $appointment = $appointment ? $appointment : get_wc_appointment( 0 );
 
-// ── Customer details ────────────────────────────────────────────────────────
-$wc_order           = $appointment->get_order();
+// ── Customer details ─────────────────────────────────────────────────────────
+$wc_order            = $appointment->get_order();
 $customer_first_name = '';
-$customer_email     = '';
-$customer_phone     = '';
+$customer_email      = '';
+$customer_phone      = '';
 
 if ( $wc_order ) {
 	$customer_first_name = $wc_order->get_billing_first_name();
@@ -42,41 +43,39 @@ if ( empty( $customer_first_name ) && $customer_full_name ) {
 	$customer_first_name = $_parts[0];
 }
 
-// ── Appointment date / time ──────────────────────────────────────────────────
-$start_timestamp  = $appointment->get_start( 'timestamp' );
-$customer_tz      = wellness_get_customer_tz( $appointment );
-$start_formatted  = $start_timestamp
-	? wellness_tz_format( $start_timestamp, $customer_tz, 'F j, Y \a\t g:i A' )
+// ── Session date / time ──────────────────────────────────────────────────────
+$start_timestamp = $appointment->get_start( 'timestamp' );
+$customer_tz     = wellness_get_customer_tz( $appointment );
+$date_display    = $start_timestamp
+	? date_i18n( 'F j, Y', $start_timestamp )
 	: $appointment->get_start_date();
+$time_display    = $start_timestamp
+	? wellness_tz_format( $start_timestamp, $customer_tz )
+	: '';
 
 // ── Duration ─────────────────────────────────────────────────────────────────
-$duration_raw     = $appointment->get_duration(); // returns numeric minutes
+$duration_raw     = $appointment->get_duration();
 $duration_display = is_numeric( $duration_raw ) ? intval( $duration_raw ) . ' minutes' : $duration_raw;
 
-// ── Therapist / staff ────────────────────────────────────────────────────────
-$staff_ids      = $appointment->get_staff_ids();
-$staff_rows     = [];
-if ( ! empty( $staff_ids ) ) {
-	foreach ( $staff_ids as $staff_id ) {
-		$staff_user = get_user_by( 'ID', $staff_id );
-		if ( $staff_user ) {
-			$display_name = $staff_user->display_name;
-			// Optional: store a professional title in user meta field "staff_title"
-			// e.g.  update_user_meta( $staff_id, 'staff_title', 'Counseling Psychologist (M.A)' );
-			$staff_title = get_user_meta( $staff_id, 'staff_title', true );
-			$staff_rows[] = $staff_title
-				? $display_name . ', ' . $staff_title
-				: $display_name;
-		}
+// ── Therapist ────────────────────────────────────────────────────────────────
+$staff_ids  = $appointment->get_staff_ids();
+$staff_rows = [];
+foreach ( $staff_ids as $staff_id ) {
+	$staff_user = get_user_by( 'ID', $staff_id );
+	if ( $staff_user ) {
+		$staff_title  = get_user_meta( $staff_id, 'staff_title', true );
+		$staff_rows[] = $staff_title
+			? $staff_user->display_name . ', ' . $staff_title
+			: $staff_user->display_name;
 	}
 }
 $staff_display = implode( '<br>', $staff_rows );
 
-// ── Session fee, discount & payment ──────────────────────────────────────────
+// ── Session fee & discount ────────────────────────────────────────────────────
 $session_fee      = '';
 $discount_display = '';
 $coupon_codes     = [];
-$payment_method   = '';
+
 if ( $wc_order ) {
 	$currency = $wc_order->get_currency();
 	foreach ( $wc_order->get_items() as $_item ) {
@@ -100,26 +99,45 @@ if ( $wc_order ) {
 			$discount_display = wc_price( $_disc, [ 'currency' => $currency ] );
 		}
 	}
-	$payment_method = $wc_order->get_payment_method_title();
 }
 
-// ── Cancellation allowed period ───────────────────────────────────────────────
-$cancellation_hours = function_exists( 'get_wc_appointment_cancellation_policy_allowed_period' )
-	? (int) get_wc_appointment_cancellation_policy_allowed_period()
-	: 24;
-
+// ── Book again URL ────────────────────────────────────────────────────────────
+$book_again_url = wc_get_page_permalink( 'shop' );
 ?>
 
-<?php do_action( 'woocommerce_email_header', 'New Session Booked', $email ); ?>
+<?php do_action( 'woocommerce_email_header', 'Following Up on Your Session', $email ); ?>
+
+<!-- ── Recommendation box (shown first) ──────────────────────────────────── -->
+<table cellpadding="0" cellspacing="0" border="0"
+	style="width:100%; background:#e8f4fb; border-left:4px solid #1e88e5; margin:0 0 24px; border-collapse:collapse;">
+	<tr>
+		<td style="padding:16px 20px;">
+			<p style="margin:0 0 8px; font-weight:700; font-size:14px; color:#1565c0;">
+				&#128161; What we recommend
+			</p>
+			<ul style="margin:0; padding:0 0 0 18px; font-size:13px; color:#555; line-height:1.9;">
+				<li>Give yourself time to reflect on what came up in today's session.</li>
+				<li>Try to practice any exercises or insights discussed with your therapist.</li>
+				<li>Journaling your thoughts in the next 24–48 hours can be very helpful.</li>
+				<li>Be gentle with yourself — progress takes time and every session counts.</li>
+				<li>Consider scheduling your next session to maintain momentum in your journey.</li>
+			</ul>
+		</td>
+	</tr>
+</table>
 
 <!-- ── Intro ─────────────────────────────────────────────────────────────── -->
-<p style="margin: 0 0 12px;">Hi <?php echo esc_html( $customer_first_name ); ?>,</p>
-<p style="margin: 0 0 6px;">Your therapy session has been successfully scheduled.</p>
-<p style="margin: 0 0 24px;">We're here to support you.</p>
+<p style="margin: 0 0 8px;">Hi <?php echo esc_html( $customer_first_name ); ?>,</p>
+<p style="margin: 0 0 6px;">
+	Thank you for attending your therapy session. We hope it was a meaningful and supportive experience.
+</p>
+<p style="margin: 0 0 24px;">
+	Taking this step for your well-being is something to be proud of.
+</p>
 
-<!-- ── Appointment details box ───────────────────────────────────────────────── -->
+<!-- ── Session summary ───────────────────────────────────────────────────── -->
 <h2 style="color: #333; font-size: 18px; font-weight: 600; margin: 0 0 12px;">
-	Your Appointment details
+	Session summary
 </h2>
 
 <table cellspacing="0" cellpadding="8" border="1"
@@ -139,12 +157,23 @@ $cancellation_hours = function_exists( 'get_wc_appointment_cancellation_policy_a
 
 		<tr>
 			<th style="text-align: <?php esc_attr_e( $text_align ); ?>; background: #f7f7f7; width: 38%; padding: 10px 14px; font-weight: 600;">
-				Date &amp; time
+				Date
 			</th>
 			<td style="text-align: <?php esc_attr_e( $text_align ); ?>; padding: 10px 14px;">
-				<?php echo esc_html( $start_formatted ); ?>
+				<?php echo esc_html( $date_display ); ?>
 			</td>
 		</tr>
+
+		<?php if ( $time_display ) : ?>
+		<tr>
+			<th style="text-align: <?php esc_attr_e( $text_align ); ?>; background: #f7f7f7; width: 38%; padding: 10px 14px; font-weight: 600;">
+				Time
+			</th>
+			<td style="text-align: <?php esc_attr_e( $text_align ); ?>; padding: 10px 14px;">
+				<?php echo esc_html( $time_display ); ?>
+			</td>
+		</tr>
+		<?php endif; ?>
 
 		<tr>
 			<th style="text-align: <?php esc_attr_e( $text_align ); ?>; background: #f7f7f7; width: 38%; padding: 10px 14px; font-weight: 600;">
@@ -163,26 +192,6 @@ $cancellation_hours = function_exists( 'get_wc_appointment_cancellation_policy_a
 				<?php echo esc_html( $appointment->get_id() ); ?>
 			</td>
 		</tr>
-
-	<?php if ( $customer_email || $customer_phone ) : ?>
-	<tr>
-		<th style="text-align: <?php esc_attr_e( $text_align ); ?>; background: #f7f7f7; width: 38%; padding: 10px 14px; font-weight: 600;">
-			Contact Details
-		</th>
-		<td style="text-align: <?php esc_attr_e( $text_align ); ?>; padding: 10px 14px;">
-			<?php if ( $customer_full_name ) : ?>
-				<?php echo esc_html( $customer_full_name ); ?><br>
-			<?php endif; ?>
-			<?php if ( $customer_email ) : ?>
-				<a href="mailto:<?php echo esc_attr( $customer_email ); ?>" style="color: inherit;"><?php echo esc_html( $customer_email ); ?></a>
-				<?php if ( $customer_phone ) : ?><br><?php endif; ?>
-			<?php endif; ?>
-			<?php if ( $customer_phone ) : ?>
-				<?php echo esc_html( $customer_phone ); ?>
-			<?php endif; ?>
-		</td>
-	</tr>
-	<?php endif; ?>
 
 		<?php if ( $session_fee ) : ?>
 		<tr>
@@ -211,55 +220,39 @@ $cancellation_hours = function_exists( 'get_wc_appointment_cancellation_policy_a
 		</tr>
 		<?php endif; ?>
 
-		<?php if ( $payment_method ) : ?>
-		<tr>
-			<th style="text-align: <?php esc_attr_e( $text_align ); ?>; background: #f7f7f7; width: 38%; padding: 10px 14px; font-weight: 600;">
-				Payment details
-			</th>
-			<td style="text-align: <?php esc_attr_e( $text_align ); ?>; padding: 10px 14px;">
-				<?php echo esc_html( $payment_method ); ?>
-			</td>
-		</tr>
-		<?php endif; ?>
-
 	</tbody>
 </table>
 
-<!-- ── How to join ───────────────────────────────────────────────────────────── -->
+<!-- ── Book next session ─────────────────────────────────────────────────── -->
 <h3 style="color: #333; font-size: 16px; font-weight: 600; margin: 0 0 8px;">
-	How to join your session?
+	Ready to continue your journey?
 </h3>
 <p style="margin: 0 0 6px;">
-	You will receive your secure session link and intake forms by email from your therapist before your appointment.
+	Consistent sessions help build trust and progress over time. Whenever you feel ready,
+	you're welcome to book your next session.
 </p>
 <p style="margin: 0 0 24px;">
-	Please make sure you're in a quiet, private space and join a few minutes early if possible.
+	<a href="<?php echo esc_url( $book_again_url ); ?>"
+		style="display:inline-block; padding:10px 22px; background:#333; color:#fff; text-decoration:none; border-radius:4px; font-size:14px; font-weight:600;">
+		Book your next session
+	</a>
 </p>
 
-<!-- ── Cancellation / reschedule ─────────────────────────────────────────────── -->
+<!-- ── Feedback request ──────────────────────────────────────────────────── -->
 <h3 style="color: #333; font-size: 16px; font-weight: 600; margin: 0 0 8px;">
-	Need to Cancel, Reschedule, or Have a Question?
+	Share your experience
 </h3>
-<p style="margin: 0 0 6px;">
-	You can cancel or reschedule your session up to <?php echo esc_html( $cancellation_hours ); ?> hours before your appointment without charge.
-</p>
-<p style="margin: 0 0 6px;">
-	Late cancellations (within <?php echo esc_html( $cancellation_hours ); ?> hours) or missed sessions are charged in full, as this time has been reserved especially for you.
-</p>
 <p style="margin: 0 0 24px;">
-	If an emergency occurs, please contact us and we'll do our best to support you.
-</p>
-
-<!-- ── Contact ───────────────────────────────────────────────────────────────── -->
-<p style="margin: 0 0 6px;">
-	You can manage your appointment or contact us from 10 AM – 6 PM at
-	<a href="tel:+201019666330" style="color: inherit;">+201019666330</a>. Or
+	Your feedback means a great deal to us and helps us continue improving our services.
+	If you'd like to share how your session went, please reach out to us at
 	<a href="mailto:info@thewellnesshub-eg.com" style="color: inherit;">info@thewellnesshub-eg.com</a>
+	or call us at <a href="tel:+201019666330" style="color: inherit;">+201019666330</a>
+	(10 AM – 6 PM).
 </p>
 
-<p style="margin: 24px 0 6px;">We're looking forward to supporting you.</p>
+<!-- ── Sign-off ───────────────────────────────────────────────────────────── -->
+<p style="margin: 0 0 6px;">Warm regards,</p>
 <p style="margin: 0 0 24px;">
-	Warm Regards,<br>
 	<strong>The Wellness Hub Team</strong>
 </p>
 

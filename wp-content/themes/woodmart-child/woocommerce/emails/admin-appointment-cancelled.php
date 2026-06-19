@@ -35,8 +35,9 @@ if (empty($client_name)) {
 
 // ── Appointment date & time ───────────────────────────────────────────────────
 $start_timestamp = $appointment->get_start('timestamp');
-$date_display    = $start_timestamp ? date_i18n('F j, Y', $start_timestamp)           : $appointment->get_start_date();
-$time_display    = $start_timestamp ? date_i18n('g:i A', $start_timestamp) . ' (Cairo time)' : '';
+$staff_tz        = wellness_get_staff_tz( $appointment );
+$date_display    = $start_timestamp ? date_i18n('F j, Y', $start_timestamp)            : $appointment->get_start_date();
+$time_display    = $start_timestamp ? wellness_tz_format( $start_timestamp, $staff_tz ) : '';
 
 // ── Duration ──────────────────────────────────────────────────────────────────
 $duration_raw     = $appointment->get_duration();
@@ -53,6 +54,33 @@ foreach ($staff_ids as $staff_id) {
 	}
 }
 $therapist_display = implode(', ', $staff_names);
+
+// ── Price & discount ─────────────────────────────────────────────────────────
+$price_display    = '';
+$discount_display = '';
+$coupon_codes     = [];
+
+if ( $wc_order ) {
+	foreach ( $wc_order->get_items() as $item ) {
+		$line_total    = floatval( $item->get_total() );
+		$line_subtotal = floatval( $item->get_subtotal() );
+		if ( $line_total > 0 || $line_subtotal > 0 ) {
+			$price_display = wc_price( $line_subtotal, [ 'currency' => $wc_order->get_currency() ] );
+			$item_discount = $line_subtotal - $line_total;
+			if ( $item_discount > 0.001 ) {
+				$discount_display = wc_price( $item_discount, [ 'currency' => $wc_order->get_currency() ] );
+			}
+			break;
+		}
+	}
+	$coupon_codes = $wc_order->get_coupon_codes();
+	if ( empty( $discount_display ) ) {
+		$order_discount = floatval( $wc_order->get_discount_total() );
+		if ( $order_discount > 0.001 ) {
+			$discount_display = wc_price( $order_discount, [ 'currency' => $wc_order->get_currency() ] );
+		}
+	}
+}
 
 // ── Dashboard link ────────────────────────────────────────────────────────────
 $dashboard_url = admin_url('edit.php?post_type=wc_appointment');
@@ -138,6 +166,33 @@ $dashboard_url = admin_url('edit.php?post_type=wc_appointment');
 				<?php echo esc_html($duration_display); ?>
 			</td>
 		</tr>
+
+		<?php if ( $price_display ) : ?>
+		<tr>
+			<th style="text-align: <?php esc_attr_e($text_align); ?>; background: #f7f7f7; width: 38%; padding: 10px 14px; font-weight: 600;">
+				Price
+			</th>
+			<td style="text-align: <?php esc_attr_e($text_align); ?>; padding: 10px 14px;">
+				<?php echo $price_display; // wc_price returns pre-escaped HTML ?>
+			</td>
+		</tr>
+		<?php endif; ?>
+
+		<?php if ( $discount_display ) : ?>
+		<tr>
+			<th style="text-align: <?php esc_attr_e($text_align); ?>; background: #f7f7f7; width: 38%; padding: 10px 14px; font-weight: 600;">
+				Discount
+			</th>
+			<td style="text-align: <?php esc_attr_e($text_align); ?>; padding: 10px 14px;">
+				&minus;<?php echo $discount_display; // wc_price returns pre-escaped HTML ?>
+				<?php if ( ! empty( $coupon_codes ) ) : ?>
+					<span style="color: #666; font-size: 12px;">
+						(<?php echo esc_html( implode( ', ', $coupon_codes ) ); ?>)
+					</span>
+				<?php endif; ?>
+			</td>
+		</tr>
+		<?php endif; ?>
 
 	</tbody>
 </table>

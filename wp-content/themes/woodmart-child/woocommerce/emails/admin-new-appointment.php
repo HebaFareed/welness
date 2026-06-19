@@ -78,6 +78,37 @@ if ( $wc_order ) {
 	}
 }
 
+// ── Price & discount ─────────────────────────────────────────────────────────
+$price_display    = '';
+$discount_display = '';
+$coupon_codes     = [];
+
+if ( $wc_order ) {
+	// Pull the line item total for the appointment product
+	foreach ( $wc_order->get_items() as $item ) {
+		$line_total    = floatval( $item->get_total() );
+		$line_subtotal = floatval( $item->get_subtotal() );
+		if ( $line_total > 0 || $line_subtotal > 0 ) {
+			$price_display = wc_price( $line_subtotal, [ 'currency' => $wc_order->get_currency() ] );
+			// Per-item discount
+			$item_discount = $line_subtotal - $line_total;
+			if ( $item_discount > 0.001 ) {
+				$discount_display = wc_price( $item_discount, [ 'currency' => $wc_order->get_currency() ] );
+			}
+			break; // first appointment item is enough
+		}
+	}
+	// Order-level coupon codes
+	$coupon_codes = $wc_order->get_coupon_codes();
+	// Fallback: use order discount total if per-item discount wasn't found
+	if ( empty( $discount_display ) ) {
+		$order_discount = floatval( $wc_order->get_discount_total() );
+		if ( $order_discount > 0.001 ) {
+			$discount_display = wc_price( $order_discount, [ 'currency' => $wc_order->get_currency() ] );
+		}
+	}
+}
+
 // ── Dashboard link ────────────────────────────────────────────────────────────
 $dashboard_url  = admin_url( 'edit.php?post_type=wc_appointment' );
 $appointment_url = admin_url( 'post.php?post=' . $appointment->get_id() . '&action=edit' );
@@ -178,6 +209,33 @@ $appointment_url = admin_url( 'post.php?post=' . $appointment->get_id() . '&acti
 				<?php echo esc_html( $duration_display ); ?>
 			</td>
 		</tr>
+
+		<?php if ( $price_display ) : ?>
+		<tr>
+			<th style="text-align: <?php esc_attr_e( $text_align ); ?>; background: #f7f7f7; width: 38%; padding: 10px 14px; font-weight: 600;">
+				Price
+			</th>
+			<td style="text-align: <?php esc_attr_e( $text_align ); ?>; padding: 10px 14px;">
+				<?php echo $price_display; // wc_price returns pre-escaped HTML ?>
+			</td>
+		</tr>
+		<?php endif; ?>
+
+		<?php if ( $discount_display ) : ?>
+		<tr>
+			<th style="text-align: <?php esc_attr_e( $text_align ); ?>; background: #f7f7f7; width: 38%; padding: 10px 14px; font-weight: 600;">
+				Discount
+			</th>
+			<td style="text-align: <?php esc_attr_e( $text_align ); ?>; padding: 10px 14px;">
+				&minus;<?php echo $discount_display; // wc_price returns pre-escaped HTML ?>
+				<?php if ( ! empty( $coupon_codes ) ) : ?>
+					<span style="color: #666; font-size: 12px;">
+						(<?php echo esc_html( implode( ', ', $coupon_codes ) ); ?>)
+					</span>
+				<?php endif; ?>
+			</td>
+		</tr>
+		<?php endif; ?>
 
 		<?php if ( ! empty( $repeat_appt ) ) : ?>
 		<tr>
