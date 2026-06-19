@@ -155,6 +155,36 @@ function save_usd_booking_fields($product_id)
 	}
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// Currency — staff-based (replaces geolocation)
+// Default: EGP.  When a product has a staff member assigned whose
+// _staff_currency user meta is 'USD', prices switch to the USD meta fields.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Determine the active currency for a product based on its assigned staff.
+ *
+ * @param WC_Product|null $product
+ * @return string 'EGP' or 'USD'
+ */
+function wellness_get_active_currency($product = null)
+{
+	$currency = 'EGP'; // default
+
+	if ($product) {
+		$staff_ids = $product->get_staff_ids();
+		if (! empty($staff_ids)) {
+			$staff_id      = (int) $staff_ids[0];
+			$staff_currency = get_user_meta($staff_id, '_staff_currency', true);
+			if (! empty($staff_currency)) {
+				$currency = $staff_currency;
+			}
+		}
+	}
+
+	return $currency;
+}
+
 add_filter('woocommerce_product_get_price', 'get_usd_booking_cost', 999999, 2);
 function get_usd_booking_cost($cost, $product)
 {
@@ -162,14 +192,12 @@ function get_usd_booking_cost($cost, $product)
 		return $cost;
 	}
 
-	// get user country and if it's egypt, return the cost as is
-	$user_country_code = WC_Geolocation::geolocate_ip();
-	if (empty($user_country_code) || $user_country_code['country'] == 'EG') {
+	// Default EGP — no conversion needed.
+	if (wellness_get_active_currency($product) === 'EGP') {
 		return $cost;
 	}
 
-	// get the usd cost
-	// if sale price is set, use it
+	// USD: use USD meta fields.
 	$sale_price = $product->get_meta('_wc_usd_display_sale_price');
 	if (!empty($sale_price)) {
 		return $sale_price;
@@ -193,13 +221,10 @@ function get_usd_booking_sale_price($cost, $product)
 		return $cost;
 	}
 
-	// get user country and if it's egypt, return the cost as is
-	$user_country_code = WC_Geolocation::geolocate_ip();
-	if (empty($user_country_code) || $user_country_code['country'] == 'EG') {
+	if (wellness_get_active_currency($product) === 'EGP') {
 		return $cost;
 	}
 
-	// get the usd cost
 	$usd_cost = get_post_meta($product->get_id(), '_wc_usd_display_sale_price', true);
 	if (empty($usd_cost)) {
 		return $cost;
@@ -215,13 +240,10 @@ function get_usd_booking_block_cost($cost, $product)
 		return $cost;
 	}
 
-	// get user country and if it's egypt, return the cost as is
-	$user_country_code = WC_Geolocation::geolocate_ip();
-	if (empty($user_country_code) || $user_country_code['country'] == 'EG') {
+	if (wellness_get_active_currency($product) === 'EGP') {
 		return $cost;
 	}
 
-	// get the usd cost
 	$usd_cost = get_post_meta($product->get_id(), '_wc_usd_booking_block_cost', true);
 	if (empty($usd_cost)) {
 		return $cost;
@@ -237,13 +259,10 @@ function get_usd_display_cost($cost, $product)
 		return $cost;
 	}
 
-	// get user country and if it's egypt, return the cost as is
-	$user_country_code = WC_Geolocation::geolocate_ip();
-	if (empty($user_country_code) || $user_country_code['country'] == 'EG') {
+	if (wellness_get_active_currency($product) === 'EGP') {
 		return $cost;
 	}
 
-	// get the usd cost
 	$usd_cost = get_post_meta($product->get_id(), '_wc_usd_display_cost', true);
 	if (empty($usd_cost)) {
 		return $cost;
@@ -252,19 +271,56 @@ function get_usd_display_cost($cost, $product)
 	return $usd_cost;
 }
 
-
 add_filter('woocommerce_currency', 'change_woocommerce_currency', 999999, 1);
 function change_woocommerce_currency($currency)
 {
-	// get user country name
-	$user_country_code = WC_Geolocation::geolocate_ip();
-	error_log('user country code: ' . var_export($user_country_code, true));
-	if (empty($user_country_code) || $user_country_code['country'] == 'EG') {
-		error_log('returning egp');
+	// Bail early — WooCommerce isn't ready before wp_loaded.
+	if (! did_action('wp_loaded')) {
 		return $currency;
 	}
 
-	error_log('returning usd');
+	// ── AJAX: wc_appointments_calculate_costs sends staff ID in 'form' ───
+	if (wp_doing_ajax() && ! empty($_REQUEST['form'])) {
+		$form_data = [];
+		parse_str($_REQUEST['form'], $form_data);
+		if (! empty($form_data['wc_appointments_field_staff'])) {
+			$staff_id       = (int) $form_data['wc_appointments_field_staff'];
+			$staff_currency = get_user_meta($staff_id, '_staff_currency', true);
+			if ($staff_currency === 'USD') {
+				return 'USD';
+			}
+		}
+		return $currency;
+	}
+
+	// ── Cart / checkout ───────────────────────────────────────────────────
+	if (WC()->cart && ! WC()->cart->is_empty()) {
+		foreach (WC()->cart->get_cart() as $cart_item) {
+			if (wellness_get_active_currency($cart_item['data']) !== 'EGP') {
+				return 'USD';
+			}
+		}
+	}
+
+	// ── Single product page — queried object if ready ─────────────────────
+	if (is_product()) {
+		$product_id = get_queried_object_id();
+		if ($product_id) {
+			$product = wc_get_product($product_id);
+			if ($product && wellness_get_active_currency($product) !== 'EGP') {
+				return 'USD';
+			}
+			return $currency;
+		}
+		// queried object not ready — fall through to global $product
+	}
+
+	// ── Fall back to global $product ──────────────────────────────────────
+	global $product;
+
+	if (! $product || wellness_get_active_currency($product) === 'EGP') {
+		return $currency;
+	}
 
 	return 'USD';
 }
@@ -272,15 +328,11 @@ function change_woocommerce_currency($currency)
 //add_filter('woocommerce_currency_symbol', 'change_woocommerce_currency_symbol', 999999, 2);
 function change_woocommerce_currency_symbol($currency_symbol, $currency)
 {
-	// get user country name
-	$user_country_code = WC_Geolocation::geolocate_ip();
-	error_log('user country code symbol: ' . var_export($user_country_code, true));
-	if (empty($user_country_code) || $user_country_code['country'] == 'EG') {
-		error_log('returning egp symbol');
-		return $currency_symbol;
+	if ($currency === 'USD') {
+		return '$';
 	}
 
-	return '$';
+	return $currency_symbol;
 }
 
 
@@ -2254,6 +2306,7 @@ function wellness_staff_timezone_field($user)
 		return;
 	}
 	$current_tz = get_user_meta($user->ID, 'timezone_string', true) ?: wc_timezone_string();
+	$staff_currency = get_user_meta($user->ID, '_staff_currency', true) ?: 'EGP';
 ?>
 	<h3><?php esc_html_e('Appointment Timezone', 'woodmart-child'); ?></h3>
 	<table class="form-table" role="presentation">
@@ -2266,6 +2319,18 @@ function wellness_staff_timezone_field($user)
 				</select>
 				<p class="description">
 					<?php esc_html_e('Appointment times in notification emails and the admin dashboard will display in this timezone.', 'woodmart-child'); ?>
+				</p>
+			</td>
+		</tr>
+		<tr>
+			<th><label for="_staff_currency"><?php esc_html_e('Your currency', 'woodmart-child'); ?></label></th>
+			<td>
+				<select name="_staff_currency" id="_staff_currency">
+					<option value="EGP" <?php selected($staff_currency, 'EGP'); ?>>EGP (Egyptian Pound)</option>
+					<option value="USD" <?php selected($staff_currency, 'USD'); ?>>USD (US Dollar)</option>
+				</select>
+				<p class="description">
+					<?php esc_html_e('Prices for products assigned to you will display in this currency. Defaults to EGP when not set.', 'woodmart-child'); ?>
 				</p>
 			</td>
 		</tr>
@@ -2305,6 +2370,14 @@ function wellness_save_staff_timezone($user_id)
 		|| preg_match('/^UTC[+-]?[\d.]*$/', $tz)
 	) {
 		update_user_meta($user_id, 'timezone_string', $tz);
+	}
+
+	// Save staff currency (EGP / USD).
+	if (isset($_POST['_staff_currency'])) {
+		$currency = sanitize_text_field(wp_unslash($_POST['_staff_currency']));
+		if (in_array($currency, array('EGP', 'USD'), true)) {
+			update_user_meta($user_id, '_staff_currency', $currency);
+		}
 	}
 }
 
@@ -2716,4 +2789,25 @@ add_filter('manage_users_custom_column', function ($output, $column_name, $user_
 		$label = $tz;
 	}
 	return '<span title="' . esc_attr($tz) . '">' . esc_html($label) . '</span>';
+}, 10, 3);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Users list — Currency column (staff users only)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+add_filter('manage_users_columns', function ($columns) {
+	$columns['wellness_currency'] = __('Currency', 'woodmart-child');
+	return $columns;
+});
+
+add_filter('manage_users_custom_column', function ($output, $column_name, $user_id) {
+	if ($column_name !== 'wellness_currency') {
+		return $output;
+	}
+	$user = get_userdata($user_id);
+	if (! $user || ! in_array('shop_staff', (array) $user->roles, true)) {
+		return '<span style="color:#aaa;">—</span>';
+	}
+	$currency = get_user_meta($user_id, '_staff_currency', true) ?: 'EGP';
+	return esc_html($currency);
 }, 10, 3);
