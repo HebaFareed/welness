@@ -283,6 +283,21 @@ $appointment_url = admin_url( 'post.php?post=' . $appointment->get_id() . '&acti
 	</tbody>
 </table>
 
+<?php
+// ── Client Intake Form summary ──────────────────────────────────────────
+$intake_rows = wellness_get_intake_summary_for_email($client_email);
+if (! empty($intake_rows)) : ?>
+<h2 style="color: #333; font-size: 18px; font-weight: 600; margin: 0 0 12px;">
+	Client Intake Summary:
+</h2>
+<table cellspacing="0" cellpadding="8" border="1"
+	style="width: 100%; border-collapse: collapse; margin: 0 0 24px; border-color: #e5e5e5;">
+	<tbody>
+		<?php echo $intake_rows; ?>
+	</tbody>
+</table>
+<?php endif; ?>
+
 <!-- ── Footer note ───────────────────────────────────────────────────────── -->
 <p style="margin: 0 0 8px;">
 	You can view or manage this session from your
