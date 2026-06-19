@@ -56,6 +56,16 @@ $time_display    = $start_timestamp
 $duration_raw     = $appointment->get_duration();
 $duration_display = is_numeric( $duration_raw ) ? intval( $duration_raw ) . ' minutes' : $duration_raw;
 
+// ── Session Type (from order item meta) ──
+$session_type = '';
+if ( $wc_order ) {
+	$item_id = get_post_meta( $appointment->get_id(), '_appointment_order_item_id', true );
+	if ( $item_id ) {
+		$_item = $wc_order->get_item( $item_id );
+		$session_type = $_item ? $_item->get_meta( '_session_type' ) : '';
+	}
+}
+
 // ── Therapist ────────────────────────────────────────────────────────────────
 $staff_ids  = $appointment->get_staff_ids();
 $staff_rows = [];
@@ -182,6 +192,17 @@ $cancellation_hours = function_exists( 'get_wc_appointment_cancellation_policy_a
 				<?php echo esc_html( $duration_display ); ?>
 			</td>
 		</tr>
+
+		<?php if ( ! empty( $session_type ) ) : ?>
+		<tr>
+			<th style="text-align: <?php esc_attr_e( $text_align ); ?>; background: #f7f7f7; width: 38%; padding: 10px 14px; font-weight: 600;">
+				Session Type
+			</th>
+			<td style="text-align: <?php esc_attr_e( $text_align ); ?>; padding: 10px 14px;">
+				<?php echo esc_html( $session_type ); ?>
+			</td>
+		</tr>
+		<?php endif; ?>
 
 		<tr>
 			<th style="text-align: <?php esc_attr_e( $text_align ); ?>; background: #f7f7f7; width: 38%; padding: 10px 14px; font-weight: 600;">

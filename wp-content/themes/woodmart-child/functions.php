@@ -197,6 +197,22 @@ function get_usd_booking_cost($cost, $product)
 		return $cost;
 	}
 
+	// Duration Options: when enabled, the price is already set correctly by
+	// appointments_calculated_product_price (AJAX) or add_cart_item() (cart).
+	// Only skip the base-price override in transactional contexts so the
+	// product/shop page still shows the base USD price.
+	$has_duration_options = get_post_meta($product->get_id(), '_wc_appointment_enable_duration_options', true) === 'yes';
+	if ($has_duration_options) {
+		// AJAX cost calculation — appointments_calculated_product_price handles pricing.
+		if (wp_doing_ajax()) {
+			return $cost;
+		}
+		// Cart / checkout — add_cart_item() already called set_price() with the correct value.
+		if (did_action('woocommerce_cart_loaded_from_session') || is_checkout()) {
+			return $cost;
+		}
+	}
+
 	// USD: use USD meta fields.
 	$sale_price = $product->get_meta('_wc_usd_display_sale_price');
 	if (!empty($sale_price)) {
@@ -541,38 +557,6 @@ function wellness_product_meta_box_callback()
 
 	$recurring_type_html = '<div class="options_group">';
 
-	// 	$recurring_type_html .= '
-	//   <p class="form-field">
-	//     <label for="_wc_appointment_booking_type">Booking Type</label>
-	//     <select name="_wc_appointment_booking_type" id="_wc_appointment_booking_type">
-	//     <option value="single" ' . selected($_wc_appointment_booking_type, 'single', false) . '>Single</option>
-	//       <option value="recurring" ' . selected($_wc_appointment_booking_type, 'recurring', false) . '>Recurring</option>
-	//     </select>
-	//   </p>';
-
-	// 	$recurring_type_html .= '
-	//   <p class="form-field">
-	//     <label for="_wc_appointment_recurring_type">Recurring Type</label>
-	//     <select name="_wc_appointment_recurring_type" id="_wc_appointment_recurring_type">' .
-	// 		$recurring_type_options
-	// 		. '
-	//     </select>
-	//   </p>';
-
-	// 	$recurring_end_period_length = get_post_meta($product_id, '_wc_appointment_recurring_end_length', true) ?? 1;
-	// 	$recurring_end_period_unit = get_post_meta($product_id, '_wc_appointment_recurring_end_unit', true) ?? 'month';
-
-	// 	// recurring end period. one month from the first appointment, or 3 months from the first appointment, or 6 months from the first appointment
-	// 	$recurring_type_html .= '
-	//   <p class="form-field">
-	//     <label for="_wc_appointment_recurring_end_length">Recurring End Period</label>
-	//     <input type="number" name="_wc_appointment_recurring_end_length" id="_wc_appointment_recurring_end_length" value="' . $recurring_end_period_length . '" />
-	//     <select name="_wc_appointment_recurring_end_unit" id="_wc_appointment_recurring_end_unit">
-	//       <option value="month" ' . selected($recurring_end_period_unit, 'month', false) . '>Month</option>
-	//       <option value="year" ' . selected($recurring_end_period_unit, 'year', false) . '>Year</option>
-	//     </select>
-	//   </p>';
-
 	$max_repeat_count = get_post_meta($product_id, '_wc_appointment_max_repeat_count', true);
 	$max_repeat_count = ($max_repeat_count !== '') ? intval($max_repeat_count) : 2;
 
@@ -584,6 +568,110 @@ function wellness_product_meta_box_callback()
   </p>';
 
 	$recurring_type_html .= '</div>';
+
+	// ── Session Types & Lengths section ──────────────────────────────────
+	$enable_duration      = get_post_meta($product_id, '_wc_appointment_enable_duration_options', true) === 'yes';
+	$duration_options     = json_decode(get_post_meta($product_id, '_wc_appointment_duration_options', true), true);
+	if (! is_array($duration_options)) $duration_options = [];
+
+	$recurring_type_html .= '<div class="options_group wellness-session-fields">';
+
+	// Enable Duration Options toggle
+	$recurring_type_html .= '
+	<p class="form-field">
+		<label for="_wc_appointment_enable_duration_options">Enable Duration Options</label>
+		<input type="checkbox" name="_wc_appointment_enable_duration_options" id="_wc_appointment_enable_duration_options" value="yes" ' . checked($enable_duration, true, false) . ' />
+		<span class="description">Let customers pick from custom duration options (e.g. "Individual – 30 min", "Couples – 60 min"). Each option sets duration + replaces the base price.</span>
+	</p>';
+
+	// Duration Options repeater
+	$dur_json = esc_attr(json_encode($duration_options));
+	$recurring_type_html .= '
+	<div id="wellness-duration-wrapper" style="' . ($enable_duration ? '' : 'display:none;') . '">
+		<h4 style="margin:12px 0 4px;">Duration Options <span class="description">(label, duration in minutes, EGP/USD replacement prices)</span></h4>
+		<table class="widefat wellness-repeater-table" id="wellness-duration-table" style="width:auto;min-width:80%;">
+			<thead><tr>
+				<th style="width:22%;">Label</th>
+				<th style="width:13%;">Duration (min)</th>
+				<th style="width:18%;">EGP Price</th>
+				<th style="width:18%;">USD Price</th>
+				<th style="width:9%;"></th>
+			</tr></thead>
+			<tbody id="wellness-duration-tbody"></tbody>
+		</table>
+		<button type="button" class="button wellness-add-row" data-target="duration">+ Add Duration Option</button>
+		<input type="hidden" name="_wc_appointment_duration_options" id="_wc_appointment_duration_options" value="' . $dur_json . '" />
+	</div>';
+
+	$recurring_type_html .= '</div>'; // .wellness-session-fields
+
+	// ── Inline JS for repeater ──────────────────────────────────────────
+	$recurring_type_html .= '
+<script>
+(function($){
+	var data = ' . json_encode($duration_options) . ';
+
+	function renderTable() {
+		var tbody = $("#wellness-duration-tbody");
+		tbody.empty();
+		if (!data.length) {
+			tbody.append(\'<tr class="wellness-empty-row"><td colspan="5" style="color:#999;font-style:italic;">No entries yet — click “Add” to create one.</td></tr>\');
+			return;
+		}
+		$.each(data, function(i, row){
+			var html = \'<tr>\' +
+				\'<td><input type="text" class="wellness-label" value="\' + escAttr(row.label||"") + \'" placeholder="e.g. Individual – 30 min" style="width:95%;" /></td>\' +
+				\'<td><input type="number" class="wellness-duration" value="\' + escAttr(row.duration||"") + \'" placeholder="30" style="width:95%;" /></td>\' +
+				\'<td><input type="number" step="0.01" class="wellness-price-egp" value="\' + escAttr(row.price_egp||"") + \'" placeholder="0" style="width:95%;" /></td>\' +
+				\'<td><input type="number" step="0.01" class="wellness-price-usd" value="\' + escAttr(row.price_usd||"") + \'" placeholder="0" style="width:95%;" /></td>\' +
+				\'<td><button type="button" class="button wellness-remove-row" data-index="\' + i + \'">×</button></td>\' +
+				\'</tr>\';
+			tbody.append(html);
+		});
+	}
+
+	function syncHidden() {
+		var entries = [];
+		$("#wellness-duration-tbody tr:not(.wellness-empty-row)").each(function(){
+			var $r = $(this);
+			var entry = {
+				label:     ($r.find(".wellness-label").val() || "").trim(),
+				duration:  $r.find(".wellness-duration").val() || "",
+				price_egp: $r.find(".wellness-price-egp").val() || "",
+				price_usd: $r.find(".wellness-price-usd").val() || ""
+			};
+			if (entry.label) entries.push(entry);
+		});
+		data = entries;
+		$("#_wc_appointment_duration_options").val(JSON.stringify(entries));
+	}
+
+	function escAttr(str) { return String(str).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+	renderTable();
+
+	$("#_wc_appointment_enable_duration_options").on("change", function(){
+		$("#wellness-duration-wrapper").toggle(this.checked);
+	});
+
+	$(".wellness-add-row").on("click", function(){
+		data.push({label:"", duration:"", price_egp:"", price_usd:""});
+		renderTable();
+		syncHidden();
+	});
+
+	$(document).on("click", ".wellness-remove-row", function(){
+		var index = $(this).data("index");
+		data.splice(index, 1);
+		renderTable();
+		syncHidden();
+	});
+
+	$(document).on("input", "#wellness-duration-table input", function(){
+		syncHidden();
+	});
+})(jQuery);
+</script>';
 
 	echo $recurring_type_html;
 }
@@ -628,6 +716,28 @@ function save_wellness_product_meta_box($post_id)
 			'_wc_appointment_max_repeat_count',
 			absint($_POST['_wc_appointment_max_repeat_count'])
 		);
+	}
+
+	// ── Duration Options enable toggle ──────────────────────────────────
+	$enable_duration = isset($_POST['_wc_appointment_enable_duration_options']) && $_POST['_wc_appointment_enable_duration_options'] === 'yes' ? 'yes' : 'no';
+	update_post_meta($post_id, '_wc_appointment_enable_duration_options', $enable_duration);
+
+	// ── Duration Options JSON ───────────────────────────────────────────
+	if (array_key_exists('_wc_appointment_duration_options', $_POST)) {
+		$options = json_decode(stripslashes($_POST['_wc_appointment_duration_options']), true);
+		if (is_array($options)) {
+			$options = array_values(array_filter(array_map(function ($entry) {
+				$label = sanitize_text_field($entry['label'] ?? '');
+				if ($label === '') return null;
+				return [
+					'label'     => $label,
+					'duration'  => absint($entry['duration'] ?? 0),
+					'price_egp' => floatval($entry['price_egp'] ?? 0),
+					'price_usd' => floatval($entry['price_usd'] ?? 0),
+				];
+			}, $options)));
+			update_post_meta($post_id, '_wc_appointment_duration_options', wp_json_encode($options));
+		}
 	}
 }
 
@@ -2811,3 +2921,292 @@ add_filter('manage_users_custom_column', function ($output, $column_name, $user_
 	$currency = get_user_meta($user_id, '_staff_currency', true) ?: 'EGP';
 	return esc_html($currency);
 }, 10, 3);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Task 2 — Duration Options dropdown (frontend + cost + duration + persistence)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Resolve currency for a product during AJAX cost calculation.
+ */
+function wellness_get_ajax_currency($product, $posted = [])
+{
+	if (! empty($posted['wc_appointments_field_staff'])) {
+		$staff_currency = get_user_meta((int) $posted['wc_appointments_field_staff'], '_staff_currency', true);
+		if ($staff_currency === 'USD') return 'USD';
+	}
+	return wellness_get_active_currency($product);
+}
+
+// ── Phase 2: Inject Duration dropdown into the booking form ─────────────
+
+add_filter('appointment_form_fields', 'wellness_inject_duration_dropdown', 20);
+function wellness_inject_duration_dropdown($fields)
+{
+	if (! is_product()) return $fields;
+	$product_id = get_queried_object_id();
+	if (! $product_id) return $fields;
+	$product = wc_get_product($product_id);
+	if (! $product || ! is_wc_appointment_product($product)) return $fields;
+
+	$enabled = get_post_meta($product_id, '_wc_appointment_enable_duration_options', true);
+	if ($enabled !== 'yes') return $fields;
+
+	$options = json_decode(get_post_meta($product_id, '_wc_appointment_duration_options', true), true);
+	$options = is_array($options) ? $options : [];
+
+	$select_options = ['' => __('— Select Session Type —', 'woodmart-child')];
+	foreach ($options as $i => $opt) {
+		if (! empty($opt['label'])) {
+			$select_options[$i] = $opt['label'];
+		}
+	}
+
+	if (count($select_options) > 1) {
+		$fields['duration_option'] = [
+			'type'    => 'select',
+			'name'    => 'wc_appointments_field_duration_option',
+			'label'   => __('Session Type', 'woodmart-child'),
+			'class'   => ['required_for_calculation', 'wc_appointments_field_duration_option', 'wc_appointments_field_duration'],
+			'options' => $select_options,
+		];
+	}
+
+	return $fields;
+}
+
+add_filter('appointments_calculated_product_price', 'wellness_duration_option_price', 200, 3);
+function wellness_duration_option_price($price, $product, $posted)
+{
+	$product_id = $product->get_id();
+
+	if (! isset($posted['wc_appointments_field_duration_option']) || $posted['wc_appointments_field_duration_option'] === '') {
+		return $price;
+	}
+
+	$options = json_decode(get_post_meta($product_id, '_wc_appointment_duration_options', true), true);
+	$options = is_array($options) ? $options : [];
+	$index   = $posted['wc_appointments_field_duration_option'];
+
+	if (! isset($options[$index])) {
+		return $price;
+	}
+
+	$opt      = $options[$index];
+	$currency = wellness_get_ajax_currency($product, $posted);
+
+	if ($currency === 'USD' && ! empty($opt['price_usd'])) {
+		return floatval($opt['price_usd']);
+	}
+	if (! empty($opt['price_egp'])) {
+		return floatval($opt['price_egp']);
+	}
+
+	return $price;
+}
+
+// ── Phase 4: Duration override based on selected option ─────────────────
+
+add_filter('appointment_form_posted_total_duration', 'wellness_override_duration_option', 20, 3);
+function wellness_override_duration_option($duration_in_total, $product, $posted)
+{
+	$product_id = $product->get_id();
+
+	if (! isset($posted['wc_appointments_field_duration_option']) || $posted['wc_appointments_field_duration_option'] === '') {
+		return $duration_in_total;
+	}
+
+	$options = json_decode(get_post_meta($product_id, '_wc_appointment_duration_options', true), true);
+	$options = is_array($options) ? $options : [];
+	$index   = $posted['wc_appointments_field_duration_option'];
+
+	if (! isset($options[$index]) || empty($options[$index]['duration'])) {
+		return $duration_in_total;
+	}
+
+	$chosen_minutes = absint($options[$index]['duration']);
+	if ($chosen_minutes <= 0) {
+		return $duration_in_total;
+	}
+
+	$duration_unit = $product->get_duration_unit();
+	if (in_array($duration_unit, ['minute', 'hour'])) {
+		return $chosen_minutes;
+	}
+
+	return $duration_in_total;
+}
+
+// ── Phase 5: Persist selected duration label in appointment data ────────
+
+add_filter('woocommerce_appointments_get_posted_data', 'wellness_capture_duration_label', 10, 3);
+function wellness_capture_duration_label($data, $product, $posted)
+{
+	$product_id = $product->get_id();
+
+	if (! isset($posted['wc_appointments_field_duration_option']) || $posted['wc_appointments_field_duration_option'] === '') {
+		return $data;
+	}
+
+	$options = json_decode(get_post_meta($product_id, '_wc_appointment_duration_options', true), true);
+	$options = is_array($options) ? $options : [];
+	$idx     = $posted['wc_appointments_field_duration_option'];
+	if (isset($options[$idx]['label'])) {
+		// Non-underscore key so it displays in cart item meta.
+		$data['session_type'] = $options[$idx]['label'];
+	}
+
+
+	return $data;
+}
+
+// ── Register Session Type label for cart / order item display ──────────
+
+add_filter('woocommerce_appointments_data_labels', 'wellness_add_session_type_label');
+function wellness_add_session_type_label($labels)
+{
+	$labels['session_type'] = __('Session Type', 'woodmart-child');
+	return $labels;
+}
+
+// ── Persist Session Type to appointment post meta after order is processed ──
+// We use checkout_order_processed (shortcode) + store_api_checkout_order_processed
+// (block) because woocommerce_new_order_item fires before item meta is persisted.
+
+add_action('woocommerce_checkout_order_processed', 'wellness_persist_session_types', 20);
+add_action('woocommerce_store_api_checkout_order_processed', 'wellness_persist_session_types', 20);
+function wellness_persist_session_types($order)
+{
+	if (! is_a($order, 'WC_Order')) {
+		$order = wc_get_order($order);
+		if (! $order) return;
+	}
+
+	foreach ($order->get_items() as $item) {
+		if (! is_a($item, 'WC_Order_Item_Product')) continue;
+
+		$appointment_id = $item->get_meta('_appointment_id');
+		if (! $appointment_id) continue;
+
+		$session_type = $item->get_meta('_session_type');
+		if ($session_type) {
+			update_post_meta($appointment_id, '_session_type', $session_type);
+		}
+	}
+}
+
+// Also persist for orders that skip "processing" (e.g., zero-total → completed).
+add_action('woocommerce_order_status_completed', 'wellness_persist_session_types_on_completed', 20);
+function wellness_persist_session_types_on_completed($order_id)
+{
+	$order = wc_get_order($order_id);
+	if (! $order) return;
+	wellness_persist_session_types($order);
+}
+
+// ── Capture session type during checkout and store as order item meta ──
+
+add_action('woocommerce_checkout_create_order_line_item', 'wellness_add_session_type_to_order_item', 10, 4);
+function wellness_add_session_type_to_order_item($item, $cart_item_key, $values, $order)
+{
+	if (! empty($values['appointment']['session_type'])) {
+		$item->add_meta_data('_session_type', $values['appointment']['session_type']);
+	}
+}
+
+// ── Display Session Type in order item meta (thank-you page, admin, emails) ──
+
+add_filter('woocommerce_display_item_meta', 'wellness_display_session_type_in_orders', 10, 3);
+function wellness_display_session_type_in_orders($html, $item, $args)
+{
+	if (! is_a($item, 'WC_Order_Item_Product')) {
+		return $html;
+	}
+
+	$session_type = $item->get_meta('_session_type');
+	if (! $session_type) {
+		return $html;
+	}
+
+	// Only add if not already displayed by the appointments plugin.
+	if (strpos($html, 'Session Type') !== false) {
+		return $html;
+	}
+
+	$html .= '<li class="wellness-session-type">';
+	$html .= '<strong class="wc-item-meta-label">' . esc_html__('Session Type', 'woodmart-child') . ':</strong> ';
+	$html .= '<span>' . esc_html($session_type) . '</span>';
+	$html .= '</li>';
+
+	return $html;
+}
+
+// ── Hide calendar until Duration option is selected ─────────────────────
+
+add_action('woocommerce_after_appointment_form_output', 'wellness_hide_calendar_until_duration', 20, 2);
+function wellness_hide_calendar_until_duration($position, $product_id)
+{
+	// Only inject on 'after' position (once) and only when duration options are enabled.
+	if ($position !== 'after') return;
+
+	$enabled = get_post_meta($product_id, '_wc_appointment_enable_duration_options', true);
+	if ($enabled !== 'yes') return;
+
+?>
+	<script>
+		(function($) {
+			function wellnessToggleDurationFields() {
+				var $select = $('#wc-appointments-appointment-form .wc_appointments_field_duration_option select');
+				if (!$select.length) return;
+
+				var $form = $('#wc-appointments-appointment-form');
+				var $durRow = $select.closest('p.form-field');
+				var chosen = $select.val();
+				var isChosen = chosen !== '' && chosen !== null;
+
+				$form.children().each(function() {
+					var $el = $(this);
+					if ($el.is($durRow)) return;
+					if (isChosen) {
+						$el.show();
+					} else {
+						$el.hide();
+					}
+				});
+
+				var $qty = $form.siblings('.quantity').add($form.find('.quantity'));
+				var $button = $form.siblings('.single_add_to_cart_button');
+				if (isChosen) {
+					$qty.show();
+					$button.show();
+				} else {
+					$qty.hide();
+					$button.hide();
+				}
+			}
+
+			$(document).on('change', '#wc-appointments-appointment-form .wc_appointments_field_duration_option select', function() {
+				wellnessToggleDurationFields();
+				// Trigger the plugin's cost calc via its custom event.
+				$(this).closest('form').triggerHandler('addon-duration-changed');
+			});
+
+			var observer = new MutationObserver(function(mutations) {
+				mutations.forEach(function(m) {
+					if (m.target.style.display !== 'none') {
+						wellnessToggleDurationFields();
+					}
+				});
+			});
+			var formEl = document.getElementById('wc-appointments-appointment-form');
+			if (formEl) {
+				observer.observe(formEl, {
+					attributes: true,
+					attributeFilter: ['style']
+				});
+				if (formEl.style.display !== 'none') wellnessToggleDurationFields();
+			}
+		})(jQuery);
+	</script>
+<?php
+}
