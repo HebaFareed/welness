@@ -162,10 +162,26 @@ function save_usd_booking_fields($product_id)
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Currency — staff-based (replaces geolocation)
-// Default: EGP.  When a product has a staff member assigned whose
-// _staff_currency user meta is 'USD', prices switch to the USD meta fields.
+// Currency — staff-based with geolocation fallback
+// _staff_currency values: '' (Location Based), 'EGP', 'USD'.
+// When empty / 'Location Based', currency is resolved via IP geolocation
+// (Egypt → EGP, elsewhere → USD).  An explicit 'USD' or 'EGP' overrides
+// location for that therapist's products.
 // ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Determine currency based on visitor geolocation.
+ *
+ * @return string 'EGP' or 'USD'
+ */
+function wellness_get_location_currency()
+{
+	$geo = WC_Geolocation::geolocate_ip();
+	if (empty($geo) || $geo['country'] === 'EG') {
+		return 'EGP';
+	}
+	return 'USD';
+}
 
 /**
  * Determine the active currency for a product based on its assigned staff.
@@ -175,15 +191,15 @@ function save_usd_booking_fields($product_id)
  */
 function wellness_get_active_currency($product = null)
 {
-	$currency = 'EGP'; // default
+	$currency = wellness_get_location_currency(); // location-based default
 
 	if ($product) {
 		$staff_ids = $product->get_staff_ids();
 		if (! empty($staff_ids)) {
 			$staff_id      = (int) $staff_ids[0];
 			$staff_currency = get_user_meta($staff_id, '_staff_currency', true);
-			if (! empty($staff_currency)) {
-				$currency = $staff_currency;
+			if ($staff_currency === 'EGP' || $staff_currency === 'USD') {
+				$currency = $staff_currency; // explicit override beats location
 			}
 		}
 	}
@@ -309,6 +325,13 @@ function change_woocommerce_currency($currency)
 			$staff_id       = (int) $form_data['wc_appointments_field_staff'];
 			$staff_currency = get_user_meta($staff_id, '_staff_currency', true);
 			if ($staff_currency === 'USD') {
+				return 'USD';
+			}
+			if ($staff_currency === 'EGP') {
+				return $currency;
+			}
+			// empty / Location Based — use geolocation
+			if (wellness_get_location_currency() === 'USD') {
 				return 'USD';
 			}
 		}
@@ -2422,7 +2445,7 @@ function wellness_staff_timezone_field($user)
 		return;
 	}
 	$current_tz = get_user_meta($user->ID, 'timezone_string', true) ?: wc_timezone_string();
-	$staff_currency = get_user_meta($user->ID, '_staff_currency', true) ?: 'EGP';
+	$staff_currency = get_user_meta($user->ID, '_staff_currency', true) ?: '';
 ?>
 	<h3><?php esc_html_e('Appointment Timezone', 'woodmart-child'); ?></h3>
 	<table class="form-table" role="presentation">
@@ -2442,11 +2465,12 @@ function wellness_staff_timezone_field($user)
 			<th><label for="_staff_currency"><?php esc_html_e('Your currency', 'woodmart-child'); ?></label></th>
 			<td>
 				<select name="_staff_currency" id="_staff_currency">
+					<option value="" <?php selected($staff_currency, ''); ?>>(Location Based)</option>
 					<option value="EGP" <?php selected($staff_currency, 'EGP'); ?>>EGP (Egyptian Pound)</option>
 					<option value="USD" <?php selected($staff_currency, 'USD'); ?>>USD (US Dollar)</option>
 				</select>
 				<p class="description">
-					<?php esc_html_e('Prices for products assigned to you will display in this currency. Defaults to EGP when not set.', 'woodmart-child'); ?>
+					<?php esc_html_e('Prices for products assigned to you will display in this currency. When set to "Location Based", currency is determined by the visitor\'s country (Egypt → EGP, elsewhere → USD).', 'woodmart-child'); ?>
 				</p>
 			</td>
 		</tr>
@@ -2488,11 +2512,15 @@ function wellness_save_staff_timezone($user_id)
 		update_user_meta($user_id, 'timezone_string', $tz);
 	}
 
-	// Save staff currency (EGP / USD).
+	// Save staff currency (Location Based / EGP / USD).
 	if (isset($_POST['_staff_currency'])) {
 		$currency = sanitize_text_field(wp_unslash($_POST['_staff_currency']));
-		if (in_array($currency, array('EGP', 'USD'), true)) {
-			update_user_meta($user_id, '_staff_currency', $currency);
+		if (in_array($currency, array('', 'EGP', 'USD'), true)) {
+			if ($currency === '') {
+				delete_user_meta($user_id, '_staff_currency');
+			} else {
+				update_user_meta($user_id, '_staff_currency', $currency);
+			}
 		}
 	}
 }
@@ -2924,7 +2952,10 @@ add_filter('manage_users_custom_column', function ($output, $column_name, $user_
 	if (! $user || ! in_array('shop_staff', (array) $user->roles, true)) {
 		return '<span style="color:#aaa;">—</span>';
 	}
-	$currency = get_user_meta($user_id, '_staff_currency', true) ?: 'EGP';
+	$currency = get_user_meta($user_id, '_staff_currency', true);
+	if ($currency === '') {
+		return '(Location Based)';
+	}
 	return esc_html($currency);
 }, 10, 3);
 
@@ -2940,6 +2971,8 @@ function wellness_get_ajax_currency($product, $posted = [])
 	if (! empty($posted['wc_appointments_field_staff'])) {
 		$staff_currency = get_user_meta((int) $posted['wc_appointments_field_staff'], '_staff_currency', true);
 		if ($staff_currency === 'USD') return 'USD';
+		if ($staff_currency === 'EGP') return 'EGP';
+		// empty / Location Based — fall through to product-based resolution
 	}
 	return wellness_get_active_currency($product);
 }
@@ -3360,7 +3393,7 @@ function wellness_add_intake_checkout_fields($fields)
 		'intake_client_name' => [
 			'type'              => 'text',
 			'label'             => __('Client Name', 'woodmart-child'),
-			'required'          => true,
+			'required'          => false,
 			'class'             => ['form-row-wide'],
 			'priority'          => 10,
 		],
@@ -3384,7 +3417,7 @@ function wellness_add_intake_checkout_fields($fields)
 		'intake_mobile' => [
 			'type'              => 'text',
 			'label'             => __('Mobile', 'woodmart-child'),
-			'required'          => true,
+			'required'          => false,
 			'class'             => ['form-row-first'],
 			'priority'          => 40,
 		],
@@ -3768,21 +3801,21 @@ function wellness_render_intake_field($key, $field, $checkout)
 
 // ── Phase 7: Validate required intake fields ────────────────────────────
 
-add_action('woocommerce_checkout_process', 'wellness_validate_intake_fields');
-function wellness_validate_intake_fields()
-{
-	if (! wellness_should_show_intake_form()) {
-		return;
-	}
+// add_action('woocommerce_checkout_process', 'wellness_validate_intake_fields');
+// function wellness_validate_intake_fields()
+// {
+// 	if (! wellness_should_show_intake_form()) {
+// 		return;
+// 	}
 
-	if (empty($_POST['intake_client_name'])) {
-		wc_add_notice(__('Please enter your full name in the Client Information section.', 'woodmart-child'), 'error');
-	}
+// 	if (empty($_POST['intake_client_name'])) {
+// 		wc_add_notice(__('Please enter your full name in the Client Information section.', 'woodmart-child'), 'error');
+// 	}
 
-	if (empty($_POST['intake_mobile'])) {
-		wc_add_notice(__('Please enter your mobile number in the Client Information section.', 'woodmart-child'), 'error');
-	}
-}
+// 	if (empty($_POST['intake_mobile'])) {
+// 		wc_add_notice(__('Please enter your mobile number in the Client Information section.', 'woodmart-child'), 'error');
+// 	}
+// }
 
 
 // ── Phase 4: Save intake form to CPT on order processed ─────────────────
@@ -4510,7 +4543,7 @@ add_action('wellness_checkout_payment_step', 'wellness_step7_render', 10);
 function wellness_step7_render()
 {
 	// Always render the payment step, regardless of intake form visibility.
-	?>
+?>
 	<div class="wellness-checkout-step wellness-step-hidden" id="wellness-step-7" data-step="7" role="region" aria-label="<?php echo esc_attr__('Step 7: Payment', 'woodmart-child'); ?>">
 		<div class="wellness-step-header">
 			<span class="wellness-step-number" aria-hidden="true"><?php echo wellness_step_icon(7); ?></span>
@@ -4521,13 +4554,15 @@ function wellness_step7_render()
 			<?php woocommerce_checkout_payment(); ?>
 			<div class="wellness-step-actions">
 				<button type="button" class="wellness-btn-back" data-back="6" aria-label="<?php echo esc_attr__('Go back to previous step', 'woodmart-child'); ?>">
-					<svg class="wellness-btn-back__icon" width="16" height="16" viewBox="0 0 16 16"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+					<svg class="wellness-btn-back__icon" width="16" height="16" viewBox="0 0 16 16">
+						<path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+					</svg>
 					<span><?php esc_html_e('Back', 'woodmart-child'); ?></span>
 				</button>
 			</div>
 		</div>
 	</div>
-	<?php
+<?php
 }
 
 
@@ -4583,7 +4618,9 @@ function wellness_multistep_checkout_js()
 				$steps[step].removeClass('wellness-step-hidden');
 				// Entrance animation
 				$steps[step].addClass('wellness-step-entering');
-				setTimeout(function() { $steps[step].removeClass('wellness-step-entering'); }, 400);
+				setTimeout(function() {
+					$steps[step].removeClass('wellness-step-entering');
+				}, 400);
 				currentStep = step;
 				updateProgress(step);
 				$('html, body').animate({
@@ -4633,7 +4670,9 @@ function wellness_multistep_checkout_js()
 					var email = $('#billing_email').val();
 					if (!email || email.indexOf('@') < 0) {
 						$('#billing_email').addClass('wellness-input--shake');
-						setTimeout(function() { $('#billing_email').removeClass('wellness-input--shake'); }, 600);
+						setTimeout(function() {
+							$('#billing_email').removeClass('wellness-input--shake');
+						}, 600);
 						$('#billing_email').focus();
 						return;
 					}
