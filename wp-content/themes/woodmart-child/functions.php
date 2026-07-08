@@ -3082,6 +3082,47 @@ function wellness_override_duration_option($duration_in_total, $product, $posted
 	return $duration_in_total;
 }
 
+// ── Phase 4b: Override Interval to match selected Duration Option ───────
+
+add_filter('woocommerce_appointments_base_interval', 'wellness_override_interval_for_duration_option', 20, 2);
+function wellness_override_interval_for_duration_option($base_interval, $product)
+{
+	// Only during AJAX slot calculation.
+	if (! wp_doing_ajax()) {
+		return $base_interval;
+	}
+
+	// Parse the AJAX form data to find the selected session type.
+	$form_data = $_POST['form'] ?? '';
+	if (empty($form_data)) {
+		return $base_interval;
+	}
+
+	parse_str($form_data, $posted);
+
+	if (empty($posted['wc_appointments_field_duration_option'])) {
+		return $base_interval;
+	}
+
+	$options = json_decode(
+		get_post_meta($product->get_id(), '_wc_appointment_duration_options', true),
+		true
+	);
+	$options = is_array($options) ? $options : [];
+	$index   = $posted['wc_appointments_field_duration_option'];
+
+	if (! isset($options[$index]) || empty($options[$index]['duration'])) {
+		return $base_interval;
+	}
+
+	$chosen_minutes = absint($options[$index]['duration']);
+	if ($chosen_minutes <= 0) {
+		return $base_interval;
+	}
+
+	return $chosen_minutes;
+}
+
 // ── Phase 5: Persist selected duration label in appointment data ────────
 
 add_filter('woocommerce_appointments_get_posted_data', 'wellness_capture_duration_label', 10, 3);
