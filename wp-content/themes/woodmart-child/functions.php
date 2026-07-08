@@ -328,10 +328,16 @@ function change_woocommerce_currency($currency)
 				return 'USD';
 			}
 			if ($staff_currency === 'EGP') {
-				return $currency;
+				return 'EGP';
 			}
-			// empty / Location Based — use geolocation
-			if (wellness_get_location_currency() === 'USD') {
+			// empty / Location Based — fall through to product resolution
+		}
+		// No staff field in form (staff_assignment !== 'customer'),
+		// or staff is Location Based — resolve from product.
+		$product_id = $form_data['add-to-cart'] ?? ($form_data['appointable-product-id'] ?? 0);
+		if ($product_id) {
+			$product = wc_get_product($product_id);
+			if ($product && wellness_get_active_currency($product) === 'USD') {
 				return 'USD';
 			}
 		}
