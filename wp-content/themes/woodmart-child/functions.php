@@ -4494,6 +4494,10 @@ function wellness_intake_step($num, $title, $back, $next = null)
 
 function wellness_intake_step_close($num, $back, $next = null)
 {
+	if (! wellness_should_show_intake_form()) {
+		return;
+	}
+
 	echo '<div class="wellness-step-actions">';
 	echo '<button type="button" class="wellness-btn-back" data-back="' . $back . '" aria-label="' . esc_attr__('Go back to previous step', 'woodmart-child') . '">';
 	echo '<svg class="wellness-btn-back__icon" width="16" height="16" viewBox="0 0 16 16"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';

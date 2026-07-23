@@ -10,16 +10,11 @@
  *
  * @see https://docs.woocommerce.com/document/template-structure/
  * @package WooCommerce/Templates
- * @version 9.4.0
+ * @version 10.5.3
  */
 
 if (! defined('ABSPATH')) {
     exit;
-}
-
-//WC 3.5.0
-if (function_exists('WC') && version_compare(WC()->version, '3.5.0', '<')) {
-    wc_print_notices();
 }
 
 do_action('woocommerce_before_checkout_form', $checkout);
