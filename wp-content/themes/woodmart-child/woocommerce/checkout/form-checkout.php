@@ -27,10 +27,11 @@ do_action('woocommerce_before_checkout_form', $checkout);
 <style>
     /* ── CSS Custom Properties (primary colour from Woodmart theme) ── */
     :root {
-        --wellness-primary: var(--wd-primary-color);
-        --wellness-primary-deep: color-mix(in srgb, var(--wd-primary-color) 80%, #000 20%);
-        --wellness-primary-soft: color-mix(in srgb, var(--wd-primary-color) 12%, #fff 88%);
-        --wellness-primary-mist: color-mix(in srgb, var(--wd-primary-color) 5%, #fff 95%);
+        --wellness-primary: var(--wd-primary-color, #5B8C5A);
+        /* Hardcoded fallbacks for Safari < 16.2 which lacks color-mix(). */
+        --wellness-primary-deep: #3D6B3C;
+        --wellness-primary-soft: #EEF5EE;
+        --wellness-primary-mist: #F7FAF7;
         --wellness-cream: #FDFBF7;
         --wellness-warm: #F5F0E8;
         --wellness-charcoal: #2C2416;
@@ -42,6 +43,13 @@ do_action('woocommerce_before_checkout_form', $checkout);
         --wellness-shadow: 0 1px 3px rgba(44, 36, 22, 0.04), 0 4px 24px rgba(44, 36, 22, 0.05);
         --wellness-shadow-lg: 0 2px 8px rgba(44, 36, 22, 0.04), 0 8px 40px rgba(44, 36, 22, 0.08);
         --wellness-transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    @supports (color: color-mix(in srgb, red 50%, blue 50%)) {
+        :root {
+            --wellness-primary-deep: color-mix(in srgb, var(--wd-primary-color) 80%, #000 20%);
+            --wellness-primary-soft: color-mix(in srgb, var(--wd-primary-color) 12%, #fff 88%);
+            --wellness-primary-mist: color-mix(in srgb, var(--wd-primary-color) 5%, #fff 95%);
+        }
     }
 
     /* ── Page-level atmosphere ────────────────────────────── */
@@ -91,7 +99,7 @@ do_action('woocommerce_before_checkout_form', $checkout);
         color: var(--wellness-charcoal);
     }
 
-    @media (max-width: 900px) {
+    @media (max-width: 1024px) {
         form.checkout.woocommerce-checkout {
             flex-direction: column !important;
         }
@@ -99,7 +107,7 @@ do_action('woocommerce_before_checkout_form', $checkout);
         form.checkout .checkout-order-review {
             flex: 1 1 auto !important;
             width: 100% !important;
-            position: static;
+            position: static !important;
         }
     }
 
@@ -562,8 +570,17 @@ do_action('woocommerce_before_checkout_form', $checkout);
         transition: opacity 0.3s ease, transform 0.3s ease;
     }
 
+    /*
+     * Off-screen instead of display:none so embedded payment iframes
+     * (Stripe Elements, Paymob Pixel) can measure their container and
+     * initialize properly.  display:none collapses iframe dimensions
+     * to 0×0, making card fields untappable after reveal.
+     */
     .wellness-checkout-step.wellness-step-hidden {
-        display: none !important;
+        position: absolute !important;
+        left: -9999px !important;
+        top: -9999px !important;
+        visibility: hidden !important;
     }
 
     /* ── Step entrance animation ─────────────────────────── */

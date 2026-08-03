@@ -24,3 +24,9 @@ wp-content/*
 # specify (see the commented-out example for a hint on how to do this.)
 # wp-content/themes/*
 # !wp-content/themes/my-theme/
+
+# Ignore untracked files in the parent theme and archived theme. Only
+# woodmart-child is actively developed. (Tracked woodmart files are
+# unaffected — .gitignore never applies to tracked files.)
+wp-content/themes/oldwoodmart/
+wp-content/themes/woodmart/

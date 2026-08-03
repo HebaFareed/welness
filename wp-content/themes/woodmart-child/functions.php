@@ -33,6 +33,20 @@ function wellness_force_wp_mail_recipient($args)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**
+ * Add viewport meta tag for mobile responsiveness.
+ *
+ * Woodmart's header.php does not include a viewport meta tag. Without it,
+ * iOS Safari renders the page at a 980 px desktop viewport and scales it
+ * down, causing touch-event coordinates to be miscalculated — taps land on
+ * the wrong elements. This affects all iPhone users regardless of gateway.
+ */
+add_action('wp_head', 'wellness_add_viewport_meta', 1);
+function wellness_add_viewport_meta()
+{
+	echo '<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">' . "\n";
+}
+
+/**
  * Enqueue script and styles for child theme
  */
 function woodmart_child_enqueue_styles()
@@ -396,6 +410,59 @@ function change_woocommerce_currency_symbol($currency_symbol, $currency)
 
 //     return $option_price;
 // }, 10, 2);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Payment Gateway Routing — Stripe for USD, Paymob for EGP.
+// Default: Paymob.  Only switch to Stripe when the cart resolves to USD.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+add_filter('woocommerce_available_payment_gateways', 'wellness_filter_gateways_by_currency', 999999);
+
+function wellness_filter_gateways_by_currency($gateways)
+{
+	// Do not interfere with admin screens.
+	if (is_admin() && ! wp_doing_ajax()) {
+		return $gateways;
+	}
+
+	// ── Determine currency from cart ─────────────────────────────────────
+	$is_usd = false;
+
+	if (WC()->cart && ! WC()->cart->is_empty()) {
+		foreach (WC()->cart->get_cart() as $cart_item) {
+			if (wellness_get_active_currency($cart_item['data']) === 'USD') {
+				$is_usd = true;
+				break;
+			}
+		}
+	}
+
+	// ── Allowed gateway IDs per currency ──────────────────────────────────
+	$stripe_ids = [
+		'stripe_cc',
+		'stripe_applepay',
+		'stripe_googlepay',
+	];
+
+	$paymob_ids = [
+		'paymob',
+		'paymob-pixel',
+		'paymob-4475761-card-vpc-egp',
+		'paymob-4371991-staging-test-vpc-egp',
+		'paymob-subscription',
+	];
+
+	// ── Default: Paymob (EGP). Only USD cart switches to Stripe. ────────
+	$allowed = $is_usd ? $stripe_ids : $paymob_ids;
+
+	foreach ($gateways as $id => $gateway) {
+		if (! in_array($id, $allowed, true)) {
+			unset($gateways[$id]);
+		}
+	}
+
+	return $gateways;
+}
 
 // add css code to admin panel when user role is shop_staff
 add_action('admin_head', 'wellness_booking_admin_css');
@@ -4651,33 +4718,46 @@ function wellness_multistep_checkout_js()
 			function hideAll() {
 				for (var i = 1; i <= 7; i++) $steps[i].addClass('wellness-step-hidden');
 			}
+
+		/**
+		 * Reveal a hidden step and reset off-screen positioning so embedded
+		 * payment iframes (Stripe Elements, Paymob Pixel) can measure their
+		 * container.  The CSS class uses position:absolute + left:-9999px
+		 * instead of display:none to preserve layout-box dimensions.
+		 */
+		function revealStep($step) {
+			$step.css({ position: '', left: '', top: '', visibility: '' });
+			$step.removeClass('wellness-step-hidden');
+			// Help iframe-based payment widgets recalculate dimensions.
+			window.dispatchEvent(new Event('resize'));
+		}
+
+		revealStep($steps[1]);
+
+		function updateProgress(step) {
+			$('.wellness-progress__dot').each(function() {
+				var s = parseInt($(this).data('step'), 10);
+				$(this).removeClass('wellness-progress__dot--active wellness-progress__dot--done');
+				if (s < step) $(this).addClass('wellness-progress__dot--done');
+				if (s === step) $(this).addClass('wellness-progress__dot--active');
+			});
+		}
+
+		function goToStep(step) {
+			if (!$steps[step] || !$steps[step].length) return;
 			hideAll();
-			$steps[1].removeClass('wellness-step-hidden');
-
-			function updateProgress(step) {
-				$('.wellness-progress__dot').each(function() {
-					var s = parseInt($(this).data('step'), 10);
-					$(this).removeClass('wellness-progress__dot--active wellness-progress__dot--done');
-					if (s < step) $(this).addClass('wellness-progress__dot--done');
-					if (s === step) $(this).addClass('wellness-progress__dot--active');
-				});
-			}
-
-			function goToStep(step) {
-				if (!$steps[step] || !$steps[step].length) return;
-				hideAll();
-				$steps[step].removeClass('wellness-step-hidden');
-				// Entrance animation
-				$steps[step].addClass('wellness-step-entering');
-				setTimeout(function() {
-					$steps[step].removeClass('wellness-step-entering');
-				}, 400);
-				currentStep = step;
-				updateProgress(step);
-				$('html, body').animate({
-					scrollTop: $steps[step].offset().top - 80
-				}, 350, 'swing');
-			}
+			revealStep($steps[step]);
+			// Entrance animation
+			$steps[step].addClass('wellness-step-entering');
+			setTimeout(function() {
+				$steps[step].removeClass('wellness-step-entering');
+			}, 400);
+			currentStep = step;
+			updateProgress(step);
+			$('html, body').animate({
+				scrollTop: $steps[step].offset().top - 80
+			}, 350, 'swing');
+		}
 
 			// ── Floating-label: mark filled selects ────────────────────
 			$(document).on('change', '.wellness-select', function() {
