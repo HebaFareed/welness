@@ -449,6 +449,7 @@ function wellness_filter_gateways_by_currency($gateways)
 		'paymob-pixel',
 		'paymob-4475761-card-vpc-egp',
 		'paymob-4371991-staging-test-vpc-egp',
+		'paymob-5618802-migs-online-next-apple-pay-vpc-egp',
 		'paymob-subscription',
 	];
 
