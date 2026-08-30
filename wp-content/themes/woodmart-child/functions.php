@@ -46,6 +46,97 @@ function wellness_add_viewport_meta()
 	echo '<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">' . "\n";
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// TEST THERAPIST BANNER
+// Shows a prominent "TEST THERAPIST" notice at the top of any appointment
+// product whose slug or name contains "test". Such products are hidden from
+// the catalog (catalog visibility = Hidden) and reachable only via direct URL,
+// so the banner makes it obvious to QA that the page is a test fixture.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Detect a test-therapist product.
+ *
+ * @param WC_Product|null $product Product to check (resolved from the queried
+ *                                 object on a single product page when null).
+ * @return bool
+ */
+function wellness_is_test_therapist_product($product = null)
+{
+	if (! $product) {
+		if (! is_product()) {
+			return false;
+		}
+		$product_id = get_queried_object_id();
+		if (! $product_id) {
+			return false;
+		}
+		$product = wc_get_product($product_id);
+	}
+	if (! $product) {
+		return false;
+	}
+
+	$slug = $product->get_slug();
+	$name = $product->get_name();
+
+	return (stripos((string) $slug, 'test') !== false) || (stripos((string) $name, 'test') !== false);
+}
+
+add_action('woocommerce_before_single_product', 'wellness_render_test_therapist_banner', 10);
+function wellness_render_test_therapist_banner()
+{
+	if (! wellness_is_test_therapist_product()) {
+		return;
+	}
+
+	$product_id = get_queried_object_id();
+	$product    = $product_id ? wc_get_product($product_id) : null;
+	$title      = $product ? $product->get_name() : __('Test Therapist', 'woodmart-child');
+
+	echo '<div class="wellness-test-banner">';
+	echo '<span class="wellness-test-banner-badge">' . esc_html__('TEST THERAPIST', 'woodmart-child') . '</span>';
+	echo '<span class="wellness-test-banner-text">'
+		. esc_html($title)
+		. ' &mdash; ' . esc_html__('QA only. This therapist is a test fixture and is not part of the live team. Bookings here are for testing the recurring &amp; session-type flows only.', 'woodmart-child')
+		. '</span>';
+	echo '</div>';
+	echo '<style>
+		.woocommerce .wellness-test-banner,
+		.wellness-test-banner {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			background: #fff7ed;
+			border: 2px solid #ea580c;
+			color: #7c2d12;
+			border-radius: 8px;
+			padding: 12px 16px;
+			margin: 16px auto;
+			max-width: 1200px;
+			font-size: 14px;
+			line-height: 1.5;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+		}
+		.wellness-test-banner-badge {
+			flex: 0 0 auto;
+			background: #ea580c;
+			color: #fff;
+			font-weight: 700;
+			letter-spacing: 0.04em;
+			text-transform: uppercase;
+			font-size: 12px;
+			border-radius: 4px;
+			padding: 4px 10px;
+			white-space: nowrap;
+		}
+		.wellness-test-banner-text { flex: 1 1 auto; }
+		@media (max-width: 600px) {
+			.wellness-test-banner { flex-direction: column; align-items: flex-start; }
+		}
+	</style>';
+}
+
 /**
  * Enqueue script and styles for child theme
  */
@@ -184,14 +275,79 @@ function save_usd_booking_fields($product_id)
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**
+ * Determine the visitor's ISO 3166-1 alpha-2 country code.
+ *
+ * Behind Cloudflare this resolves deterministically from the trusted
+ * CF-IPCountry header (see wellness_geolocate_ip()); otherwise it falls back
+ * to WC_Geolocation, which uses the real client IP.
+ *
+ * @return string '' when the country is unknown.
+ */
+function wellness_get_location_country()
+{
+	// Prefer the country frozen for this session (set on product-page view or the
+	// first geolocation here) so the page display, add-to-cart, and checkout all
+	// agree — geo-IP results can flake between requests.
+	if (function_exists('WC') && WC()->session) {
+		$session_country = WC()->session->get('wellness_country', '');
+		if (is_string($session_country) && preg_match('/^[A-Z]{2}$/', $session_country)) {
+			return $session_country;
+		}
+	}
+
+	$geo     = WC_Geolocation::geolocate_ip();
+	$country = empty($geo['country']) ? '' : strtoupper(sanitize_text_field($geo['country']));
+
+	// Freeze on first resolution so later calls in the session agree.
+	if (function_exists('WC') && WC()->session && $country !== '') {
+		WC()->session->set('wellness_country', $country);
+	}
+
+	return $country;
+}
+
+/**
+ * Deterministic, Cloudflare-aware geolocation.
+ *
+ * WC_Geolocation switches between the CF-IPCountry header, the client IP from
+ * X-Forwarded-For, an external geo-IP API, and REMOTE_ADDR, so two calls can
+ * return different countries behind a proxy. This filter pins the country to
+ * Cloudflare's CF-IPCountry header when the request is genuinely proxied by
+ * Cloudflare, and otherwise lets WC resolve the real client IP.
+ *
+ * @param string|false $country_code  Country code from earlier filters.
+ * @param string       $ip_address    IP address WC would geolocate.
+ * @param bool         $fallback      Whether fallback detection is enabled.
+ * @param bool         $api_fallback  Whether API lookup fallback is enabled.
+ * @return string|false
+ */
+add_filter('woocommerce_geolocate_ip', 'wellness_geolocate_ip', 10, 4);
+function wellness_geolocate_ip($country_code, $ip_address, $fallback, $api_fallback)
+{
+	// Only trust Cloudflare headers on requests that really came through
+	// Cloudflare, so a spoofed header on a direct/origin hit is ignored.
+	$via_cf = ! empty($_SERVER['HTTP_CF_RAY']) || ! empty($_SERVER['HTTP_CF_CONNECTING_IP']);
+
+	if ($via_cf && ! empty($_SERVER['HTTP_CF_IPCOUNTRY'])) {
+		$country = strtoupper(sanitize_text_field(wp_unslash($_SERVER['HTTP_CF_IPCOUNTRY'])));
+		// 'XX' / 'T1' are Cloudflare's sentinel values for unknown locations.
+		if (preg_match('/^[A-Z]{2}$/', $country) && ! in_array($country, ['XX', 'T1'], true)) {
+			return $country;
+		}
+	}
+
+	return $country_code;
+}
+
+/**
  * Determine currency based on visitor geolocation.
  *
  * @return string 'EGP' or 'USD'
  */
 function wellness_get_location_currency()
 {
-	$geo = WC_Geolocation::geolocate_ip();
-	if (empty($geo) || $geo['country'] === 'EG') {
+	$country = wellness_get_location_country();
+	if ($country === '' || $country === 'EG') {
 		return 'EGP';
 	}
 	return 'USD';
@@ -219,6 +375,68 @@ function wellness_get_active_currency($product = null)
 	}
 
 	return $currency;
+}
+
+/**
+ * Freeze the resolved currency + payer country on the cart item at add-to-cart.
+ *
+ * Runs after the appointments plugin's add_cart_item_data (priority 10) so the
+ * appointment data and _appointment_id already exist. The amount (_cost) is
+ * frozen here too; persisting the currency + country that produced it ensures
+ * the order currency label and gateway can never disagree with the amount.
+ *
+ * @param array $cart_item_meta Cart item meta.
+ * @param int   $product_id     Product ID.
+ * @return array
+ */
+add_filter('woocommerce_add_cart_item_data', 'wellness_freeze_currency_on_cart_item', 20, 2);
+function wellness_freeze_currency_on_cart_item($cart_item_meta, $product_id)
+{
+	if (empty($cart_item_meta['appointment']) || ! is_array($cart_item_meta['appointment'])) {
+		return $cart_item_meta;
+	}
+
+	$product = wc_get_product($product_id);
+	if (! $product) {
+		return $cart_item_meta;
+	}
+
+	// The same currency the cost calculation used (selected staff, else product).
+	$posted   = (array) (isset($_POST) ? $_POST : []);
+	$currency = wellness_get_ajax_currency($product, $posted);
+	$country  = wellness_get_location_country();
+
+	$cart_item_meta['appointment']['_currency'] = $currency;
+	$cart_item_meta['appointment']['_country']  = $country;
+
+	// Persist to the appointment so downstream features (emails, recurring) can read it.
+	if (! empty($cart_item_meta['appointment']['_appointment_id'])) {
+		$appointment_id = (int) $cart_item_meta['appointment']['_appointment_id'];
+		update_post_meta($appointment_id, '_currency', $currency);
+		update_post_meta($appointment_id, '_country', $country);
+	}
+
+	return $cart_item_meta;
+}
+
+/**
+ * Freeze the resolved country for the session on product-page views.
+ *
+ * Defense-in-depth: once a visitor lands on a booking page, remember the resolved
+ * country for the session so display, add-to-cart, and checkout all agree (the
+ * country is also frozen lazily in wellness_get_location_country()).
+ */
+add_action('template_redirect', 'wellness_freeze_country_session');
+function wellness_freeze_country_session()
+{
+	if (is_admin() || ! is_product() || ! function_exists('WC') || ! WC()->session) {
+		return;
+	}
+
+	// Freeze only once per session.
+	if (! WC()->session->get('wellness_country')) {
+		WC()->session->set('wellness_country', wellness_get_location_country());
+	}
 }
 
 add_filter('woocommerce_product_get_price', 'get_usd_booking_cost', 999999, 2);
@@ -323,6 +541,37 @@ function get_usd_display_cost($cost, $product)
 	return $usd_cost;
 }
 
+/**
+ * Resolve the effective currency for a cart item.
+ *
+ * Prefers the currency frozen at add-to-cart (_currency) so the label always
+ * matches the amount, and falls back to live resolution for pre-fix carts.
+ *
+ * @param array $cart_item Cart item array.
+ * @return string 'EGP' or 'USD'
+ */
+function wellness_cart_item_currency($cart_item)
+{
+	if (! empty($cart_item['appointment']['_currency'])) {
+		return $cart_item['appointment']['_currency'];
+	}
+	return wellness_get_active_currency($cart_item['data']);
+}
+
+/**
+ * Resolve the effective payer country for a cart item.
+ *
+ * @param array $cart_item Cart item array.
+ * @return string '' when unknown.
+ */
+function wellness_cart_item_country($cart_item)
+{
+	if (! empty($cart_item['appointment']['_country'])) {
+		return $cart_item['appointment']['_country'];
+	}
+	return wellness_get_location_country();
+}
+
 add_filter('woocommerce_currency', 'change_woocommerce_currency', 999999, 1);
 function change_woocommerce_currency($currency)
 {
@@ -361,7 +610,7 @@ function change_woocommerce_currency($currency)
 	// ── Cart / checkout ───────────────────────────────────────────────────
 	if (WC()->cart && ! WC()->cart->is_empty()) {
 		foreach (WC()->cart->get_cart() as $cart_item) {
-			if (wellness_get_active_currency($cart_item['data']) !== 'EGP') {
+			if (wellness_cart_item_currency($cart_item) !== 'EGP') {
 				return 'USD';
 			}
 		}
@@ -412,8 +661,10 @@ function change_woocommerce_currency_symbol($currency_symbol, $currency)
 // }, 10, 2);
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Payment Gateway Routing — Stripe for USD, Paymob for EGP.
-// Default: Paymob.  Only switch to Stripe when the cart resolves to USD.
+// Payment Gateway Routing — location-aware.
+// EGP → Paymob. USD + payer in Egypt → Paymob (converted to EGP at the order
+// step, since Paymob does not convert). USD + payer elsewhere → Stripe.
+// Default: Paymob.
 // ═══════════════════════════════════════════════════════════════════════════════
 
 add_filter('woocommerce_available_payment_gateways', 'wellness_filter_gateways_by_currency', 999999);
@@ -425,14 +676,37 @@ function wellness_filter_gateways_by_currency($gateways)
 		return $gateways;
 	}
 
-	// ── Determine currency from cart ─────────────────────────────────────
-	$is_usd = false;
+	// ── Determine currency + payer country from the cart ─────────────────
+	$is_usd   = false;
+	$country  = '';
 
 	if (WC()->cart && ! WC()->cart->is_empty()) {
 		foreach (WC()->cart->get_cart() as $cart_item) {
-			if (wellness_get_active_currency($cart_item['data']) === 'USD') {
-				$is_usd = true;
+			if (wellness_cart_item_currency($cart_item) === 'USD') {
+				$is_usd  = true;
+				$country = wellness_cart_item_country($cart_item);
 				break;
+			}
+		}
+	} elseif (is_checkout_pay_page()) {
+		// Standalone pay-for-order (e.g. a recurring follow-up): the cart is
+		// empty, so route by the order's own currency. A USD+Egypt order is
+		// already converted to EGP at creation, so USD here means Stripe.
+		$order_id = absint(get_query_var('order-pay'));
+		$order    = $order_id ? wc_get_order($order_id) : null;
+		if ($order) {
+			$is_usd = strtoupper((string) $order->get_currency()) === 'USD';
+			if ($is_usd) {
+				// Best-effort recovery of the payer country from frozen meta.
+				foreach ($order->get_items() as $item) {
+					$appointment_id = $item->get_meta('_appointment_id');
+					if ($appointment_id) {
+						$country = get_post_meta((int) $appointment_id, '_country', true);
+						if ($country) {
+							break;
+						}
+					}
+				}
 			}
 		}
 	}
@@ -453,8 +727,10 @@ function wellness_filter_gateways_by_currency($gateways)
 		'paymob-subscription',
 	];
 
-	// ── Default: Paymob (EGP). Only USD cart switches to Stripe. ────────
-	$allowed = $is_usd ? $stripe_ids : $paymob_ids;
+	// ── Location-aware routing ───────────────────────────────────────────
+	// EGP → Paymob. USD + payer in Egypt → Paymob (converted to EGP at the
+	// order step, since Paymob doesn't convert). USD + payer elsewhere → Stripe.
+	$allowed = (! $is_usd || $country === 'EG') ? $paymob_ids : $stripe_ids;
 
 	foreach ($gateways as $id => $gateway) {
 		if (! in_array($id, $allowed, true)) {
@@ -463,6 +739,228 @@ function wellness_filter_gateways_by_currency($gateways)
 	}
 
 	return $gateways;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Live USD→EGP exchange rate (open.er-api.com, cached) — used to convert a USD
+// order to EGP for Paymob (which does not convert currencies) at order creation.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Fetch the current USD→EGP rate from open.er-api.com (free, no key, updates
+ * daily). Returns 0.0 on any failure so callers can fall back safely.
+ *
+ * @return float
+ */
+function wellness_fetch_usd_egp_rate()
+{
+	$response = wp_remote_get('https://open.er-api.com/v6/latest/USD', array(
+		'timeout'    => 10,
+		'user-agent' => 'WellnessHub/' . (defined('WP_VERSION') ? WP_VERSION : ''),
+	));
+
+	if (! is_wp_error($response) && isset($response['response']['code']) && 200 === (int) $response['response']['code']) {
+		$body = json_decode(wp_remote_retrieve_body($response), true);
+		if (is_array($body) && ! empty($body['rates']['EGP'])) {
+			return (float) $body['rates']['EGP'];
+		}
+	}
+
+	return 0.0;
+}
+
+/**
+ * USD→EGP exchange rate for converting a USD order to EGP for Paymob.
+ *
+ * The rate lives in options (not a transient) so a stale value survives expiry
+ * and checkout never blocks on the API: when the cached rate is older than 12h,
+ * a background refresh is scheduled and the stale rate is returned immediately.
+ * A synchronous fetch happens only on the very first call (no cached value).
+ * On total failure, the site option `wellness_usd_egp_fallback` is returned so
+ * a payment is never converted at 0.
+ *
+ * @return float USD→EGP rate (> 0).
+ */
+function wellness_get_usd_egp_rate()
+{
+	$rate    = (float) get_option('wellness_usd_egp_rate', 0);
+	$updated = (int) get_option('wellness_usd_egp_rate_updated', 0);
+
+	// Fresh or stale: return it; refresh in the background when stale. This
+	// never blocks a checkout request on the API.
+	if ($rate > 0) {
+		if ((time() - $updated) >= 12 * HOUR_IN_SECONDS && ! as_next_scheduled_action('wellness_refresh_usd_egp_rate')) {
+			as_schedule_single_action(time() + 60, 'wellness_refresh_usd_egp_rate');
+		}
+		return $rate;
+	}
+
+	// No cached value: never block checkout — return the fallback (never 0)
+	// and refresh in the background.
+	if (! as_next_scheduled_action('wellness_refresh_usd_egp_rate')) {
+		as_schedule_single_action(time() + 60, 'wellness_refresh_usd_egp_rate');
+	}
+	$fallback = (float) get_option('wellness_usd_egp_fallback', 30.0);
+	return $fallback <= 0 ? 30.0 : $fallback;
+}
+
+/**
+ * Prewarm the USD→EGP rate on site init so the first checkout doesn't rely on
+ * the fallback. Runs on a page load (not inside the checkout transaction) and
+ * only fetches when no rate is cached yet; stale rates are refreshed in the
+ * background by wellness_get_usd_egp_rate().
+ */
+add_action('init', 'wellness_prewarm_usd_egp_rate');
+function wellness_prewarm_usd_egp_rate()
+{
+	$rate = (float) get_option('wellness_usd_egp_rate', 0);
+	if ($rate > 0) {
+		return;
+	}
+
+	$fetched = wellness_fetch_usd_egp_rate();
+	if ($fetched > 0) {
+		update_option('wellness_usd_egp_rate', $fetched);
+		update_option('wellness_usd_egp_rate_updated', time());
+	}
+}
+
+/**
+ * Background refresh of the USD→EGP rate (scheduled when the cached value goes
+ * stale, so checkout requests are never blocked by the API call).
+ */
+add_action('wellness_refresh_usd_egp_rate', 'wellness_refresh_usd_egp_rate_callback');
+function wellness_refresh_usd_egp_rate_callback()
+{
+	$rate = wellness_fetch_usd_egp_rate();
+	if ($rate > 0) {
+		update_option('wellness_usd_egp_rate', $rate);
+		update_option('wellness_usd_egp_rate_updated', time());
+	}
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// USD → EGP conversion at order creation (Paymob charges in EGP and does not
+// convert). Only for USD orders whose payer is in Egypt; the cart/checkout
+// display stays in USD as the customer saw it.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Re-denominate a USD order to EGP when the payer is in Egypt.
+ *
+ * Runs on woocommerce_checkout_create_order (shortcode checkout, before the
+ * order is saved) and woocommerce_store_api_checkout_order_processed (blocks,
+ * after the order is saved — the wrapper saves again). Uses the frozen
+ * currency/country captured at add-to-cart so it can never disagree with the
+ * amount.
+ *
+ * @param WC_Order|int $order Order object (or ID for the block path).
+ * @return void
+ */
+function wellness_convert_order_usd_to_egp($order)
+{
+	if (! is_a($order, 'WC_Order')) {
+		$order = wc_get_order($order);
+		if (! $order) return;
+	}
+
+	// Only convert once, and only while the order is still in EGP. A resumed
+	// pending/failed order re-runs checkout with USD items and a fresh USD
+	// currency, so a stale marker must not suppress the conversion.
+	if ($order->get_meta('_usd_to_egp_converted') === 'yes' && $order->get_currency() === 'EGP') {
+		return;
+	}
+
+	// Frozen currency + country from the cart (still populated during order
+	// creation); fall back to the order's own currency for pre-fix carts.
+	$currency = '';
+	$country  = '';
+
+	if (WC()->cart && ! WC()->cart->is_empty()) {
+		foreach (WC()->cart->get_cart() as $cart_item) {
+			$currency = wellness_cart_item_currency($cart_item);
+			$country  = wellness_cart_item_country($cart_item);
+			break;
+		}
+	}
+
+	if ($currency === '') {
+		$currency = $order->get_currency();
+	}
+
+	// Only USD orders paid from Egypt are converted to EGP.
+	if ($currency !== 'USD' || $country !== 'EG') {
+		return;
+	}
+
+	$rate = wellness_get_usd_egp_rate();
+	if ($rate <= 0) {
+		return;
+	}
+
+	$decimals       = wc_get_price_decimals();
+	$original_total = round($order->get_total(), $decimals);
+
+	// Convert product line items, including their per-rate tax breakdowns.
+	foreach ($order->get_items() as $item) {
+		if (! is_a($item, 'WC_Order_Item_Product')) {
+			continue;
+		}
+		$item->set_subtotal(round($item->get_subtotal() * $rate, $decimals));
+		$item->set_total(round($item->get_total() * $rate, $decimals));
+		$item->set_subtotal_tax(round($item->get_subtotal_tax() * $rate, $decimals));
+		$item->set_total_tax(round($item->get_total_tax() * $rate, $decimals));
+
+		$taxes = $item->get_taxes();
+		foreach (array('subtotal', 'total') as $tax_key) {
+			if (isset($taxes[$tax_key]) && is_array($taxes[$tax_key])) {
+				foreach ($taxes[$tax_key] as $rate_id => $amount) {
+					$taxes[$tax_key][$rate_id] = round($amount * $rate, $decimals);
+				}
+			}
+		}
+		$item->set_taxes($taxes);
+	}
+
+	// Convert order tax line items so the admin tax breakdown matches the totals.
+	foreach ($order->get_items('tax') as $item) {
+		if (! is_a($item, 'WC_Order_Item_Tax')) {
+			continue;
+		}
+		$item->set_tax_total(round($item->get_tax_total() * $rate, $decimals));
+		$item->set_shipping_tax_total(round($item->get_shipping_tax_total() * $rate, $decimals));
+	}
+
+	// Convert order-level totals (set from the USD cart by set_data_from_cart).
+	$order->set_currency('EGP');
+	$order->set_total(round($order->get_total() * $rate, $decimals));
+	$order->set_shipping_total(round($order->get_shipping_total() * $rate, $decimals));
+	$order->set_discount_total(round($order->get_discount_total() * $rate, $decimals));
+	$order->set_cart_tax(round($order->get_cart_tax() * $rate, $decimals));
+	$order->set_shipping_tax(round($order->get_shipping_tax() * $rate, $decimals));
+	$order->set_discount_tax(round($order->get_discount_tax() * $rate, $decimals));
+
+	// Audit trail.
+	$order->update_meta_data('_usd_to_egp_converted', 'yes');
+	$order->update_meta_data('_usd_to_egp_rate', $rate);
+	$order->update_meta_data('_original_currency', 'USD');
+	$order->update_meta_data('_original_total', $original_total);
+}
+
+add_action('woocommerce_checkout_create_order', 'wellness_convert_order_usd_to_egp', 20, 1);
+
+/**
+ * Block-checkout wrapper: the order is already saved, so persist the conversion.
+ *
+ * @param WC_Order $order Order object.
+ */
+add_action('woocommerce_store_api_checkout_order_processed', 'wellness_convert_order_usd_to_egp_save', 20, 1);
+function wellness_convert_order_usd_to_egp_save($order)
+{
+	wellness_convert_order_usd_to_egp($order);
+	if (is_a($order, 'WC_Order')) {
+		$order->save();
+	}
 }
 
 // add css code to admin panel when user role is shop_staff
@@ -1028,9 +1526,18 @@ function wellness_create_recurring_appointments($from_status, $to_status, $appoi
 	if (! $order) {
 		return;
 	}
-	$currency    = $order->get_currency();
-	$customer_id = $order->get_customer_id();
-	$tz          = $order->get_meta('_customer_timezone', true);
+	$currency        = $order->get_currency();
+	$customer_id     = $order->get_customer_id();
+	$tz              = $order->get_meta('_customer_timezone', true);
+	$frozen_currency = get_post_meta($appointment_id, '_currency', true);
+	$frozen_country  = get_post_meta($appointment_id, '_country', true);
+
+	// A USD booking whose payer is in Egypt is charged in EGP (converted at the
+	// checkout step). If the parent order predates the fix and is still USD, the
+	// follow-up should still be charged in EGP.
+	if ($frozen_currency === 'USD' && $frozen_country === 'EG' && $currency !== 'EGP') {
+		$currency = 'EGP';
+	}
 
 	// Copy the parent line-item price (captures session-type / EGP / USD price).
 	$parent_item = null;
@@ -1041,12 +1548,39 @@ function wellness_create_recurring_appointments($from_status, $to_status, $appoi
 		}
 	}
 
-	$fallback_price  = (float) $product->get_price();
-	$line_subtotal   = $parent_item ? (float) $parent_item->get_subtotal() : $fallback_price;
-	$line_total      = $parent_item ? (float) $parent_item->get_total() : $fallback_price;
-	$line_tax        = $parent_item ? (float) $parent_item->get_total_tax() : 0;
-	$line_subtotal_tax = $parent_item ? (float) $parent_item->get_subtotal_tax() : 0;
-	$session_type    = $parent_item ? (string) $parent_item->get_meta('_session_type') : '';
+	if ($parent_item) {
+		$line_subtotal     = (float) $parent_item->get_subtotal();
+		$line_total        = (float) $parent_item->get_total();
+		$line_tax          = (float) $parent_item->get_total_tax();
+		$line_subtotal_tax = (float) $parent_item->get_subtotal_tax();
+
+		// A pre-fix USD parent's amounts are converted to EGP for the follow-up.
+		if ($currency === 'EGP' && strtoupper((string) $order->get_currency()) !== 'EGP') {
+			$rate              = wellness_get_usd_egp_rate();
+			$decimals          = wc_get_price_decimals();
+			$line_subtotal     = round($line_subtotal * $rate, $decimals);
+			$line_total        = round($line_total * $rate, $decimals);
+			$line_tax          = round($line_tax * $rate, $decimals);
+			$line_subtotal_tax = round($line_subtotal_tax * $rate, $decimals);
+		}
+	} else {
+		// No parent line item: derive the price from the FROZEN currency/country
+		// (never live geolocation) so the amount and currency always agree.
+		$egp_price = (float) $product->get_regular_price();
+		$usd_price = (float) get_post_meta($product_id, '_wc_usd_display_cost', true);
+
+		if ($currency === 'EGP') {
+			$line_total = ($frozen_currency === 'USD' && $usd_price > 0)
+				? round($usd_price * wellness_get_usd_egp_rate(), wc_get_price_decimals())
+				: ($egp_price > 0 ? $egp_price : $usd_price);
+		} else {
+			$line_total = $usd_price > 0 ? $usd_price : $egp_price;
+		}
+		$line_subtotal     = $line_total;
+		$line_tax          = 0;
+		$line_subtotal_tax = 0;
+	}
+	$session_type = $parent_item ? (string) $parent_item->get_meta('_session_type') : '';
 
 	for ($i = 1; $i <= $count; $i++) {
 		$offset       = '+' . ($i * $mult) . ' ' . $unit;
@@ -1128,6 +1662,10 @@ function wellness_create_recurring_appointments($from_status, $to_status, $appoi
 		if ($session_type) {
 			update_post_meta($new_appointment->get_id(), '_session_type', $session_type);
 		}
+
+		// Carry the currency/country context to the follow-up appointment.
+		update_post_meta($new_appointment->get_id(), '_currency', $frozen_currency ?: $currency);
+		update_post_meta($new_appointment->get_id(), '_country', $frozen_country);
 
 		// Detect any silent slot shift (exact slot was taken).
 		$created_start = $new_appointment->get_start();
