@@ -114,6 +114,12 @@ if ( $wc_order ) {
 $cancellation_hours = function_exists( 'get_wc_appointment_cancellation_policy_allowed_period' )
 	? (int) get_wc_appointment_cancellation_policy_allowed_period()
 	: 24;
+
+// ── Recurring chain (so the client sees the full series + confirmation status) ──
+$recurring_chain = [];
+if ( get_post_meta( $appointment->get_id(), '_recurring', true ) === 'yes' ) {
+	$recurring_chain = wellness_get_recurring_chain( $appointment );
+}
 ?>
 
 <?php do_action( 'woocommerce_email_header', 'Session Reminder', $email ); ?>
@@ -242,6 +248,32 @@ $cancellation_hours = function_exists( 'get_wc_appointment_cancellation_policy_a
 
 	</tbody>
 </table>
+
+<?php if ( ! empty( $recurring_chain ) ) : ?>
+<!-- ── Recurring appointment ────────────────────────────────────────────────── -->
+<h3 style="color: #333; font-size: 16px; font-weight: 600; margin: 0 0 8px;">
+	Your recurring sessions
+</h3>
+<ul style="margin:0 0 12px; padding:0 0 0 18px;">
+	<?php foreach ( $recurring_chain as $chain_appt ) : ?>
+		<?php
+		$chain_start = $chain_appt->get_start();
+		$is_past     = $chain_start && $chain_start < current_time( 'timestamp' );
+		$is_current  = $chain_appt->get_id() === $appointment->get_id();
+		$chain_label = $chain_start ? wellness_tz_format( $chain_start, $customer_tz, 'F j, Y \a\t g:i A' ) : '';
+		?>
+		<li>
+			<?php echo esc_html( $chain_label ); ?>
+			— <?php echo esc_html( wellness_appointment_status_label( $chain_appt->get_status() ) ); ?>
+			<?php if ( $is_past ) : ?><em> (past)</em><?php endif; ?>
+			<?php if ( $is_current ) : ?><strong> (this session)</strong><?php endif; ?>
+		</li>
+	<?php endforeach; ?>
+</ul>
+<p style="margin:0 0 24px; font-size:13px; color:#555;">
+	Each recurring session is confirmed only after payment.
+</p>
+<?php endif; ?>
 
 <!-- ── How to join ───────────────────────────────────────────────────────────── -->
 <h3 style="color: #333; font-size: 16px; font-weight: 600; margin: 0 0 8px;">

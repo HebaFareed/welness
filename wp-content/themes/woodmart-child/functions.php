@@ -3600,7 +3600,11 @@ function wellness_display_recurring_in_orders($html, $item, $args)
 	}
 
 	$html .= '<li class="wellness-recurring-note">';
-	$html .= esc_html__('You will receive a payment reminder and a confirmation for each recurring session.', 'woodmart-child');
+	$html .= esc_html(sprintf(
+		/* translators: %d: days before the appointment */
+		__('Each recurring session is confirmed only after payment — please pay at least %d day(s) before your appointment. A reminder will be sent before each session.', 'woodmart-child'),
+		wellness_get_recurring_payment_reminder_days()
+	));
 	$html .= '</li>';
 
 	return $html;
@@ -3763,6 +3767,145 @@ function wellness_compute_recurring_dates($start_ts, $interval, $count, $tz = nu
 }
 
 /**
+ * Get the full recurring chain (root + follow-ups) for an appointment, sorted by start time.
+ *
+ * @param WC_Appointment $appointment An appointment that is (or belongs to) a recurring series.
+ * @return WC_Appointment[]
+ */
+function wellness_get_recurring_chain($appointment)
+{
+	if (! $appointment) return [];
+
+	$root_id = $appointment->get_parent_id() > 0 ? $appointment->get_parent_id() : $appointment->get_id();
+	$root    = get_wc_appointment($root_id);
+	if (! $root) return [];
+
+	$children = get_posts(array(
+		'post_type'   => 'wc_appointment',
+		'post_status' => 'any',
+		'meta_query'  => array(
+			array('key' => '_appointment_parent_id', 'value' => $root_id),
+		),
+		'fields' => 'ids',
+	));
+
+	$chain = [];
+	foreach (array_merge(array($root_id), $children) as $id) {
+		$a = get_wc_appointment($id);
+		if ($a) $chain[] = $a;
+	}
+
+	usort($chain, function ($a, $b) {
+		return $a->get_start() - $b->get_start();
+	});
+
+	return $chain;
+}
+
+/**
+ * Human-friendly label for an appointment status.
+ */
+function wellness_appointment_status_label($status)
+{
+	$labels = [
+		'unpaid'               => __('Unpaid (pending payment)', 'woodmart-child'),
+		'paid'                 => __('Paid', 'woodmart-child'),
+		'confirmed'            => __('Confirmed', 'woodmart-child'),
+		'complete'             => __('Completed', 'woodmart-child'),
+		'cancelled'            => __('Cancelled', 'woodmart-child'),
+		'pending-confirmation' => __('Pending confirmation', 'woodmart-child'),
+		'in-cart'              => __('In cart', 'woodmart-child'),
+		'was-in-cart'          => __('Was in cart', 'woodmart-child'),
+	];
+	return isset($labels[$status]) ? $labels[$status] : ucfirst(str_replace('-', ' ', $status));
+}
+
+/**
+ * Render a compact recurring chain list (dates + status + past) for admin views.
+ *
+ * @param WC_Appointment $appointment Any appointment in a recurring series.
+ */
+function wellness_render_recurring_chain($appointment)
+{
+	$chain = wellness_get_recurring_chain($appointment);
+	if (empty($chain)) return;
+
+	echo '<div class="wellness-recurring-chain" style="margin:10px 0; padding:10px 12px; background:#f7f7f7; border-left:4px solid #4f7cff;">';
+	echo '<h4 style="margin:0 0 8px; font-size:13px;">' . esc_html__('Recurring Appointment', 'woodmart-child') . '</h4>';
+	echo '<ul style="margin:0; padding:0 0 0 16px;">';
+	foreach ($chain as $a) {
+		$start      = $a->get_start();
+		$is_past    = $start && $start < current_time('timestamp');
+		$is_current = $a->get_id() === $appointment->get_id();
+		$label      = $start ? date_i18n('F j, Y g:i A', $start) : '';
+		printf(
+			'<li>%s — %s%s%s</li>',
+			esc_html($label),
+			esc_html(wellness_appointment_status_label($a->get_status())),
+			$is_past ? ' <em>(past)</em>' : '',
+			$is_current ? ' <strong>(this)</strong>' : ''
+		);
+	}
+	echo '</ul></div>';
+}
+
+/**
+ * Show the recurring chain on the admin order edit page.
+ */
+add_action('woocommerce_admin_order_data_after_order_details', 'wellness_show_recurring_on_order');
+function wellness_show_recurring_on_order($order)
+{
+	if (! $order instanceof WC_Order) return;
+
+	$appointment_ids = class_exists('WC_Appointment_Data_Store')
+		? WC_Appointment_Data_Store::get_appointment_ids_from_order_id($order->get_id())
+		: array();
+	if (empty($appointment_ids)) return;
+
+	$appointment = get_wc_appointment($appointment_ids[0]);
+	if (! $appointment) return;
+
+	$root_id = $appointment->get_parent_id() > 0 ? $appointment->get_parent_id() : $appointment->get_id();
+	if (get_post_meta($root_id, '_recurring', true) !== 'yes') return;
+
+	wellness_render_recurring_chain($appointment);
+}
+
+/**
+ * Add a recurring-chain metabox on the wc_appointment admin edit screen.
+ */
+add_action('add_meta_boxes', 'wellness_recurring_admin_metabox', 10, 2);
+function wellness_recurring_admin_metabox($post_type, $post)
+{
+	if ($post_type !== 'wc_appointment' || ! $post) return;
+
+	$appointment = get_wc_appointment($post->ID);
+	if (! $appointment) return;
+
+	$root_id = $appointment->get_parent_id() > 0 ? $appointment->get_parent_id() : $appointment->get_id();
+	if (get_post_meta($root_id, '_recurring', true) !== 'yes') return;
+
+	add_meta_box(
+		'wellness_recurring_chain',
+		__('Recurring Appointment', 'woodmart-child'),
+		'wellness_recurring_admin_metabox_cb',
+		'wc_appointment',
+		'side',
+		'high'
+	);
+}
+
+function wellness_recurring_admin_metabox_cb($post)
+{
+	$appointment = get_wc_appointment($post->ID);
+	if (! $appointment) {
+		echo '<p>&mdash;</p>';
+		return;
+	}
+	wellness_render_recurring_chain($appointment);
+}
+
+/**
  * Append the recurring schedule + pay/confirm note to cart and checkout review item data.
  */
 add_filter('woocommerce_get_item_data', 'wellness_recurring_cart_item_data', 10, 2);
@@ -3787,7 +3930,10 @@ function wellness_recurring_cart_item_data($item_data, $cart_item)
 
 	$item_data[] = [
 		'name'  => __('Payment & confirmation', 'woodmart-child'),
-		'value' => __('You will receive a payment reminder and a confirmation for each recurring session.', 'woodmart-child'),
+		'value' => sprintf(
+			__('Each recurring session is confirmed only after payment — please pay at least %d day(s) before your appointment. A reminder will be sent before each session.', 'woodmart-child'),
+			wellness_get_recurring_payment_reminder_days()
+		),
 	];
 
 	return $item_data;
@@ -3870,8 +4016,9 @@ function wellness_recurring_preview()
 	$max_tstamp = strtotime("+{$max_date['value']} {$max_date['unit']}");
 
 	$results = [];
-	for ($i = 1; $i <= $count; $i++) {
-		$target_start = strtotime('+' . ($i * $mult) . ' ' . $unit, $base_start);
+	// Include the first (booked) session plus each follow-up, so the client sees the full schedule.
+	for ($i = 0; $i <= $count; $i++) {
+		$target_start = $i === 0 ? $base_start : strtotime('+' . ($i * $mult) . ' ' . $unit, $base_start);
 		if ($target_start === false || $target_start > $max_tstamp) {
 			continue;
 		}
@@ -3937,10 +4084,11 @@ function wellness_recurring_form_js($position, $product_id)
 	$nonce     = wp_create_nonce('wellness_recurring_preview');
 	$ajax_url  = admin_url('admin-ajax.php');
 	$max_count = max(1, intval(get_post_meta($product_id, '_wc_appointment_max_repeat_count', true) ?: 2));
+	$reminder_days = wellness_get_recurring_payment_reminder_days();
 ?>
 	<style>
 		/* Hide repeat interval + count until the toggle is checked. */
-		#wc-appointments-appointment-form .wellness-recurring-lead { display: none !important; }
+		#wc-appointments-appointment-form .wellness-recurring-lead { display: none; }
 		#wc-appointments-appointment-form .wellness-recurring-preview {
 			margin: 10px 0;
 			padding: 10px 12px;
@@ -4002,6 +4150,10 @@ function wellness_recurring_form_js($position, $product_id)
 				html += '<li>' + (s.display || (s.date + ' at ' + s.time)) + (s.shifted ? '<em>' + s.notice + '</em>' : '') + '</li>';
 			});
 			html += '</ul>';
+			html += '<p class="wellness-recurring-preview-note"><?php echo esc_js(sprintf(
+				__('Each recurring session is confirmed only after payment — please pay at least %d day(s) before your appointment.', 'woodmart-child'),
+				$reminder_days
+			)); ?></p>';
 			$pv.html(html).show();
 		}
 

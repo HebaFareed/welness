@@ -92,6 +92,13 @@ if ( $recurring === 'yes' ) {
 	}
 }
 
+// Full recurring chain with statuses (root + follow-ups), so the therapist sees
+// which sessions are confirmed, pending payment, or already past.
+$recurring_chain = [];
+if ( $recurring === 'yes' ) {
+	$recurring_chain = wellness_get_recurring_chain( $appointment );
+}
+
 // ── Price & discount ─────────────────────────────────────────────────────────
 $price_display    = '';
 $discount_display = '';
@@ -271,15 +278,28 @@ $appointment_url = admin_url( 'post.php?post=' . $appointment->get_id() . '&acti
 				<?php echo esc_html( $recurring_label ); ?>
 			</td>
 		</tr>
-			<?php if ( ! empty( $recurring_rows ) ) : ?>
+			<?php if ( ! empty( $recurring_chain ) ) : ?>
 			<tr>
 				<th style="text-align: <?php esc_attr_e( $text_align ); ?>; background: #f7f7f7; width: 38%; padding: 10px 14px; font-weight: 600;">
-					Scheduled sessions
+					Recurring sessions
 				</th>
 				<td style="text-align: <?php esc_attr_e( $text_align ); ?>; padding: 10px 14px;">
 					<ul style="margin:0; padding:0 0 0 18px;">
-						<?php foreach ( $recurring_rows as $row ) : ?>
-							<li><?php echo esc_html( $row ); ?></li>
+						<?php foreach ( $recurring_chain as $chain_appt ) : ?>
+							<?php
+							$chain_start = $chain_appt->get_start();
+							$is_past     = $chain_start && $chain_start < current_time( 'timestamp' );
+							$is_current  = $chain_appt->get_id() === $appointment->get_id();
+							$chain_label = $chain_start
+								? ( $staff_tz ? wellness_tz_format( $chain_start, $staff_tz, 'F j, Y \a\t g:i A' ) : date_i18n( 'F j, Y \a\t g:i A', $chain_start ) )
+								: '';
+							?>
+							<li>
+								<?php echo esc_html( $chain_label ); ?>
+								— <?php echo esc_html( wellness_appointment_status_label( $chain_appt->get_status() ) ); ?>
+								<?php if ( $is_past ) : ?><em> (past)</em><?php endif; ?>
+								<?php if ( $is_current ) : ?><strong> (this booking)</strong><?php endif; ?>
+							</li>
 						<?php endforeach; ?>
 					</ul>
 				</td>
