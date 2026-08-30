@@ -118,6 +118,22 @@ $cancellation_hours = function_exists( 'get_wc_appointment_cancellation_policy_a
 	? (int) get_wc_appointment_cancellation_policy_allowed_period()
 	: 24;
 
+// ── Recurring schedule (parent + follow-up dates) ────────────────────────────
+$recurring          = get_post_meta( $appointment->get_id(), '_recurring', true );
+$recurring_interval = get_post_meta( $appointment->get_id(), '_recurring_interval', true );
+$recurring_count    = absint( get_post_meta( $appointment->get_id(), '_recurring_count', true ) );
+$recurring_rows     = [];
+
+if ( $recurring === 'yes' && $start_timestamp ) {
+	list( $unit, $mult ) = wellness_recurring_interval_map( $recurring_interval );
+	for ( $i = 0; $i <= $recurring_count; $i++ ) {
+		$ts = $i === 0 ? $start_timestamp : strtotime( '+' . ( $i * $mult ) . ' ' . $unit, $start_timestamp );
+		if ( $ts ) {
+			$recurring_rows[] = wellness_tz_format( $ts, $customer_tz, 'F j, Y \a\t g:i A' );
+		}
+	}
+}
+
 ?>
 
 <?php do_action( 'woocommerce_email_header', 'New Session Booked', $email ); ?>
@@ -245,6 +261,21 @@ $cancellation_hours = function_exists( 'get_wc_appointment_cancellation_policy_a
 
 	</tbody>
 </table>
+
+<?php if ( ! empty( $recurring_rows ) ) : ?>
+<!-- ── Recurring sessions ─────────────────────────────────────────────────── -->
+<h3 style="color: #333; font-size: 16px; font-weight: 600; margin: 0 0 8px;">
+	Your recurring sessions
+</h3>
+<ul style="margin:0 0 12px; padding:0 0 0 18px;">
+	<?php foreach ( $recurring_rows as $row ) : ?>
+		<li><?php echo esc_html( $row ); ?></li>
+	<?php endforeach; ?>
+</ul>
+<p style="margin:0 0 24px; font-size:13px; color:#555;">
+	Each follow-up session is booked separately and paid separately — you'll receive a payment reminder before each one.
+</p>
+<?php endif; ?>
 
 <!-- ── How to join ───────────────────────────────────────────────────────────── -->
 <h3 style="color: #333; font-size: 16px; font-weight: 600; margin: 0 0 8px;">

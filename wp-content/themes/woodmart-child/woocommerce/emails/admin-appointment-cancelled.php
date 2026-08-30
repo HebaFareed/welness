@@ -93,6 +93,9 @@ if ( $wc_order ) {
 }
 
 // ── Dashboard link ────────────────────────────────────────────────────────────
+// ── Unpaid recurring cancellation flag ────────────────────────────────────────
+$unpaid_recurring = get_post_meta( $appointment->get_id(), '_recurring_unpaid_cancelled', true ) === 'yes';
+
 $dashboard_url = admin_url('edit.php?post_type=wc_appointment');
 ?>
 
@@ -101,8 +104,25 @@ $dashboard_url = admin_url('edit.php?post_type=wc_appointment');
 <!-- ── Intro ─────────────────────────────────────────────────────────────── -->
 <p style="margin: 0 0 8px;">Hello,</p>
 <p style="margin: 0 0 24px;">
-	This is to inform you that the following therapy session has been cancelled by the client.
+	This is to inform you that the following therapy session has been cancelled.
 </p>
+
+<?php if ( $unpaid_recurring ) : ?>
+<!-- ── Unpaid recurring notice ────────────────────────────────────────────── -->
+<table cellpadding="0" cellspacing="0" border="0"
+	style="width:100%; background:#fff8e1; border-left:4px solid #f9a825; margin:0 0 24px; border-collapse:collapse;">
+	<tr>
+		<td style="padding:16px 20px;">
+			<p style="margin:0 0 8px; font-weight:700; font-size:14px; color:#a15c00;">
+				&#9888; Unpaid recurring appointment
+			</p>
+			<p style="margin:0; font-size:13px; color:#555; line-height:1.7;">
+				This was a recurring appointment that was not paid on time, so it was automatically cancelled.
+			</p>
+		</td>
+	</tr>
+</table>
+<?php endif; ?>
 
 <!-- ── Session details box ───────────────────────────────────────────────── -->
 <h2 style="color: #333; font-size: 18px; font-weight: 600; margin: 0 0 12px;">

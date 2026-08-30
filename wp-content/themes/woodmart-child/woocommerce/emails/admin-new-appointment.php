@@ -53,36 +53,40 @@ if ( $wc_order ) {
 	}
 }
 
-// ── Repeat / interval from order item addons ──────────────────────────────────
-$repeat_appt = '';
-$interval    = '';
+// ── Recurring (replaces Product Add-Ons "Repeat Appointment" parsing) ────────
+$recurring          = get_post_meta( $appointment->get_id(), '_recurring', true );
+$recurring_interval = get_post_meta( $appointment->get_id(), '_recurring_interval', true );
+$recurring_count    = absint( get_post_meta( $appointment->get_id(), '_recurring_count', true ) );
 
-if ( $wc_order ) {
+// Fallback to order item meta (set by wellness_add_recurring_to_order_item).
+if ( $recurring !== 'yes' && $wc_order ) {
 	foreach ( $wc_order->get_items() as $item ) {
-		$addons_html = $item->get_meta( '_tmcartepo_data' ) ?: $item->get_meta( 'Items' ) ?: '';
-
-		// Try standard WC Product Addons meta (stored as line-item meta)
-		foreach ( $item->get_meta_data() as $meta ) {
-			$key = strtolower( $meta->key );
-			$val = $meta->value;
-			if ( strpos( $key, 'repeat' ) !== false ) {
-				$repeat_appt = is_array( $val ) ? implode( ', ', $val ) : $val;
-			}
-			if ( $key === 'interval' ) {
-				$interval = is_array( $val ) ? implode( ', ', $val ) : $val;
-			}
+		if ( $item->get_meta( '_recurring' ) === 'yes' ) {
+			$recurring          = 'yes';
+			$recurring_interval = $item->get_meta( '_recurring_interval' );
+			$recurring_count    = absint( $item->get_meta( '_recurring_count' ) );
+			break;
 		}
+	}
+}
 
-		// Fallback: parse from the formatted addons HTML string stored on the appointment
-		if ( empty( $repeat_appt ) ) {
-			$addons_raw = $appointment->get_addons();
-			if ( $addons_raw ) {
-				if ( preg_match( '!Repeat Appointment:</strong>\s*<p>(.*?)</p>!', $addons_raw, $m ) ) {
-					$repeat_appt = $m[1];
-				}
-				if ( preg_match( '!Interval:</strong>\s*<p>(.*?)</p>!', $addons_raw, $m ) ) {
-					$interval = $m[1];
-				}
+$recurring_label = '';
+$recurring_rows  = [];
+if ( $recurring === 'yes' ) {
+	$labels = [
+		'weekly'   => __( 'Weekly', 'woocommerce-appointments' ),
+		'biweekly' => __( 'Bi-Weekly', 'woocommerce-appointments' ),
+		'monthly'  => __( 'Monthly', 'woocommerce-appointments' ),
+	];
+	$interval_label  = isset( $labels[ $recurring_interval ] ) ? $labels[ $recurring_interval ] : $recurring_interval;
+	$recurring_label = $interval_label . ' &times; ' . $recurring_count;
+
+	if ( $start_timestamp ) {
+		list( $unit, $mult ) = wellness_recurring_interval_map( $recurring_interval );
+		for ( $i = 0; $i <= $recurring_count; $i++ ) {
+			$ts = $i === 0 ? $start_timestamp : strtotime( '+' . ( $i * $mult ) . ' ' . $unit, $start_timestamp );
+			if ( $ts ) {
+				$recurring_rows[] = date_i18n( 'F j, Y', $ts ) . ' ' . ( $staff_tz ? wellness_tz_format( $ts, $staff_tz, 'g:i A' ) : '' );
 			}
 		}
 	}
@@ -258,26 +262,29 @@ $appointment_url = admin_url( 'post.php?post=' . $appointment->get_id() . '&acti
 		</tr>
 		<?php endif; ?>
 
-		<?php if ( ! empty( $repeat_appt ) ) : ?>
+		<?php if ( $recurring === 'yes' ) : ?>
 		<tr>
 			<th style="text-align: <?php esc_attr_e( $text_align ); ?>; background: #f7f7f7; width: 38%; padding: 10px 14px; font-weight: 600;">
-				Repeat Appt
+				Recurring
 			</th>
 			<td style="text-align: <?php esc_attr_e( $text_align ); ?>; padding: 10px 14px;">
-				<?php echo esc_html( $repeat_appt ); ?>
+				<?php echo esc_html( $recurring_label ); ?>
 			</td>
 		</tr>
-		<?php endif; ?>
-
-		<?php if ( ! empty( $interval ) ) : ?>
-		<tr>
-			<th style="text-align: <?php esc_attr_e( $text_align ); ?>; background: #f7f7f7; width: 38%; padding: 10px 14px; font-weight: 600;">
-				Interval
-			</th>
-			<td style="text-align: <?php esc_attr_e( $text_align ); ?>; padding: 10px 14px;">
-				<?php echo esc_html( $interval ); ?>
-			</td>
-		</tr>
+			<?php if ( ! empty( $recurring_rows ) ) : ?>
+			<tr>
+				<th style="text-align: <?php esc_attr_e( $text_align ); ?>; background: #f7f7f7; width: 38%; padding: 10px 14px; font-weight: 600;">
+					Scheduled sessions
+				</th>
+				<td style="text-align: <?php esc_attr_e( $text_align ); ?>; padding: 10px 14px;">
+					<ul style="margin:0; padding:0 0 0 18px;">
+						<?php foreach ( $recurring_rows as $row ) : ?>
+							<li><?php echo esc_html( $row ); ?></li>
+						<?php endforeach; ?>
+					</ul>
+				</td>
+			</tr>
+			<?php endif; ?>
 		<?php endif; ?>
 
 	</tbody>

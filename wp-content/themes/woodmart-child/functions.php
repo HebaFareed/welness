@@ -643,22 +643,34 @@ function wellness_product_meta_box_callback()
 {
 	global $post;
 	$product_id = $post->ID;
-	$_wc_appointment_booking_type = get_post_meta($product_id, '_wc_appointment_booking_type', true) ?? 'single';
-	$recurring_type = get_post_meta($product_id, '_wc_appointment_recurring_type', true);
+	// ── DEPRECATED (2026-08-30): legacy booking/recurring type vars commented out. ──
+	// $_wc_appointment_booking_type = get_post_meta($product_id, '_wc_appointment_booking_type', true) ?? 'single';
+	// $recurring_type = get_post_meta($product_id, '_wc_appointment_recurring_type', true);
 
-	$recurring_types = array(
-		'weekly' => 'Weekly',
-		'every_other_week' => 'Every Other Week',
-		'monthly' => 'Monthly',
-	);
+	// $recurring_types = array(
+	// 	'weekly' => 'Weekly',
+	// 	'every_other_week' => 'Every Other Week',
+	// 	'monthly' => 'Monthly',
+	// );
 
-	$recurring_type_options = '<option value="">Select Recurring Type</option>';
-	foreach ($recurring_types as $key => $value) {
-		$selected = $recurring_type == $key ? 'selected' : '';
-		$recurring_type_options .= "<option value='$key' $selected>$value</option>";
-	}
+	// $recurring_type_options = '<option value="">Select Recurring Type</option>';
+	// foreach ($recurring_types as $key => $value) {
+	// 	$selected = $recurring_type == $key ? 'selected' : '';
+	// 	$recurring_type_options .= "<option value='$key' $selected>$value</option>";
+	// }
 
 	$recurring_type_html = '<div class="options_group">';
+
+	// ── Enable Recurring toggle (default ON) ─────────────────────────────
+	$enable_recurring = get_post_meta($product_id, '_wc_appointment_enable_recurring', true);
+	$enable_recurring = ($enable_recurring === '') ? 'yes' : $enable_recurring; // default ON
+
+	$recurring_type_html .= '
+	<p class="form-field">
+		<label for="_wc_appointment_enable_recurring">Enable Recurring</label>
+		<input type="checkbox" name="_wc_appointment_enable_recurring" id="_wc_appointment_enable_recurring" value="yes" ' . checked($enable_recurring, 'yes', false) . ' />
+		<span class="description">Let clients repeat this appointment (choose interval &amp; number of repeats). Disable for single-session products.</span>
+	</p>';
 
 	$max_repeat_count = get_post_meta($product_id, '_wc_appointment_max_repeat_count', true);
 	$max_repeat_count = ($max_repeat_count !== '') ? intval($max_repeat_count) : 2;
@@ -781,37 +793,42 @@ function wellness_product_meta_box_callback()
 add_action('save_post', 'save_wellness_product_meta_box');
 function save_wellness_product_meta_box($post_id)
 {
-	if (array_key_exists('_wc_appointment_recurring_type', $_POST)) {
-		update_post_meta(
-			$post_id,
-			'_wc_appointment_recurring_type',
-			$_POST['_wc_appointment_recurring_type']
-		);
-	}
+	// ── DEPRECATED (2026-08-30): legacy recurring meta commented out. ──────
+	// if (array_key_exists('_wc_appointment_recurring_type', $_POST)) {
+	// 	update_post_meta(
+	// 		$post_id,
+	// 		'_wc_appointment_recurring_type',
+	// 		$_POST['_wc_appointment_recurring_type']
+	// 	);
+	// }
 
-	if (array_key_exists('_wc_appointment_booking_type', $_POST)) {
-		update_post_meta(
-			$post_id,
-			'_wc_appointment_booking_type',
-			$_POST['_wc_appointment_booking_type']
-		);
-	}
+	// if (array_key_exists('_wc_appointment_booking_type', $_POST)) {
+	// 	update_post_meta(
+	// 		$post_id,
+	// 		'_wc_appointment_booking_type',
+	// 		$_POST['_wc_appointment_booking_type']
+	// 	);
+	// }
 
-	if (array_key_exists('_wc_appointment_recurring_end_length', $_POST)) {
-		update_post_meta(
-			$post_id,
-			'_wc_appointment_recurring_end_length',
-			$_POST['_wc_appointment_recurring_end_length']
-		);
-	}
+	// if (array_key_exists('_wc_appointment_recurring_end_length', $_POST)) {
+	// 	update_post_meta(
+	// 		$post_id,
+	// 		'_wc_appointment_recurring_end_length',
+	// 		$_POST['_wc_appointment_recurring_end_length']
+	// 	);
+	// }
 
-	if (array_key_exists('_wc_appointment_recurring_end_unit', $_POST)) {
-		update_post_meta(
-			$post_id,
-			'_wc_appointment_recurring_end_unit',
-			$_POST['_wc_appointment_recurring_end_unit']
-		);
-	}
+	// if (array_key_exists('_wc_appointment_recurring_end_unit', $_POST)) {
+	// 	update_post_meta(
+	// 		$post_id,
+	// 		'_wc_appointment_recurring_end_unit',
+	// 		$_POST['_wc_appointment_recurring_end_unit']
+	// 	);
+	// }
+
+	// ── Enable Recurring toggle ──────────────────────────────────────────
+	$enable_recurring = isset($_POST['_wc_appointment_enable_recurring']) && $_POST['_wc_appointment_enable_recurring'] === 'yes' ? 'yes' : 'no';
+	update_post_meta($post_id, '_wc_appointment_enable_recurring', $enable_recurring);
 
 	if (array_key_exists('_wc_appointment_max_repeat_count', $_POST)) {
 		update_post_meta(
@@ -845,33 +862,35 @@ function save_wellness_product_meta_box($post_id)
 }
 
 // add to product description that the product is recurring
-add_action('woocommerce_single_product_summary', 'add_recurring_product_description', 20);
-add_action('woocommerce_before_add_to_cart_button', 'add_recurring_product_description', 20);
-function add_recurring_product_description()
-{
-	global $product;
-	$product_id = $product->get_id();
-	$booking_type = get_post_meta($product_id, '_wc_appointment_booking_type', true);
-	$recurring_type = get_post_meta($product_id, '_wc_appointment_recurring_type', true);
+// DEPRECATED (2026-08-30): legacy recurring description commented out. Recurring
+// is now driven by the `_wc_appointment_enable_recurring` toggle + frontend fields.
+// add_action('woocommerce_single_product_summary', 'add_recurring_product_description', 20);
+// add_action('woocommerce_before_add_to_cart_button', 'add_recurring_product_description', 20);
+// function add_recurring_product_description()
+// {
+// 	global $product;
+// 	$product_id = $product->get_id();
+// 	$booking_type = get_post_meta($product_id, '_wc_appointment_booking_type', true);
+// 	$recurring_type = get_post_meta($product_id, '_wc_appointment_recurring_type', true);
 
-	if ($booking_type == 'recurring') {
-		$recurring_types = array(
-			'weekly' => 'Weekly',
-			'every_other_week' => 'Every Other Week',
-			'monthly' => 'Monthly',
-		);
+// 	if ($booking_type == 'recurring') {
+// 		$recurring_types = array(
+// 			'weekly' => 'Weekly',
+// 			'every_other_week' => 'Every Other Week',
+// 			'monthly' => 'Monthly',
+// 		);
 
-		$end_period_length = get_post_meta($product_id, '_wc_appointment_recurring_end_length', true) ?? 1;
-		$end_period_unit = get_post_meta($product_id, '_wc_appointment_recurring_end_unit', true) ?? 'month';
+// 		$end_period_length = get_post_meta($product_id, '_wc_appointment_recurring_end_length', true) ?? 1;
+// 		$end_period_unit = get_post_meta($product_id, '_wc_appointment_recurring_end_unit', true) ?? 'month';
 
-		if ($end_period_length && $end_period_unit) {
-			$end_period_label = $end_period_length . ' ' . $end_period_unit;
-			echo "<p>This is a recurring product, it will be repeated " . $recurring_types[$recurring_type] . " from the first appointment till " . $end_period_label . ".</p>";
-		} else {
-			echo "<p>This is a recurring product, it will be repeated " . $recurring_types[$recurring_type] . " from the first appointment.</p>";
-		}
-	}
-}
+// 		if ($end_period_length && $end_period_unit) {
+// 			$end_period_label = $end_period_length . ' ' . $end_period_unit;
+// 			echo "<p>This is a recurring product, it will be repeated " . $recurring_types[$recurring_type] . " from the first appointment till " . $end_period_label . ".</p>";
+// 		} else {
+// 			echo "<p>This is a recurring product, it will be repeated " . $recurring_types[$recurring_type] . " from the first appointment.</p>";
+// 		}
+// 	}
+// }
 
 add_filter('woocommerce_loop_add_to_cart_link', 'custom_replace_add_to_cart_button', 10, 2);
 
@@ -887,186 +906,309 @@ function custom_replace_add_to_cart_button($button, $product)
 }
 
 // get product addon value on order creation
-function get_product_addon_value($from_status, $to_status, $appointment_id)
+/**
+ * Create recurring follow-up appointments + orders when the parent (first)
+ * appointment is paid. Replaces the old WooCommerce Product Add-Ons approach.
+ *
+ * Each follow-up appointment is created as 'unpaid' and linked to a new
+ * 'pending' order, so the standard payment flow (order paid → appointment
+ * paid → confirmed) triggers client + therapist confirmation emails.
+ */
+function wellness_create_recurring_appointments($from_status, $to_status, $appointment_id)
 {
-	// Only trigger on the paid transition to avoid duplicates on subsequent status changes (e.g. paid -> confirmed).
+	// Only trigger on the paid transition to avoid duplicates on later status changes (paid -> confirmed).
 	if ($to_status !== 'paid') {
 		return;
 	}
 
 	$appointment = get_wc_appointment($appointment_id);
+	if (! $appointment) {
+		return;
+	}
+
+	// Only the first appointment of a recurring series triggers creation.
+	if ($appointment->get_parent_id() > 0) {
+		return;
+	}
+
+	// Read recurrence settings (set on the parent appointment by wellness_persist_recurring).
+	$recurring = get_post_meta($appointment_id, '_recurring', true);
+	if ($recurring !== 'yes') {
+		return;
+	}
+
+	$interval = get_post_meta($appointment_id, '_recurring_interval', true);
+	$count    = absint(get_post_meta($appointment_id, '_recurring_count', true));
+	if (! $interval || $count <= 0) {
+		return;
+	}
+
 	$product_id = $appointment->get_product_id();
-	$product = wc_get_product($product_id);
-	$addons = $appointment->get_addons();
-	if ($appointment->get_parent_id() <= 0) {
-		if (empty($addons)) {
-			return;
+	$product    = wc_get_product($product_id);
+	if (! $product) {
+		return;
+	}
+
+	// The product must still allow recurring (default ON).
+	$enable = get_post_meta($product_id, '_wc_appointment_enable_recurring', true);
+	$enable = ($enable === '') ? 'yes' : $enable;
+	if ($enable !== 'yes') {
+		return;
+	}
+
+	// Cap against the product-level maximum.
+	$max_count = max(1, intval(get_post_meta($product_id, '_wc_appointment_max_repeat_count', true) ?: 2));
+	$count     = min($count, $max_count);
+
+	// Confirm follow-ups aren't already created.
+	$existing = get_posts(array(
+		'post_type'   => 'wc_appointment',
+		'post_status' => 'any',
+		'meta_query'  => array(
+			array('key' => '_appointment_parent_id', 'value' => $appointment_id),
+		),
+		'fields' => 'ids',
+	));
+	if (! empty($existing)) {
+		return;
+	}
+
+	list($unit, $mult) = wellness_recurring_interval_map($interval);
+
+	$original_start = $appointment->get_start();
+	$original_end   = $appointment->get_end();
+	$all_day        = $appointment->is_all_day();
+
+	$order = $appointment->get_order();
+	if (! $order) {
+		return;
+	}
+	$currency    = $order->get_currency();
+	$customer_id = $order->get_customer_id();
+	$tz          = $order->get_meta('_customer_timezone', true);
+
+	// Copy the parent line-item price (captures session-type / EGP / USD price).
+	$parent_item = null;
+	foreach ($order->get_items() as $item) {
+		if ((int) $item->get_product_id() === (int) $product_id || $item->get_meta('_appointment_id') == $appointment_id) {
+			$parent_item = $item;
+			break;
+		}
+	}
+
+	$fallback_price  = (float) $product->get_price();
+	$line_subtotal   = $parent_item ? (float) $parent_item->get_subtotal() : $fallback_price;
+	$line_total      = $parent_item ? (float) $parent_item->get_total() : $fallback_price;
+	$line_tax        = $parent_item ? (float) $parent_item->get_total_tax() : 0;
+	$line_subtotal_tax = $parent_item ? (float) $parent_item->get_subtotal_tax() : 0;
+	$session_type    = $parent_item ? (string) $parent_item->get_meta('_session_type') : '';
+
+	for ($i = 1; $i <= $count; $i++) {
+		$offset       = '+' . ($i * $mult) . ' ' . $unit;
+		$target_start = strtotime($offset, $original_start);
+		$target_end   = strtotime($offset, $original_end);
+		if (! $target_start || ! $target_end) {
+			continue;
 		}
 
-		// addons values is usually a string like this
-		// <ul class="wc-item-meta"><li><strong class="wc-item-meta-label">Repeat Appointment:</strong> <p>Yes</p>
-		// </li><li><strong class="wc-item-meta-label">Number:</strong> <p>1</p>
-		// </li><li><strong class="wc-item-meta-label">Interval:</strong> <p>Weekly</p>
-		// </li></ul>
-		// extract repeat appointment value from string <strong class="wc-item-meta-label">Repeat Appointment:</strong> <p>Yes</p> using regex after Repeat Appointment:
-		$repeat_count = preg_match_all('!Repeat Appointment:</strong> <p>(.*?)</p>!', $addons, $matches);
-		if ($repeat_count > 0) {
-			$repeat = $matches[1][0];
-		} else {
-			return;
+		// Create the follow-up order first so we can link the appointment to it.
+		$new_order = wc_create_order(array(
+			'customer_id' => $customer_id,
+			'created_via' => 'recurring',
+			'parent'      => $order->get_id(),
+		));
+		$new_order->set_address($order->get_address('billing'), 'billing');
+		$new_order->set_address($order->get_address('shipping'), 'shipping');
+		$new_order->set_created_via('recurring');
+		$new_order->set_currency($currency);
+		$new_order->set_payment_method($order->get_payment_method());
+		$new_order->set_payment_method_title($order->get_payment_method_title());
+		if ($tz) {
+			$new_order->update_meta_data('_customer_timezone', $tz);
 		}
-
-		if ($repeat != 'Yes') {
-			return;
+		if (! wc_tax_enabled()) {
+			$new_order->set_shipping_tax(0);
+			$new_order->set_cart_tax(0);
 		}
+		$new_order->calculate_totals();
 
-		// Extract number of repeats requested by customer (default: 1 if addon is absent/zero).
-		$count_match = preg_match_all('!Number:</strong> <p>(.*?)</p>!', $addons, $count_matches);
-		$user_count  = ($count_match > 0 && intval($count_matches[1][0]) > 0) ? intval($count_matches[1][0]) : 1;
+		$new_order_id = $new_order->get_id();
 
-		// Cap against the product-level maximum (default: 2).
-		$max_count    = max(1, intval(get_post_meta($product_id, '_wc_appointment_max_repeat_count', true) ?: 2));
-		$actual_count = min($user_count, $max_count);
-
-		// Extract interval from the Interval addon field.
-		$interval_count = preg_match_all('!Interval:</strong> <p>(.*?)</p>!', $addons, $matches);
-		if ($interval_count > 0) {
-			$interval_label = $matches[1][0];
-		} else {
-			return;
-		}
-
-		if (in_array($interval_label, ['Week', 'Weekly'])) {
-			$interval_unit       = 'week';
-			$interval_multiplier = 1;
-		} elseif (in_array($interval_label, ['Bi-Weekly', 'Biweekly', 'Every Other Week'])) {
-			$interval_unit       = 'week';
-			$interval_multiplier = 2;
-		} elseif (in_array($interval_label, ['Month', 'Monthly'])) {
-			$interval_unit       = 'month';
-			$interval_multiplier = 1;
-		} else {
-			return;
-		}
-
-		// Confirm that the follow-up appointments aren't already created.
-		$appointments = get_posts(array(
-			'post_type' => 'wc_appointment',
-			'meta_query' => array(
-				array(
-					'key' => '_appointment_product_id',
-					'value' => $product_id,
-				),
-				array(
-					'key' => '_appointment_parent_id',
-					'value' => $appointment_id,
-				),
-			),
+		$item_id = wc_add_order_item($new_order_id, array(
+			'order_item_name' => $product->get_title(),
+			'order_item_type' => 'line_item',
 		));
 
-		if (!empty($appointments)) {
-			return;
+		wc_update_order_item_meta($item_id, '_qty', 1);
+		wc_update_order_item_meta($item_id, '_tax_class', $product->get_tax_class());
+		wc_update_order_item_meta($item_id, '_product_id', $product->get_id());
+		wc_update_order_item_meta($item_id, '_variation_id', '');
+		wc_update_order_item_meta($item_id, '_line_subtotal', $line_subtotal);
+		wc_update_order_item_meta($item_id, '_line_total', $line_total);
+		wc_update_order_item_meta($item_id, '_line_tax', $line_tax);
+		wc_update_order_item_meta($item_id, '_line_subtotal_tax', $line_subtotal_tax);
+		if ($session_type) {
+			wc_update_order_item_meta($item_id, '_session_type', $session_type);
 		}
 
-		// Capture the original start/end once before looping.
-		$original_start = $appointment->get_start();
-		$original_end   = $appointment->get_end();
+		$new_order->calculate_totals();
+		$new_order->set_total($line_total + $line_tax);
+		$new_order->save();
 
-		$order_id  = $appointment->get_order_id();
-		$order     = wc_get_order($order_id);
-		$currency  = $order->get_currency();
-
-		if ($currency == 'USD') {
-			$sale_price = $product->get_meta('_wc_usd_display_sale_price');
-			if (!empty($sale_price)) {
-				$order_total = $sale_price;
-			} else {
-				$order_total = $product->get_meta('_wc_usd_display_cost');
-			}
-		} else {
-			$order_total = $product->get_price();
+		// Create the follow-up appointment as 'unpaid' linked to the pending order.
+		$new_appointment_data = array(
+			'start_date'  => $target_start,
+			'end_date'    => $target_end,
+			'staff_ids'   => $appointment->get_staff_ids(),
+			'parent_id'   => $appointment_id,
+			'customer_id' => $appointment->get_customer_id(),
+		);
+		if ($all_day) {
+			$new_appointment_data['all_day'] = true;
 		}
 
-		$customer_id = $order->get_customer_id();
-
-		// Create one follow-up appointment + order per repeat.
-		for ($i = 1; $i <= $actual_count; $i++) {
-			$offset = '+' . ($i * $interval_multiplier) . ' ' . $interval_unit;
-
-			$new_appointment_data = array(
-				'start_date'  => strtotime($offset, $original_start),
-				'end_date'    => strtotime($offset, $original_end),
-				'staff_ids'   => $appointment->get_staff_ids(),
-				'parent_id'   => $appointment_id,
-				'customer_id' => $appointment->get_customer_id(),
-				'post_parent' => $order_id,
-			);
-
-			if ($appointment->is_all_day()) {
-				$new_appointment_data['all_day'] = true;
-			}
-
-			$new_appointment = create_wc_appointment(
-				$product_id,
-				$new_appointment_data,
-				$appointment->get_status(),
-				false
-			);
-
-			$new_order = wc_create_order(array(
-				'customer_id' => $customer_id,
-				'created_via' => 'recurring',
-				'parent'      => $order_id,
-			));
-
-			$new_order->set_address($order->get_address('billing'), 'billing');
-			$new_order->set_address($order->get_address('shipping'), 'shipping');
-			$new_order->set_created_via('recurring');
-			$new_order->set_currency($currency);
-			$new_order->set_payment_method($order->get_payment_method());
-			$new_order->set_payment_method_title($order->get_payment_method_title());
-
-			if (! wc_tax_enabled()) {
-				$new_order->set_shipping_tax(0);
-				$new_order->set_cart_tax(0);
-			}
-
-			$new_order->calculate_totals();
-			$new_order_id = $new_order->get_id();
-
-			$item_id = wc_add_order_item(
-				$new_order_id,
-				[
-					'order_item_name' => $product->get_title(),
-					'order_item_type' => 'line_item',
-				]
-			);
-
-			wc_update_order_item_meta($item_id, '_qty', 1);
-			wc_update_order_item_meta($item_id, '_tax_class', $product->get_tax_class());
-			wc_update_order_item_meta($item_id, '_product_id', $product->get_id());
-			wc_update_order_item_meta($item_id, '_variation_id', '');
-			wc_update_order_item_meta($item_id, '_line_subtotal', $order_total);
-			wc_update_order_item_meta($item_id, '_line_total', $order_total);
-			wc_update_order_item_meta($item_id, '_line_tax', 0);
-			wc_update_order_item_meta($item_id, '_line_subtotal_tax', 0);
-
-			$new_order->calculate_totals();
-			$new_order->set_total($order_total);
-			$new_order->set_created_via('appointments');
-			$new_order->save();
-
-			$new_appointment->set_order_id($new_order_id);
-			$new_appointment->set_order_item_id($item_id);
-			$new_appointment->save();
-
-			$new_appointment->maybe_schedule_event('reminder');
-			$new_appointment->maybe_schedule_event('complete');
+		$new_appointment = create_wc_appointment($product_id, $new_appointment_data, 'unpaid', false);
+		if (! $new_appointment) {
+			$new_order->update_status('failed');
+			continue;
 		}
+
+		$new_appointment->set_order_id($new_order_id);
+		$new_appointment->set_order_item_id($item_id);
+		$new_appointment->save();
+
+		if ($session_type) {
+			update_post_meta($new_appointment->get_id(), '_session_type', $session_type);
+		}
+
+		// Detect any silent slot shift (exact slot was taken).
+		$created_start = $new_appointment->get_start();
+		if ($created_start != $target_start) {
+			$shift_note = sprintf(
+				/* translators: 1: requested time, 2: booked time */
+				'Recurring follow-up moved: requested %1$s, booked %2$s (the exact slot was unavailable).',
+				date_i18n('M j, Y g:i A', $target_start),
+				date_i18n('M j, Y g:i A', $created_start)
+			);
+			$new_order->add_order_note($shift_note);
+		}
+
+		$new_appointment->maybe_schedule_event('reminder');
+		$new_appointment->maybe_schedule_event('complete');
+
+		// Schedule the pay reminder + unpaid-cancel check.
+		$reminder_days = wellness_get_recurring_payment_reminder_days();
+		$reminder_ts   = $created_start - ($reminder_days * DAY_IN_SECONDS);
+		if ($reminder_ts > current_time('timestamp')) {
+			as_schedule_single_action($reminder_ts, 'wellness-appointment-payment-reminder', array($new_appointment->get_id(), $new_order_id), 'wca');
+		}
+		as_schedule_single_action($created_start, 'wellness-appointment-payment-check', array($new_appointment->get_id(), $new_order_id), 'wca');
 	}
 }
 
-add_action('woocommerce_appointment_status_changed', 'get_product_addon_value', 10, 3);
+/**
+ * Lead time (days before the appointment) for the recurring payment-reminder email.
+ */
+function wellness_get_recurring_payment_reminder_days()
+{
+	$days = intval(get_option('wellness_recurring_payment_reminder_days', 1));
+	return $days > 0 ? $days : 1;
+}
+
+/**
+ * Send the recurring "complete payment" reminder for a follow-up appointment.
+ * Hooked from the Action Scheduler job scheduled in wellness_create_recurring_appointments().
+ */
+add_action('wellness-appointment-payment-reminder', 'wellness_send_recurring_payment_reminder', 10, 2);
+function wellness_send_recurring_payment_reminder($appointment_id, $order_id)
+{
+	$appointment = get_wc_appointment($appointment_id);
+	if (! $appointment) return;
+
+	$order = wc_get_order($order_id);
+	if (! $order) return;
+
+	// Only while the follow-up order is still pending and the appointment unpaid.
+	if (! $order->has_status('pending')) return;
+	if (! in_array($appointment->get_status(), ['unpaid', 'in-cart', 'pending-confirmation'], true)) return;
+
+	$recipient = $order->get_billing_email();
+	if (empty($recipient)) return;
+
+	$customer_first_name = $order->get_billing_first_name();
+	if (empty($customer_first_name)) {
+		$_full = $order->get_meta('billing_full_name', true);
+		if ($_full) {
+			$_parts              = explode(' ', trim($_full));
+			$customer_first_name = $_parts[0];
+		}
+	}
+
+	$pay_url = $order->get_checkout_payment_url();
+
+	$mailer  = WC()->mailer();
+	$subject = __('Complete your appointment payment', 'woodmart-child');
+
+	ob_start();
+	$email_obj       = new stdClass();
+	$email_obj->id   = 'customer_appointment_payment';
+
+	wc_get_template(
+		'emails/customer-appointment-payment.php',
+		[
+			'appointment'         => $appointment,
+			'order'               => $order,
+			'pay_url'             => $pay_url,
+			'customer_first_name' => $customer_first_name,
+			'email_heading'       => __('Complete your appointment payment', 'woodmart-child'),
+			'sent_to_admin'       => false,
+			'plain_text'          => false,
+			'email'               => $email_obj,
+		],
+		'',
+		get_stylesheet_directory() . '/woocommerce/'
+	);
+	$message = ob_get_clean();
+
+	$message = $mailer->wrap_message($subject, $message);
+	$mailer->send($recipient, $subject, $message, $mailer->get_headers(), []);
+}
+
+/**
+ * Auto-cancel an unpaid recurring follow-up appointment at its start time and
+ * notify the therapist. Hooked from the Action Scheduler job scheduled in
+ * wellness_create_recurring_appointments().
+ */
+add_action('wellness-appointment-payment-check', 'wellness_cancel_unpaid_recurring_appointment', 10, 2);
+function wellness_cancel_unpaid_recurring_appointment($appointment_id, $order_id)
+{
+	$appointment = get_wc_appointment($appointment_id);
+	if (! $appointment) return;
+
+	// Only cancel if the appointment is still unpaid / not yet confirmed.
+	if (! in_array($appointment->get_status(), ['unpaid', 'in-cart', 'pending-confirmation'], true)) return;
+
+	// Flag it so the admin email template can explain the reason (Phase 7).
+	update_post_meta($appointment_id, '_recurring_unpaid_cancelled', 'yes');
+
+	// Cancel the appointment — fires the admin(staff) and customer
+	// appointment-cancelled emails via the plugin's status transition hooks.
+	$appointment->update_status('cancelled');
+
+	// Cancel the still-pending follow-up order and suppress the generic
+	// "order cancelled" email (the appointment-cancelled email already covers
+	// the customer). Add an order note so the therapist sees the reason.
+	$order = wc_get_order($order_id);
+	if ($order && $order->has_status('pending')) {
+		add_filter('woocommerce_email_enabled_customer_cancelled_order', function ($enabled, $o) use ($order) {
+			return ($o && $o->get_id() === $order->get_id()) ? false : $enabled;
+		}, 10, 2);
+
+		$order->update_status('cancelled', __('Recurring appointment was not paid and has been cancelled.', 'woodmart-child'));
+	}
+}
+
+add_action('woocommerce_appointment_status_changed', 'wellness_create_recurring_appointments', 10, 3);
 add_filter('wc_products_array_filter_readable', 'restrict_products_to_staff_based_on_role', 10, 2);
 function restrict_products_to_staff_based_on_role($products, $staff_id)
 {
@@ -1286,6 +1428,21 @@ function wellness_customize_register($wp_customize)
 		'type' => 'number',
 		'settings' => 'wc_appointment_cancellation_fee_usd',
 	));
+
+	// ── Recurring Appointments section ─────────────────────────────────────
+	$wp_customize->add_section('wellness_recurring_section', array(
+		'title' => __('Recurring Appointments', 'woodmart-child'),
+		'priority' => 35,
+	));
+	$wp_customize->add_setting('wellness_recurring_payment_reminder_days', array(
+		'default' => 1,
+	));
+	$wp_customize->add_control('wellness_recurring_payment_reminder_days', array(
+		'label' => __('Recurring payment reminder (days before)', 'woodmart-child'),
+		'section' => 'wellness_recurring_section',
+		'type' => 'number',
+		'settings' => 'wellness_recurring_payment_reminder_days',
+	));
 }
 
 
@@ -1306,6 +1463,17 @@ function save_wc_appointment_cancellation_policy_settings()
 	// save the cancellation fee in USD
 	if (isset($_POST['wc_appointment_cancellation_fee_usd'])) {
 		update_option('wc_appointment_cancellation_fee_usd', sanitize_text_field($_POST['wc_appointment_cancellation_fee_usd']));
+	}
+}
+
+/**
+ * Save the recurring appointments settings.
+ */
+add_action('customize_save_after', 'save_wellness_recurring_settings');
+function save_wellness_recurring_settings()
+{
+	if (isset($_POST['wellness_recurring_payment_reminder_days'])) {
+		update_option('wellness_recurring_payment_reminder_days', absint($_POST['wellness_recurring_payment_reminder_days']));
 	}
 }
 
@@ -2090,46 +2258,51 @@ add_filter('woocommerce_checkout_login_message', function () {
  * Inject a "Number" addon field on all appointable products so customers can
  * specify how many times they want to repeat the appointment at booking time.
  * Skipped if an addon named "Number" already exists (manually configured).
+ *
+ * DEPRECATED (2026-08-30): Recurring is now handled by the custom child-theme
+ * "Repeat Appointment" fields. This addon injected 'Number' on every
+ * appointable product, so it appeared in order item meta even when the customer
+ * did not choose to repeat. Commented out pending removal.
  */
-add_filter('woocommerce_product_addons_get_items', 'wellness_inject_repeat_number_addon', 10, 2);
-function wellness_inject_repeat_number_addon($addons, $product_id)
-{
-	// Only inject if this product has repeat configured (has _wc_appointment_max_repeat_count or is appointable).
-	$post_type = get_post_type($product_id);
-	if (!in_array($post_type, ['product', 'wc_appointment'], true)) {
-		return $addons;
-	}
+// add_filter('woocommerce_product_addons_get_items', 'wellness_inject_repeat_number_addon', 10, 2);
+// function wellness_inject_repeat_number_addon($addons, $product_id)
+// {
+// 	// Only inject if this product has repeat configured (has _wc_appointment_max_repeat_count or is appointable).
+// 	$post_type = get_post_type($product_id);
+// 	if (!in_array($post_type, ['product', 'wc_appointment'], true)) {
+// 		return $addons;
+// 	}
 
-	// Don't duplicate if a Number field already exists.
-	foreach ($addons as $addon) {
-		if (isset($addon['name']) && strtolower(trim($addon['name'])) === 'number') {
-			return $addons;
-		}
-	}
+// 	// Don't duplicate if a Number field already exists.
+// 	foreach ($addons as $addon) {
+// 		if (isset($addon['name']) && strtolower(trim($addon['name'])) === 'number') {
+// 			return $addons;
+// 		}
+// 	}
 
-	$saved_max   = get_post_meta($product_id, '_wc_appointment_max_repeat_count', true);
-	$max_allowed = ($saved_max !== '') ? max(1, intval($saved_max)) : 2;
+// 	$saved_max   = get_post_meta($product_id, '_wc_appointment_max_repeat_count', true);
+// 	$max_allowed = ($saved_max !== '') ? max(1, intval($saved_max)) : 2;
 
-	$addons[] = array(
-		'name'              => 'Number',
-		'title_format'      => 'label',
-		'description'       => 'How many times would you like to repeat this appointment? (max: ' . $max_allowed . ')',
-		'type'              => 'custom_text',
-		'display'           => '',
-		'position'          => count($addons),
-		'required'          => 0,
-		'restrictions'      => 1,
-		'restrictions_type' => 'any_integer',
-		'adjust_price'      => 0,
-		'price_type'        => 'flat_fee',
-		'price'             => '',
-		'min'               => 1,
-		'max'               => $max_allowed,
-		'options'           => array(),
-	);
+// 	$addons[] = array(
+// 		'name'              => 'Number',
+// 		'title_format'      => 'label',
+// 		'description'       => 'How many times would you like to repeat this appointment? (max: ' . $max_allowed . ')',
+// 		'type'              => 'custom_text',
+// 		'display'           => '',
+// 		'position'          => count($addons),
+// 		'required'          => 0,
+// 		'restrictions'      => 1,
+// 		'restrictions_type' => 'any_integer',
+// 		'adjust_price'      => 0,
+// 		'price_type'        => 'flat_fee',
+// 		'price'             => '',
+// 		'min'               => 1,
+// 		'max'               => $max_allowed,
+// 		'options'           => array(),
+// 	);
 
-	return $addons;
-}
+// 	return $addons;
+// }
 
 
 /**
@@ -3295,6 +3468,144 @@ function wellness_display_session_type_in_orders($html, $item, $args)
 	return $html;
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// Recurring — capture & persist recurrence data (cart → order item → appointment)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Capture recurring values into appointment data. Only set when the customer
+// chose to repeat, so no recurring meta appears on single (non-repeat) bookings.
+add_filter('woocommerce_appointments_get_posted_data', 'wellness_capture_recurring_data', 12, 3);
+function wellness_capture_recurring_data($data, $product, $posted)
+{
+	if (empty($posted['wc_appointments_field_recurring']) || $posted['wc_appointments_field_recurring'] !== 'yes') {
+		return $data;
+	}
+
+	$interval = $posted['wc_appointments_field_recurring_interval'] ?? '';
+	$count    = absint($posted['wc_appointments_field_recurring_count'] ?? 0);
+	if ($interval === '' || $count <= 0) {
+		return $data;
+	}
+
+	// Non-underscore keys so they display in cart item meta.
+	$data['recurring']          = 'yes';
+	$data['recurring_interval'] = $interval;
+	$data['recurring_count']    = $count;
+
+	return $data;
+}
+
+// Register labels for the recurring appointment-data keys (cart display).
+add_filter('woocommerce_appointments_data_labels', 'wellness_add_recurring_labels');
+function wellness_add_recurring_labels($labels)
+{
+	$labels['recurring']          = __('Repeat Appointment', 'woodmart-child');
+	$labels['recurring_interval'] = __('Repeat Interval', 'woodmart-child');
+	$labels['recurring_count']    = __('Number of Repeats', 'woodmart-child');
+	return $labels;
+}
+
+// Write recurrence as order item meta during checkout.
+add_action('woocommerce_checkout_create_order_line_item', 'wellness_add_recurring_to_order_item', 10, 4);
+function wellness_add_recurring_to_order_item($item, $cart_item_key, $values, $order)
+{
+	if (empty($values['appointment']['recurring']) || $values['appointment']['recurring'] !== 'yes') {
+		return;
+	}
+	$item->add_meta_data('_recurring', 'yes');
+	if (! empty($values['appointment']['recurring_interval'])) {
+		$item->add_meta_data('_recurring_interval', $values['appointment']['recurring_interval']);
+	}
+	if (! empty($values['appointment']['recurring_count'])) {
+		$item->add_meta_data('_recurring_count', absint($values['appointment']['recurring_count']));
+	}
+}
+
+// Persist recurrence to the appointment post meta after the order is processed.
+add_action('woocommerce_checkout_order_processed', 'wellness_persist_recurring', 20);
+add_action('woocommerce_store_api_checkout_order_processed', 'wellness_persist_recurring', 20);
+function wellness_persist_recurring($order)
+{
+	if (! is_a($order, 'WC_Order')) {
+		$order = wc_get_order($order);
+		if (! $order) return;
+	}
+
+	foreach ($order->get_items() as $item) {
+		if (! is_a($item, 'WC_Order_Item_Product')) continue;
+
+		$appointment_id = $item->get_meta('_appointment_id');
+		if (! $appointment_id) continue;
+
+		if ($item->get_meta('_recurring') === 'yes') {
+			update_post_meta($appointment_id, '_recurring', 'yes');
+			update_post_meta($appointment_id, '_recurring_interval', $item->get_meta('_recurring_interval'));
+			update_post_meta($appointment_id, '_recurring_count', absint($item->get_meta('_recurring_count')));
+		}
+	}
+}
+
+// Also persist for orders that skip "processing" (zero-total → completed).
+add_action('woocommerce_order_status_completed', 'wellness_persist_recurring_on_completed', 20);
+function wellness_persist_recurring_on_completed($order_id)
+{
+	$order = wc_get_order($order_id);
+	if (! $order) return;
+	wellness_persist_recurring($order);
+}
+
+// Display a single "Repeat: Weekly × 2" line in order item meta
+// (thank-you page, admin, emails) when the booking is recurring.
+add_filter('woocommerce_display_item_meta', 'wellness_display_recurring_in_orders', 12, 3);
+function wellness_display_recurring_in_orders($html, $item, $args)
+{
+	if (! is_a($item, 'WC_Order_Item_Product')) return $html;
+
+	if ($item->get_meta('_recurring') !== 'yes') return $html;
+
+	$interval = $item->get_meta('_recurring_interval');
+	$count    = (int) $item->get_meta('_recurring_count');
+	if (! $interval || ! $count) return $html;
+
+	$interval_labels = [
+		'weekly'   => __('Weekly', 'woodmart-child'),
+		'biweekly' => __('Bi-Weekly', 'woodmart-child'),
+		'monthly'  => __('Monthly', 'woodmart-child'),
+	];
+	$label = isset($interval_labels[$interval]) ? $interval_labels[$interval] : $interval;
+
+	// Avoid duplicating the appointments-plugin rendered rows.
+	if (strpos($html, 'Repeat Appointment') !== false || strpos($html, '>Repeat:') !== false) {
+		return $html;
+	}
+
+	$html .= '<li class="wellness-recurring">';
+	$html .= '<strong class="wc-item-meta-label">' . esc_html__('Repeat', 'woodmart-child') . ':</strong> ';
+	$html .= '<span>' . esc_html($label) . '</span> &times; ' . esc_html($count);
+	$html .= '</li>';
+
+	// Full schedule of recurring dates.
+	$start = 0;
+	$appointment_id = $item->get_meta('_appointment_id');
+	if ($appointment_id) {
+		$appt = get_wc_appointment($appointment_id);
+		if ($appt) $start = (int) $appt->get_start();
+	}
+	$dates = $start ? wellness_compute_recurring_dates($start, $interval, $count) : [];
+	if ($dates) {
+		$html .= '<li class="wellness-recurring-schedule">';
+		$html .= '<strong class="wc-item-meta-label">' . esc_html__('Scheduled sessions', 'woodmart-child') . ':</strong> ';
+		$html .= '<span>' . esc_html(implode(', ', $dates)) . '</span>';
+		$html .= '</li>';
+	}
+
+	$html .= '<li class="wellness-recurring-note">';
+	$html .= esc_html__('You will receive a payment reminder and a confirmation for each recurring session.', 'woodmart-child');
+	$html .= '</li>';
+
+	return $html;
+}
+
 // ── Hide calendar until Duration option is selected ─────────────────────
 
 add_action('woocommerce_after_appointment_form_output', 'wellness_hide_calendar_until_duration', 20, 2);
@@ -3346,6 +3657,389 @@ function wellness_hide_calendar_until_duration($position, $product_id)
 			}
 		})(jQuery);
 	</style>
+<?php
+}
+
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Recurring Appointments — custom fields, schedule preview & AJAX
+// (replaces the WooCommerce Product Add-Ons "Repeat Appointment" flow)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Inject the recurring fields into the appointment form.
+ * Only shows when the product has _wc_appointment_enable_recurring = 'yes' (default).
+ */
+add_filter('appointment_form_fields', 'wellness_inject_recurring_fields', 25);
+function wellness_inject_recurring_fields($fields)
+{
+	if (! is_product()) return $fields;
+
+	$product_id = get_queried_object_id();
+	if (! $product_id) return $fields;
+
+	$product = wc_get_product($product_id);
+	if (! $product || ! is_wc_appointment_product($product)) return $fields;
+
+	$enable = get_post_meta($product_id, '_wc_appointment_enable_recurring', true);
+	$enable = ($enable === '') ? 'yes' : $enable; // default ON
+	if ($enable !== 'yes') return $fields;
+
+	$max_count = max(1, intval(get_post_meta($product_id, '_wc_appointment_max_repeat_count', true) ?: 2));
+
+	$fields['recurring'] = [
+		'type'  => 'checkbox',
+		'name'  => 'wc_appointments_field_recurring',
+		'label' => __('Do you want to repeat this appointment?', 'woodmart-child'),
+		'class' => ['wellness-recurring-toggle'],
+	];
+
+	$fields['recurring_interval'] = [
+		'type'    => 'select',
+		'name'    => 'wc_appointments_field_recurring_interval',
+		'label'   => __('Repeat every', 'woodmart-child'),
+		'class'   => ['wellness-recurring-lead', 'wellness-recurring-interval'],
+		'options' => [
+			'weekly'   => __('Weekly', 'woodmart-child'),
+			'biweekly' => __('Bi-Weekly', 'woodmart-child'),
+			'monthly'  => __('Monthly', 'woodmart-child'),
+		],
+	];
+
+	$fields['recurring_count'] = [
+		'type'  => 'number',
+		'name'  => 'wc_appointments_field_recurring_count',
+		'label' => __('Number of repeats', 'woodmart-child'),
+		'class' => ['wellness-recurring-lead', 'wellness-recurring-count'],
+		'min'   => 1,
+		'max'   => $max_count,
+		'step'  => 1,
+		'value' => 2,
+	];
+
+	return $fields;
+}
+
+/**
+ * Map a recurrence interval key to a strtotime unit + multiplier.
+ */
+function wellness_recurring_interval_map($interval)
+{
+	switch ($interval) {
+		case 'biweekly':
+			return ['week', 2];
+		case 'monthly':
+			return ['month', 1];
+		case 'weekly':
+		default:
+			return ['week', 1];
+	}
+}
+
+/**
+ * Compute the list of formatted recurring session dates (first + follow-ups).
+ *
+ * @param int         $start_ts  Start timestamp of the first appointment.
+ * @param string      $interval  weekly | biweekly | monthly.
+ * @param int         $count     Number of follow-ups.
+ * @param string|null $tz        IANA timezone for formatting (optional).
+ * @return string[]
+ */
+function wellness_compute_recurring_dates($start_ts, $interval, $count, $tz = null)
+{
+	if (! $start_ts || ! $interval || (int) $count <= 0) return [];
+
+	list($unit, $mult) = wellness_recurring_interval_map($interval);
+	$rows = [];
+	for ($i = 0; $i <= (int) $count; $i++) {
+		$ts = $i === 0 ? (int) $start_ts : strtotime('+' . ($i * $mult) . ' ' . $unit, (int) $start_ts);
+		if ($ts) {
+			$rows[] = $tz
+				? wellness_tz_format($ts, $tz, 'F j, Y \a\t g:i A')
+				: date_i18n('F j, Y \a\t g:i A', $ts);
+		}
+	}
+	return $rows;
+}
+
+/**
+ * Append the recurring schedule + pay/confirm note to cart and checkout review item data.
+ */
+add_filter('woocommerce_get_item_data', 'wellness_recurring_cart_item_data', 10, 2);
+function wellness_recurring_cart_item_data($item_data, $cart_item)
+{
+	if (empty($cart_item['appointment']['recurring']) || $cart_item['appointment']['recurring'] !== 'yes') {
+		return $item_data;
+	}
+
+	$interval = $cart_item['appointment']['recurring_interval'] ?? '';
+	$count    = absint($cart_item['appointment']['recurring_count'] ?? 0);
+	$start    = $cart_item['appointment']['_start_date'] ?? 0;
+	if (! $interval || ! $count || ! $start) return $item_data;
+
+	$dates = wellness_compute_recurring_dates($start, $interval, $count);
+	if ($dates) {
+		$item_data[] = [
+			'name'  => __('Scheduled sessions', 'woodmart-child'),
+			'value' => implode(', ', $dates),
+		];
+	}
+
+	$item_data[] = [
+		'name'  => __('Payment & confirmation', 'woodmart-child'),
+		'value' => __('You will receive a payment reminder and a confirmation for each recurring session.', 'woodmart-child'),
+	];
+
+	return $item_data;
+}
+
+/**
+ * Appointment length in seconds for the given product, honouring a selected
+ * duration option (session type) when provided.
+ */
+function wellness_recurring_duration_seconds($product, $duration_option = '')
+{
+	$duration = $product->get_duration();
+	$unit     = $product->get_duration_unit();
+
+	if ($duration_option !== '' && $duration_option !== null) {
+		$options = json_decode(get_post_meta($product->get_id(), '_wc_appointment_duration_options', true), true);
+		if (is_array($options) && isset($options[$duration_option]['duration']) && absint($options[$duration_option]['duration']) > 0) {
+			return absint($options[$duration_option]['duration']) * 60;
+		}
+	}
+
+	switch ($unit) {
+		case 'hour':
+			return $duration * HOUR_IN_SECONDS;
+		case 'day':
+			return $duration * DAY_IN_SECONDS;
+		case 'minute':
+		default:
+			return $duration * MINUTE_IN_SECONDS;
+	}
+}
+
+/**
+ * AJAX: compute the upcoming recurring schedule for the pre-booking preview.
+ * Checks each follow-up slot via wc_appointments_get_total_available_appointments_for_range()
+ * and shifts to the next available slot (mirroring create_wc_appointment) when taken.
+ */
+add_action('wp_ajax_wellness_recurring_preview', 'wellness_recurring_preview');
+add_action('wp_ajax_nopriv_wellness_recurring_preview', 'wellness_recurring_preview');
+function wellness_recurring_preview()
+{
+	check_ajax_referer('wellness_recurring_preview', 'nonce');
+
+	$product_id = absint($_POST['product_id'] ?? 0);
+	$product    = wc_get_product($product_id);
+	if (! $product || ! is_wc_appointment_product($product)) {
+		wp_send_json_error(['message' => __('Invalid product.', 'woodmart-child')]);
+	}
+
+	$year  = absint($_POST['year'] ?? date('Y'));
+	$month = absint($_POST['month'] ?? 0);
+	$day   = absint($_POST['day'] ?? 0);
+	$time  = sanitize_text_field($_POST['time'] ?? '');
+	if (! $month || ! $day || ! $time) {
+		wp_send_json_error(['message' => __('Please pick a date and time first.', 'woodmart-child')]);
+	}
+
+	$base_start = strtotime("$year-$month-$day $time");
+	if (! $base_start) {
+		wp_send_json_error(['message' => __('Invalid start time.', 'woodmart-child')]);
+	}
+
+	$interval = sanitize_text_field($_POST['interval'] ?? 'weekly');
+	$count    = max(1, absint($_POST['count'] ?? 1));
+	$max_count = max(1, intval(get_post_meta($product_id, '_wc_appointment_max_repeat_count', true) ?: 2));
+	$count    = min($count, $max_count);
+	$staff_id = absint($_POST['staff_id'] ?? 0);
+
+	// Resolve the customer timezone (from the appointments_time_zone cookie) so the
+	// preview shows the same local times the client picked on the slot picker.
+	$customer_tz = isset($_COOKIE['appointments_time_zone']) ? sanitize_text_field(wp_unslash($_COOKIE['appointments_time_zone'])) : '';
+	if (! in_array($customer_tz, timezone_identifiers_list(), true)) {
+		$customer_tz = wc_timezone_string();
+	}
+
+	$duration_sec = wellness_recurring_duration_seconds($product, $_POST['duration_option'] ?? '');
+	list($unit, $mult) = wellness_recurring_interval_map($interval);
+
+	$max_date  = $product->get_max_date_a();
+	$max_tstamp = strtotime("+{$max_date['value']} {$max_date['unit']}");
+
+	$results = [];
+	for ($i = 1; $i <= $count; $i++) {
+		$target_start = strtotime('+' . ($i * $mult) . ' ' . $unit, $base_start);
+		if ($target_start === false || $target_start > $max_tstamp) {
+			continue;
+		}
+		$target_end = $target_start + $duration_sec;
+		$shifted    = false;
+
+		$available = wellness_recurring_slot_available($product, $target_start, $target_end, $staff_id);
+
+		if (! $available) {
+			// Shift to the next available slot (same logic as create_wc_appointment).
+			while ($target_start + $duration_sec <= $max_tstamp) {
+				$target_start += $duration_sec;
+				$target_end    = $target_start + $duration_sec;
+				if (wellness_recurring_slot_available($product, $target_start, $target_end, $staff_id)) {
+					$shifted = true;
+					break;
+				}
+			}
+		}
+
+		$results[] = [
+			'display' => wellness_tz_format($target_start, $customer_tz, 'F j, Y \a\t g:i A'),
+			'date'    => date_i18n(wc_appointments_date_format(), $target_start),
+			'time'    => date_i18n(wc_appointments_time_format(), $target_start),
+			'shifted' => $shifted,
+			'notice'  => $shifted ? __('The exact slot was unavailable; we reserved the next available time.', 'woodmart-child') : '',
+		];
+	}
+
+	wp_send_json(['sessions' => $results]);
+}
+
+/**
+ * Whether a given range is bookable (no staff conflict, within availability rules).
+ */
+function wellness_recurring_slot_available($product, $start, $end, $staff_id)
+{
+	$res = wc_appointments_get_total_available_appointments_for_range(
+		$product,
+		$start,
+		$end,
+		$staff_id ? $staff_id : null,
+		1
+	);
+	return $res && ! is_wp_error($res) && ! empty($res);
+}
+
+/**
+ * Frontend JS/CSS for the recurring toggle + live schedule preview.
+ */
+add_action('woocommerce_after_appointment_form_output', 'wellness_recurring_form_js', 25, 2);
+function wellness_recurring_form_js($position, $product_id)
+{
+	if ($position !== 'after') return;
+
+	$product = wc_get_product($product_id);
+	if (! $product || ! is_wc_appointment_product($product)) return;
+
+	$enable = get_post_meta($product_id, '_wc_appointment_enable_recurring', true);
+	$enable = ($enable === '') ? 'yes' : $enable; // default ON
+	if ($enable !== 'yes') return;
+
+	$nonce     = wp_create_nonce('wellness_recurring_preview');
+	$ajax_url  = admin_url('admin-ajax.php');
+	$max_count = max(1, intval(get_post_meta($product_id, '_wc_appointment_max_repeat_count', true) ?: 2));
+?>
+	<style>
+		/* Hide repeat interval + count until the toggle is checked. */
+		#wc-appointments-appointment-form .wellness-recurring-lead { display: none !important; }
+		#wc-appointments-appointment-form .wellness-recurring-preview {
+			margin: 10px 0;
+			padding: 10px 12px;
+			background: #f4f8ff;
+			border-left: 4px solid #4f7cff;
+			border-radius: 4px;
+			color: #333;
+			font-size: 14px;
+		}
+		#wc-appointments-appointment-form .wellness-recurring-preview ul { margin: 6px 0 0; padding-left: 18px; }
+		#wc-appointments-appointment-form .wellness-recurring-preview em { color: #b54708; font-style: normal; display: block; }
+	</style>
+	<script>
+	window.WELLNESS_RECURRING = {
+		ajax: '<?php echo esc_js($ajax_url); ?>',
+		nonce: '<?php echo esc_js($nonce); ?>',
+		max_count: <?php echo (int) $max_count; ?>
+	};
+	(function() {
+		if (typeof jQuery === 'undefined') { return; }
+		jQuery(function($) {
+			'use strict';
+			var TIMEOUT = null;
+
+		function isOn($form) {
+			return $form.find('input[name="wc_appointments_field_recurring"]').is(':checked');
+		}
+
+		function toggle($form) {
+			var on = isOn($form);
+			$form.find('.wellness-recurring-lead').toggle(on);
+			if (!on) {
+				$form.find('.wellness-recurring-preview').hide().empty();
+			} else {
+				update($form);
+			}
+		}
+
+		function payload($form) {
+			var $picker = $form.find('.wc-appointments-date-picker');
+			return {
+				product_id: $picker.find('.picker').data('product_id') || $form.find('input[name="add-to-cart"]').val() || $form.find('input[name="appointable-product-id"]').val() || 0,
+				day: $form.find('input[name="wc_appointments_field_start_date_day"]').val(),
+				month: $form.find('input[name="wc_appointments_field_start_date_month"]').val(),
+				year: $form.find('input[name="wc_appointments_field_start_date_year"]').val(),
+				time: $form.find('input[name="wc_appointments_field_start_date_time"]').val(),
+				interval: $form.find('select[name="wc_appointments_field_recurring_interval"]').val(),
+				count: $form.find('input[name="wc_appointments_field_recurring_count"]').val(),
+				staff_id: $form.find('select[name="wc_appointments_field_staff"]').val() || '',
+				duration_option: $form.find('select[name="wc_appointments_field_duration_option"]').val() || ''
+			};
+		}
+
+		function render(res) {
+			var $pv = $('#wc-appointments-appointment-form .wellness-recurring-preview');
+			if (!res || !res.sessions || !res.sessions.length) { $pv.hide().empty(); return; }
+			var html = '<strong><?php echo esc_js(__('Your upcoming sessions:', 'woodmart-child')); ?></strong><ul>';
+			$.each(res.sessions, function(i, s) {
+				html += '<li>' + (s.display || (s.date + ' at ' + s.time)) + (s.shifted ? '<em>' + s.notice + '</em>' : '') + '</li>';
+			});
+			html += '</ul>';
+			$pv.html(html).show();
+		}
+
+		function request($form) {
+			var p = payload($form);
+			if (!p.product_id || !p.day || !p.month || !p.year || !p.time || !p.interval || !p.count) return;
+			$.post(WELLNESS_RECURRING.ajax, $.extend({ action: 'wellness_recurring_preview', nonce: WELLNESS_RECURRING.nonce }, p))
+				.done(render)
+				.fail(function() {
+					$('#wc-appointments-appointment-form .wellness-recurring-preview').hide().empty();
+				});
+		}
+
+		function update($form) {
+			clearTimeout(TIMEOUT);
+			TIMEOUT = setTimeout(function() { request($form); }, 250);
+		}
+
+		$(document).on('change', '#wc-appointments-appointment-form input[name="wc_appointments_field_recurring"]', function() {
+			toggle($(this).closest('#wc-appointments-appointment-form'));
+		});
+
+		$(document).on('change', '#wc-appointments-appointment-form select[name="wc_appointments_field_recurring_interval"], #wc-appointments-appointment-form input[name="wc_appointments_field_recurring_count"], #wc-appointments-appointment-form input[name="wc_appointments_field_start_date_time"], #wc-appointments-appointment-form input[name="wc_appointments_field_start_date_day"], #wc-appointments-appointment-form input[name="wc_appointments_field_start_date_month"], #wc-appointments-appointment-form input[name="wc_appointments_field_start_date_year"]', function() {
+			var $form = $(this).closest('#wc-appointments-appointment-form');
+			if (isOn($form)) update($form);
+		});
+
+			$(function() {
+				var $form = $('#wc-appointments-appointment-form');
+				if (!$form.length) return;
+				if (!$form.find('.wellness-recurring-preview').length) {
+					$form.append('<div class="wellness-recurring-preview" style="display:none;"></div>');
+				}
+				toggle($form);
+			});
+		});
+	})();
+	</script>
 <?php
 }
 
