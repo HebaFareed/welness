@@ -907,6 +907,17 @@ function custom_replace_add_to_cart_button($button, $product)
 
 // get product addon value on order creation
 /**
+ * TEMP DEBUG — log via the WooCommerce logger (source: wellness-recurring).
+ * Visible under WooCommerce → Status → Logs.
+ */
+function wellness_recurring_log($message)
+{
+	if (function_exists('wc_get_logger')) {
+		wc_get_logger()->info('[WELLNESS_RECURRING] ' . $message, array('source' => 'wellness-recurring'));
+	}
+}
+
+/**
  * Create recurring follow-up appointments + orders when the parent (first)
  * appointment is paid. Replaces the old WooCommerce Product Add-Ons approach.
  *
@@ -916,6 +927,9 @@ function custom_replace_add_to_cart_button($button, $product)
  */
 function wellness_create_recurring_appointments($from_status, $to_status, $appointment_id)
 {
+	// TEMP DEBUG
+	wellness_recurring_log('engine fired: appt=' . $appointment_id . ' from=' . $from_status . ' to=' . $to_status);
+
 	// Only trigger on the paid transition to avoid duplicates on later status changes (paid -> confirmed).
 	if ($to_status !== 'paid') {
 		return;
@@ -923,29 +937,34 @@ function wellness_create_recurring_appointments($from_status, $to_status, $appoi
 
 	$appointment = get_wc_appointment($appointment_id);
 	if (! $appointment) {
+		wellness_recurring_log('engine: appointment not found');
 		return;
 	}
 
 	// Only the first appointment of a recurring series triggers creation.
 	if ($appointment->get_parent_id() > 0) {
+		wellness_recurring_log('engine: is follow-up (parent_id=' . $appointment->get_parent_id() . '), skip');
 		return;
 	}
 
 	// Read recurrence settings (set on the parent appointment by wellness_persist_recurring).
 	$recurring = get_post_meta($appointment_id, '_recurring', true);
 	if ($recurring !== 'yes') {
+		wellness_recurring_log('engine: _recurring="' . $recurring . '" not yes, skip');
 		return;
 	}
 
 	$interval = get_post_meta($appointment_id, '_recurring_interval', true);
 	$count    = absint(get_post_meta($appointment_id, '_recurring_count', true));
 	if (! $interval || $count <= 0) {
+		wellness_recurring_log('engine: interval/count missing (interval=' . $interval . ' count=' . $count . '), skip');
 		return;
 	}
 
 	$product_id = $appointment->get_product_id();
 	$product    = wc_get_product($product_id);
 	if (! $product) {
+		wellness_recurring_log('engine: product not found');
 		return;
 	}
 
@@ -953,6 +972,7 @@ function wellness_create_recurring_appointments($from_status, $to_status, $appoi
 	$enable = get_post_meta($product_id, '_wc_appointment_enable_recurring', true);
 	$enable = ($enable === '') ? 'yes' : $enable;
 	if ($enable !== 'yes') {
+		wellness_recurring_log('engine: product recurring disabled, skip');
 		return;
 	}
 
@@ -970,6 +990,7 @@ function wellness_create_recurring_appointments($from_status, $to_status, $appoi
 		'fields' => 'ids',
 	));
 	if (! empty($existing)) {
+		wellness_recurring_log('engine: follow-ups already exist (' . count($existing) . '), skip');
 		return;
 	}
 
@@ -1076,6 +1097,8 @@ function wellness_create_recurring_appointments($from_status, $to_status, $appoi
 		$new_appointment->set_order_id($new_order_id);
 		$new_appointment->set_order_item_id($item_id);
 		$new_appointment->save();
+
+		wellness_recurring_log('created follow-up: appt=' . $new_appointment->get_id() . ' order=' . $new_order_id . ' start=' . $new_appointment->get_start());
 
 		if ($session_type) {
 			update_post_meta($new_appointment->get_id(), '_session_type', $session_type);
@@ -3492,6 +3515,8 @@ function wellness_capture_recurring_data($data, $product, $posted)
 	$data['recurring_interval'] = $interval;
 	$data['recurring_count']    = $count;
 
+	wellness_recurring_log('capture OK: interval=' . $interval . ' count=' . $count);
+
 	return $data;
 }
 
@@ -3513,6 +3538,7 @@ function wellness_add_recurring_to_order_item($item, $cart_item_key, $values, $o
 		return;
 	}
 	$item->add_meta_data('_recurring', 'yes');
+	wellness_recurring_log('order item meta written: recurring=yes');
 	if (! empty($values['appointment']['recurring_interval'])) {
 		$item->add_meta_data('_recurring_interval', $values['appointment']['recurring_interval']);
 	}
@@ -3541,6 +3567,7 @@ function wellness_persist_recurring($order)
 			update_post_meta($appointment_id, '_recurring', 'yes');
 			update_post_meta($appointment_id, '_recurring_interval', $item->get_meta('_recurring_interval'));
 			update_post_meta($appointment_id, '_recurring_count', absint($item->get_meta('_recurring_count')));
+			wellness_recurring_log('persisted to appointment ' . $appointment_id . ' recurring=yes');
 		}
 	}
 }
