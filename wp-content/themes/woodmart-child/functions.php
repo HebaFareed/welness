@@ -947,15 +947,39 @@ function wellness_create_recurring_appointments($from_status, $to_status, $appoi
 		return;
 	}
 
-	// Read recurrence settings (set on the parent appointment by wellness_persist_recurring).
+	// Read recurrence settings: appointment post meta first, then fall back to the
+	// order item (the appointment post meta may be empty if the appointment wasn't
+	// linked to the order item by woocommerce_checkout_order_processed).
 	$recurring = get_post_meta($appointment_id, '_recurring', true);
+	$interval  = get_post_meta($appointment_id, '_recurring_interval', true);
+	$count     = absint(get_post_meta($appointment_id, '_recurring_count', true));
+
 	if ($recurring !== 'yes') {
-		wellness_recurring_log('engine: _recurring="' . $recurring . '" not yes, skip');
+		$order = $appointment->get_order();
+		if ($order) {
+			foreach ($order->get_items() as $item) {
+				if ($item->get_meta('_recurring') === 'yes') {
+					$recurring = 'yes';
+					$interval  = $item->get_meta('_recurring_interval');
+					$count     = absint($item->get_meta('_recurring_count'));
+					break;
+				}
+			}
+		}
+		// Persist to the appointment so downstream features (admin chain, emails) can read it.
+		if ($recurring === 'yes') {
+			update_post_meta($appointment_id, '_recurring', 'yes');
+			if ($interval) update_post_meta($appointment_id, '_recurring_interval', $interval);
+			update_post_meta($appointment_id, '_recurring_count', $count);
+			wellness_recurring_log('engine: recurrence resolved from order item, persisted to appointment');
+		}
+	}
+
+	if ($recurring !== 'yes') {
+		wellness_recurring_log('engine: _recurring not yes, skip');
 		return;
 	}
 
-	$interval = get_post_meta($appointment_id, '_recurring_interval', true);
-	$count    = absint(get_post_meta($appointment_id, '_recurring_count', true));
 	if (! $interval || $count <= 0) {
 		wellness_recurring_log('engine: interval/count missing (interval=' . $interval . ' count=' . $count . '), skip');
 		return;
@@ -1096,6 +1120,7 @@ function wellness_create_recurring_appointments($from_status, $to_status, $appoi
 
 		$new_appointment->set_order_id($new_order_id);
 		$new_appointment->set_order_item_id($item_id);
+		$new_appointment->set_parent_id($appointment_id); // ensure the follow-up links to the root
 		$new_appointment->save();
 
 		wellness_recurring_log('created follow-up: appt=' . $new_appointment->get_id() . ' order=' . $new_order_id . ' start=' . $new_appointment->get_start());
@@ -3930,6 +3955,234 @@ function wellness_recurring_admin_metabox_cb($post)
 		return;
 	}
 	wellness_render_recurring_chain($appointment);
+}
+
+/**
+ * Whether an appointment belongs to a recurring series (root has _recurring = yes).
+ */
+function wellness_appointment_is_recurring($appointment)
+{
+	static $cache = array();
+	if (! $appointment) return false;
+
+	$root_id = $appointment->get_parent_id() > 0 ? $appointment->get_parent_id() : $appointment->get_id();
+	if (isset($cache[$root_id])) return $cache[$root_id];
+
+	$cache[$root_id] = get_post_meta($root_id, '_recurring', true) === 'yes';
+	return $cache[$root_id];
+}
+
+/**
+ * Insert a column after a given key in an admin list-table columns array.
+ */
+function wellness_insert_after($items, $after_key, $key, $label)
+{
+	$new = array();
+	foreach ($items as $k => $v) {
+		$new[$k] = $v;
+		if ($k === $after_key) {
+			$new[$key] = $label;
+		}
+	}
+	if (! isset($new[$key])) {
+		$new[$key] = $label;
+	}
+	return $new;
+}
+
+/**
+ * "Recurring" column on the appointments admin list (after the name column).
+ */
+add_filter('manage_wc_appointment_posts_columns', 'wellness_appointments_list_columns');
+function wellness_appointments_list_columns($columns)
+{
+	return wellness_insert_after($columns, 'appointment_id', 'wellness_recurring', __('Recurring', 'woodmart-child'));
+}
+
+add_action('manage_wc_appointment_posts_custom_column', 'wellness_appointments_list_column_content', 10, 2);
+function wellness_appointments_list_column_content($column, $post_id)
+{
+	if ($column !== 'wellness_recurring') return;
+
+	$appointment = get_wc_appointment($post_id);
+	if (! $appointment || ! wellness_appointment_is_recurring($appointment)) {
+		echo '<span style="color:#bbb;">&mdash;</span>';
+		return;
+	}
+	wellness_render_recurring_badge(wellness_get_recurring_chain($appointment), 'appointment');
+}
+
+/**
+ * "Recurring" column on the orders admin list (after the order-number column).
+ */
+add_filter('manage_shop_order_posts_columns', 'wellness_orders_list_columns');
+add_filter('manage_edit-shop_order_columns', 'wellness_orders_list_columns');
+add_filter('manage_woocommerce_page_wc-orders_columns', 'wellness_orders_list_columns');
+function wellness_orders_list_columns($columns)
+{
+	return wellness_insert_after($columns, 'order_number', 'wellness_recurring', __('Recurring', 'woodmart-child'));
+}
+
+/**
+ * Whether an order is part of a recurring series (first order or a follow-up order).
+ */
+function wellness_orders_is_recurring($order)
+{
+	if (! $order) return false;
+
+	foreach ($order->get_items() as $item) {
+		if ($item->get_meta('_recurring') === 'yes') {
+			return true;
+		}
+	}
+
+	if (class_exists('WC_Appointment_Data_Store')) {
+		$appointment_ids = WC_Appointment_Data_Store::get_appointment_ids_from_order_id($order->get_id());
+		if (! empty($appointment_ids)) {
+			$appointment = get_wc_appointment($appointment_ids[0]);
+			if ($appointment && wellness_appointment_is_recurring($appointment)) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+/**
+ * First recurring-series appointment linked to an order (root or follow-up).
+ */
+function wellness_order_recurring_appointment($order)
+{
+	if (! $order || ! class_exists('WC_Appointment_Data_Store')) return null;
+
+	$appointment_ids = WC_Appointment_Data_Store::get_appointment_ids_from_order_id($order->get_id());
+	if (empty($appointment_ids)) return null;
+
+	$appointment = get_wc_appointment($appointment_ids[0]);
+	if ($appointment && wellness_appointment_is_recurring($appointment)) {
+		return $appointment;
+	}
+	return null;
+}
+
+// Legacy CPT orders list.
+add_action('manage_shop_order_posts_custom_column', 'wellness_orders_list_column_content', 10, 2);
+function wellness_orders_list_column_content($column, $post_id)
+{
+	if ($column !== 'wellness_recurring') return;
+	wellness_orders_recurring_cell(wc_get_order($post_id));
+}
+
+// HPOS orders list (WC_Order object is passed).
+add_action('manage_woocommerce_page_wc-orders_custom_column', 'wellness_orders_list_hpos_column', 10, 2);
+function wellness_orders_list_hpos_column($column, $order)
+{
+	if ($column !== 'wellness_recurring') return;
+	wellness_orders_recurring_cell($order instanceof WC_Order ? $order : null);
+}
+
+function wellness_orders_recurring_cell($order)
+{
+	if (! $order || ! wellness_orders_is_recurring($order)) {
+		echo '<span style="color:#bbb;">&mdash;</span>';
+		return;
+	}
+	$appointment = wellness_order_recurring_appointment($order);
+	$chain       = $appointment ? wellness_get_recurring_chain($appointment) : array();
+	wellness_render_recurring_badge($chain, 'order');
+}
+
+/**
+ * Shared clickable badge + popup for the recurring admin-list columns.
+ *
+ * @param array  $chain WC_Appointment[] of the recurring series.
+ * @param string $type  'appointment' or 'order'.
+ */
+function wellness_render_recurring_badge($chain = array(), $type = 'appointment')
+{
+	$days = wellness_get_recurring_payment_reminder_days();
+
+	echo '<span class="wellness-rec-wrap">';
+	echo '<a href="#" class="wellness-rec-badge" title="' . esc_attr__('Click for recurring details', 'woodmart-child') . '">' . esc_html__('Recurring', 'woodmart-child') . '</a>';
+	echo '<span class="wellness-rec-note">' . esc_html(sprintf(
+		/* translators: %d: days before the appointment */
+		__('pay/confirm %d day(s) before session', 'woodmart-child'),
+		$days
+	)) . '</span>';
+
+	echo '<div class="wellness-rec-pop">';
+	echo '<div class="wellness-rec-pop-title">' . esc_html__('Recurring series', 'woodmart-child') . '</div>';
+	if (empty($chain)) {
+		echo '<div class="wellness-rec-pop-row">' . esc_html__('No linked sessions yet.', 'woodmart-child') . '</div>';
+	} else {
+		foreach ($chain as $a) {
+			$start     = $a->get_start();
+			$when      = $start ? date_i18n('M j, Y g:i A', $start) : '';
+			$appt_link = admin_url('post.php?post=' . $a->get_id() . '&action=edit');
+			$order     = $a->get_order();
+
+			echo '<div class="wellness-rec-pop-row">';
+			echo '<a href="' . esc_url($appt_link) . '" target="_blank">' . esc_html__('Appt #', 'woodmart-child') . esc_html($a->get_id()) . '</a>';
+			if ($when) {
+				echo ' <span class="wellness-rec-pop-when">' . esc_html($when) . '</span>';
+			}
+			echo ' <span class="wellness-rec-pop-status">' . esc_html(wellness_appointment_status_label($a->get_status())) . '</span>';
+			if ($order) {
+				echo ' &mdash; ' . esc_html__('Order', 'woodmart-child') . ' <a href="' . esc_url($order->get_edit_order_url()) . '" target="_blank">#' . esc_html($order->get_order_number()) . '</a>';
+			}
+			echo '</div>';
+		}
+	}
+	echo '</div>'; // .wellness-rec-pop
+	echo '</span>'; // .wellness-rec-wrap
+}
+
+/**
+ * CSS/JS for the recurring badge popup on the appointments and orders list screens.
+ */
+add_action('admin_footer', 'wellness_recurring_list_popup_assets');
+function wellness_recurring_list_popup_assets()
+{
+	$screen = get_current_screen();
+	if (! $screen) return;
+
+	$is_appointments = ('edit' === $screen->base && 'wc_appointment' === $screen->post_type);
+	$is_orders       = ('edit' === $screen->base && 'shop_order' === $screen->post_type)
+		|| ('woocommerce_page_wc-orders' === $screen->id);
+
+	if (! $is_appointments && ! $is_orders) return;
+	?>
+	<style>
+		.wellness-rec-wrap { position: relative; display: inline-block; }
+		.wellness-rec-badge { display: inline-block; padding: 2px 8px; border-radius: 3px; background: #e3edff; color: #1a56db; font-size: 11px; font-weight: 600; text-decoration: none; border: 1px solid #c7d8ff; }
+		.wellness-rec-badge:hover { background: #d4e2ff; }
+		.wellness-rec-note { display: block; color: #666; font-size: 11px; line-height: 1.5; margin-top: 2px; }
+		.wellness-rec-pop { display: none; position: absolute; top: 100%; left: 0; z-index: 9999; min-width: 320px; background: #fff; border: 1px solid #ccd0d4; box-shadow: 0 4px 12px rgba(0,0,0,.15); padding: 8px 10px; border-radius: 4px; }
+		.wellness-rec-pop.open { display: block; }
+		.wellness-rec-pop-title { font-weight: 600; margin-bottom: 6px; font-size: 12px; }
+		.wellness-rec-pop-row { font-size: 12px; line-height: 1.7; padding-top: 4px; margin-top: 4px; }
+		.wellness-rec-pop-row + .wellness-rec-pop-row { border-top: 1px solid #f0f0f1; }
+		.wellness-rec-pop-when { color: #555; }
+		.wellness-rec-pop-status { color: #1a56db; font-weight: 600; }
+	</style>
+	<script>
+	(function($) {
+		$(document).on('click', '.wellness-rec-badge', function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+			var $pop = $(this).siblings('.wellness-rec-pop');
+			$('.wellness-rec-pop.open').not($pop).removeClass('open');
+			$pop.toggleClass('open');
+		});
+		$(document).on('click', function(e) {
+			if (!$(e.target).closest('.wellness-rec-wrap').length) {
+				$('.wellness-rec-pop.open').removeClass('open');
+			}
+		});
+	})(jQuery);
+	</script>
+	<?php
 }
 
 /**
