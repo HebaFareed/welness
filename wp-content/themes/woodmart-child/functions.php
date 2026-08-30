@@ -3307,6 +3307,16 @@ function wellness_hide_calendar_until_duration($position, $product_id)
 	if ($enabled !== 'yes') return;
 
 ?>
+	<style>
+		/* Hide form elements until duration option is selected */
+		#wc-appointments-appointment-form.wellness-duration-pending > *:not(.wc_appointments_field_duration_option) {
+			display: none !important;
+		}
+		#wc-appointments-appointment-form.wellness-duration-pending ~ .quantity,
+		#wc-appointments-appointment-form.wellness-duration-pending ~ .single_add_to_cart_button {
+			display: none !important;
+		}
+	</style>
 	<script>
 		(function($) {
 			function wellnessToggleDurationFields() {
@@ -3314,28 +3324,13 @@ function wellness_hide_calendar_until_duration($position, $product_id)
 				if (!$select.length) return;
 
 				var $form = $('#wc-appointments-appointment-form');
-				var $durRow = $select.closest('p.form-field');
 				var chosen = $select.val();
 				var isChosen = chosen !== '' && chosen !== null;
 
-				$form.children().each(function() {
-					var $el = $(this);
-					if ($el.is($durRow)) return;
-					if (isChosen) {
-						$el.show();
-					} else {
-						$el.hide();
-					}
-				});
-
-				var $qty = $form.siblings('.quantity').add($form.find('.quantity'));
-				var $button = $form.siblings('.single_add_to_cart_button');
 				if (isChosen) {
-					$qty.show();
-					$button.show();
+					$form.removeClass('wellness-duration-pending');
 				} else {
-					$qty.hide();
-					$button.hide();
+					$form.addClass('wellness-duration-pending');
 				}
 			}
 
@@ -3345,23 +3340,12 @@ function wellness_hide_calendar_until_duration($position, $product_id)
 				$(this).closest('form').triggerHandler('addon-duration-changed');
 			});
 
-			var observer = new MutationObserver(function(mutations) {
-				mutations.forEach(function(m) {
-					if (m.target.style.display !== 'none') {
-						wellnessToggleDurationFields();
-					}
-				});
-			});
-			var formEl = document.getElementById('wc-appointments-appointment-form');
-			if (formEl) {
-				observer.observe(formEl, {
-					attributes: true,
-					attributeFilter: ['style']
-				});
-				if (formEl.style.display !== 'none') wellnessToggleDurationFields();
+			// Initialize on page load
+			if ($('#wc-appointments-appointment-form').length) {
+				wellnessToggleDurationFields();
 			}
 		})(jQuery);
-	</script>
+	</style>
 <?php
 }
 
@@ -4535,7 +4519,7 @@ function wellness_intake_step($num, $title, $back, $next = null)
 		if ($num === 2) echo '<input type="hidden" id="wellness-intake-skipped" value="1" />';
 		return false;
 	}
-	$hidden = ($num > 2) ? ' wellness-step-hidden' : '';
+	$hidden = ($num > 1) ? ' wellness-step-hidden' : '';
 
 	// ── Progress dots row (only once at step 2) ──────────────────────
 	// if ($num === 2) {
