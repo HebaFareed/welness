@@ -3828,27 +3828,39 @@ function wellness_get_recurring_chain($appointment)
 {
 	if (! $appointment) return [];
 
-	$root_id = $appointment->get_parent_id() > 0 ? $appointment->get_parent_id() : $appointment->get_id();
-	$root    = get_wc_appointment($root_id);
-	if (! $root) return [];
+	// Build the series from the ORDER hierarchy: the recurring engine creates each
+	// follow-up order as a child of the first (root) order. Appointments are then
+	// resolved per order (an appointment's post_parent is its order id). Relying
+	// on the order tree is more robust than the appointment _appointment_parent_id
+	// meta, which is not always persisted on the follow-ups.
+	$order = $appointment->get_order();
+	if (! $order) return [];
 
-	$children = get_posts(array(
-		'post_type'   => 'wc_appointment',
-		'post_status' => 'any',
-		'meta_query'  => array(
-			array('key' => '_appointment_parent_id', 'value' => $root_id),
-		),
-		'fields' => 'ids',
-	));
+	$root_order_id = $order->get_parent_id() ? (int) $order->get_parent_id() : (int) $order->get_id();
 
-	$chain = [];
-	foreach (array_merge(array($root_id), $children) as $id) {
-		$a = get_wc_appointment($id);
-		if ($a) $chain[] = $a;
+	$order_ids = array($root_order_id);
+	if (class_exists('WC_Appointment_Data_Store')) {
+		$children = wc_get_orders(array(
+			'parent' => $root_order_id,
+			'limit'  => -1,
+			'return' => 'ids',
+		));
+		if (! empty($children)) {
+			$order_ids = array_merge($order_ids, $children);
+		}
+	}
+
+	$chain = array();
+	foreach ($order_ids as $order_id) {
+		$appt_ids = WC_Appointment_Data_Store::get_appointment_ids_from_order_id($order_id);
+		foreach ($appt_ids as $appt_id) {
+			$a = get_wc_appointment($appt_id);
+			if ($a) $chain[] = $a;
+		}
 	}
 
 	usort($chain, function ($a, $b) {
-		return $a->get_start() - $b->get_start();
+		return (int) $a->get_start() - (int) $b->get_start();
 	});
 
 	return $chain;
@@ -3912,7 +3924,288 @@ function wellness_render_recurring_chain($appointment)
 		}
 		echo '</li>';
 	}
-	echo '</ul></div>';
+	echo '</ul>';
+
+	// Admin / therapist only: cancel the entire upcoming series.
+	$has_upcoming = false;
+	foreach ($chain as $a) {
+		$start = $a->get_start();
+		if ($start && $start >= $now && $a->get_status() !== 'cancelled') {
+			$has_upcoming = true;
+			break;
+		}
+	}
+
+	$user = wp_get_current_user();
+	$can_cancel = current_user_can('manage_woocommerce') || in_array('shop_staff', (array) $user->roles, true);
+
+	if ($can_cancel && $has_upcoming) {
+		$confirm_msg = __('Cancel the entire recurring series? All upcoming sessions in this series will be cancelled.', 'woodmart-child');
+		echo '<div style="margin-top:10px; padding-top:8px; border-top:1px solid #e2e2e2;">';
+		echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '" onsubmit="return confirm(' . wp_json_encode($confirm_msg) . ');">';
+		echo '<input type="hidden" name="action" value="wellness_cancel_recurring_series" />';
+		echo '<input type="hidden" name="appointment_id" value="' . esc_attr($appointment->get_id()) . '" />';
+		wp_nonce_field('wellness_cancel_recurring_series', 'wellness_cancel_recurring_nonce');
+		echo '<label style="display:block; margin:6px 0 2px; font-size:12px; font-weight:600;">';
+		echo '<input type="checkbox" name="wellness_cancel_waive_fees" value="1" style="margin-right:4px; vertical-align:-2px;" />';
+		echo esc_html__('Waive cancellation fees (full refund)', 'woodmart-child');
+		echo '</label>';
+		echo '<p style="margin:0 0 10px; font-size:12px; color:#555; line-height:1.5;">';
+		echo esc_html__('Checked: paid upcoming sessions are refunded in full with no cancellation fee. Unchecked: the standard Cancellation Policy fee applies and only the remainder is refunded. Past sessions are never cancelled.', 'woodmart-child');
+		echo '</p>';
+		echo '<button type="submit" class="button" style="color:#b32d2e; border-color:#b32d2e;"><span class="dashicons dashicons-no" style="font-size:16px; line-height:1.3; margin-right:4px;"></span>' . esc_html__('Cancel recurring series', 'woodmart-child') . '</button>';
+		echo '</form>';
+		echo '</div>';
+	}
+
+	echo '</div>';
+}
+
+/**
+ * Admin/therapist: cancel the entire upcoming recurring series.
+ *
+ * Triggered by the "Cancel recurring series" button in the recurring chain.
+ * Cancels every upcoming (non-past, non-cancelled) session in the series. For
+ * paid sessions it either applies the standard Cancellation Policy fee + refund
+ * or (when "waive fees" is checked) issues a full refund with no fee. Unpaid
+ * follow-up orders are cancelled. Past sessions are left untouched.
+ */
+add_action('admin_post_wellness_cancel_recurring_series', 'wellness_cancel_recurring_series');
+function wellness_cancel_recurring_series()
+{
+	if (! isset($_POST['wellness_cancel_recurring_nonce']) || ! wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['wellness_cancel_recurring_nonce'])), 'wellness_cancel_recurring_series')) {
+		wp_die(esc_html__('Invalid request.', 'woodmart-child'));
+	}
+
+	$user = wp_get_current_user();
+	if (! current_user_can('manage_woocommerce') && ! in_array('shop_staff', (array) $user->roles, true)) {
+		wp_die(esc_html__('You are not allowed to cancel recurring appointments.', 'woodmart-child'));
+	}
+
+	$appointment_id = absint($_POST['appointment_id'] ?? 0);
+	$waive_fees     = ! empty($_POST['wellness_cancel_waive_fees']);
+
+	$appointment = get_wc_appointment($appointment_id);
+	if (! $appointment) {
+		wp_die(esc_html__('Appointment not found.', 'woodmart-child'));
+	}
+
+	$now   = current_time('timestamp');
+	$chain = wellness_get_recurring_chain($appointment);
+
+	$fee_hook  = 'woocommerce_appointments_cancelled_appointment';
+	$cancelled = 0;
+	$refunded  = 0;
+	$waived    = 0;
+
+	// Suppress the per-session "appointment cancelled" emails (customer + admin)
+	// so we send one consolidated notice below instead of one per session.
+	$mailer        = WC()->mailer();
+	$notif_hooks   = array(
+		'woocommerce_appointment_pending-confirmation_to_cancelled_notification',
+		'woocommerce_appointment_confirmed_to_cancelled_notification',
+		'woocommerce_appointment_paid_to_cancelled_notification',
+		'woocommerce_appointment_unpaid_to_cancelled_notification',
+	);
+	$suppressed    = array();
+	if ($mailer) {
+		foreach ($mailer->get_emails() as $email) {
+			if (! in_array($email->id, array('appointment_cancelled', 'admin_appointment_cancelled'), true)) {
+				continue;
+			}
+			foreach ($notif_hooks as $h) {
+				remove_action($h, array($email, 'trigger'), 10);
+				$suppressed[] = array($h, $email);
+			}
+		}
+	}
+
+	foreach ($chain as $a) {
+		$start = $a->get_start();
+		if (! $start || $start < $now || $a->get_status() === 'cancelled') {
+			continue; // Leave past / already-cancelled sessions alone.
+		}
+
+		$order   = $a->get_order();
+		$is_paid = in_array($a->get_status(), array('paid', 'confirmed', 'complete'), true)
+			|| ($order && $order->is_paid());
+
+		// Suppress the automatic cancellation-fee handler when waiving fees or
+		// when the session was never paid (don't charge a fee on unpaid sessions).
+		$suppress = $waive_fees || ! $is_paid;
+		if ($suppress) {
+			remove_action($fee_hook, 'check_appointment_cancellation_policy', 10);
+		}
+
+		if ($is_paid && $waive_fees && $order) {
+			// Full refund, no cancellation fee.
+			$amount = method_exists($a, 'get_cost') ? (float) $a->get_cost() : 0;
+			if ($amount <= 0 && $order) {
+				$item_id = WC_Appointment_Data_Store::get_appointment_order_item_id($a->get_id());
+				if ($item_id) {
+					$item = $order->get_item($item_id);
+					if ($item) $amount = (float) $item->get_total();
+				}
+			}
+			if ($amount > 0) {
+				wc_create_refund(array(
+					'amount'   => $amount,
+					'reason'   => __('Recurring series cancelled - full refund (fees waived).', 'woodmart-child'),
+					'order_id' => $order->get_id(),
+				));
+				$refunded++;
+				$waived++;
+			}
+			$order->add_order_note(__('Recurring series cancelled by admin/therapist - cancellation fee waived, full refund issued.', 'woodmart-child'));
+		}
+
+		// Cancel the appointment (fires the standard cancellation policy for
+		// paid sessions unless we suppressed it above).
+		$a->update_status('cancelled');
+		$cancelled++;
+
+		// Cancel pending follow-up orders (unpaid) and suppress the generic
+		// order-cancelled email (the appointment-cancelled email covers the customer).
+		if ($order && $order->has_status('pending')) {
+			add_filter('woocommerce_email_enabled_customer_cancelled_order', function ($enabled, $o) use ($order) {
+				return ($o && $o->get_id() === $order->get_id()) ? false : $enabled;
+			}, 10, 2);
+			$order->update_status('cancelled', __('Recurring series cancelled.', 'woodmart-child'));
+		}
+
+		if ($suppress) {
+			add_action($fee_hook, 'check_appointment_cancellation_policy', 10, 1);
+		}
+	}
+
+	// Re-enable the per-session cancellation emails.
+	foreach ($suppressed as $pair) {
+		add_action($pair[0], array($pair[1], 'trigger'), 10);
+	}
+
+	// Send one consolidated cancellation notice to the client + therapist/admin.
+	if ($cancelled > 0) {
+		wellness_send_recurring_cancel_notifications($appointment, $cancelled, $refunded, $waived);
+	}
+
+	$redirect = wp_get_referer() ? wp_get_referer() : admin_url('edit.php?post_type=wc_appointment');
+	wp_safe_redirect(add_query_arg(array(
+		'wellness_recurring_cancelled' => $cancelled,
+		'wellness_recurring_refunded'  => $refunded,
+		'wellness_recurring_waived'    => $waived,
+	), $redirect));
+	exit;
+}
+
+/**
+ * Send a single consolidated notification when a recurring series is cancelled.
+ *
+ * @param WC_Appointment $appointment Any appointment in the series.
+ * @param int            $cancelled   Number of sessions cancelled.
+ * @param int            $refunded    Number of sessions refunded.
+ * @param bool           $waived      Whether cancellation fees were waived.
+ */
+function wellness_send_recurring_cancel_notifications($appointment, $cancelled, $refunded, $waived)
+{
+	$chain = wellness_get_recurring_chain($appointment);
+	if (empty($chain)) return;
+
+	$root_order = $appointment->get_order();
+	if ($root_order && $root_order->get_parent_id()) {
+		$root_order = wc_get_order($root_order->get_parent_id());
+	}
+	$customer_email = $root_order ? $root_order->get_billing_email() : '';
+
+	$staff_email = '';
+	$staff_ids   = $appointment->get_staff_ids();
+	if (! empty($staff_ids)) {
+		$u = get_user_by('ID', (int) $staff_ids[0]);
+		if ($u) $staff_email = $u->user_email;
+	}
+	$admin_email = $staff_email ?: get_option('admin_email');
+
+	if (! $customer_email && ! $admin_email) return;
+
+	$now         = current_time('timestamp');
+	$customer_tz = wellness_get_customer_tz($appointment);
+
+	$rows = array();
+	foreach ($chain as $a) {
+		$start = $a->get_start();
+		if (! $start || $start < $now) continue; // Only the upcoming (cancelled) sessions.
+		$rows[] = wellness_tz_format($start, $customer_tz, 'F j, Y \a\t g:i A');
+	}
+	$rows_html = '';
+	if (! empty($rows)) {
+		$rows_html = '<ul>' . implode('', array_map(function ($r) {
+			return '<li>' . esc_html($r) . '</li>';
+		}, $rows)) . '</ul>';
+	}
+
+	$refund_line = '';
+	if ($refunded > 0) {
+		$refund_line = $waived
+			? sprintf(__(/* translators: %d: number of refunded sessions */ '%d session(s) were refunded in full - cancellation fees waived.', 'woodmart-child'), $refunded)
+			: sprintf(__(/* translators: %d: number of refunded sessions */ '%d session(s) were refunded (standard cancellation fee applied).', 'woodmart-child'), $refunded);
+	}
+
+	$mailer = WC()->mailer();
+	if (! $mailer) return;
+
+	// Client notification.
+	if ($customer_email) {
+		$heading = __('Recurring sessions cancelled', 'woodmart-child');
+		$subject = __('Your recurring sessions have been cancelled', 'woodmart-child');
+		$content = '<p>' . esc_html(__('We are sorry, but your upcoming recurring sessions have been cancelled.', 'woodmart-child')) . '</p>'
+			. $rows_html
+			. ($refund_line ? '<p>' . esc_html($refund_line) . '</p>' : '')
+			. '<p>' . esc_html(__('If you have any questions, please contact us.', 'woodmart-child')) . '</p>';
+		$message = $mailer->wrap_message($heading, $content);
+		$mailer->send($customer_email, $subject, $message, $mailer->get_headers(), array());
+	}
+
+	// Therapist/admin notification.
+	if ($admin_email) {
+		$heading = __('Recurring series cancelled', 'woodmart-child');
+		$subject = __('A recurring series has been cancelled', 'woodmart-child');
+		$content = '<p>' . esc_html(sprintf(__(/* translators: %d: number of cancelled sessions */ '%d upcoming session(s) were cancelled.', 'woodmart-child'), $cancelled)) . '</p>'
+			. $rows_html
+			. ($refund_line ? '<p>' . esc_html($refund_line) . '</p>' : '');
+		$message = $mailer->wrap_message($heading, $content);
+		$mailer->send($admin_email, $subject, $message, $mailer->get_headers(), array());
+	}
+}
+
+/**
+ * Admin notice after a recurring series cancellation.
+ */
+add_action('admin_notices', 'wellness_recurring_cancel_notice');
+function wellness_recurring_cancel_notice()
+{
+	if (empty($_GET['wellness_recurring_cancelled'])) {
+		return;
+	}
+	$cancelled = absint($_GET['wellness_recurring_cancelled']);
+	$refunded  = absint($_GET['wellness_recurring_refunded'] ?? 0);
+	$waived    = absint($_GET['wellness_recurring_waived'] ?? 0);
+
+	$msg = sprintf(
+		/* translators: %d: number of cancelled sessions */
+		_n('%d upcoming session cancelled.', '%d upcoming sessions cancelled.', $cancelled, 'woodmart-child'),
+		$cancelled
+	);
+	if ($refunded > 0) {
+		$msg .= ' ' . sprintf(
+			/* translators: %d: number of refunded sessions */
+			_n('%d session refunded.', '%d sessions refunded.', $refunded, 'woodmart-child'),
+			$refunded
+		);
+	}
+	if ($waived > 0) {
+		$msg .= ' ' . esc_html__('Cancellation fees waived.', 'woodmart-child');
+	}
+
+	echo '<div class="notice notice-success is-dismissible"><p>' . esc_html($msg) . '</p></div>';
 }
 
 /**
@@ -3931,8 +4224,7 @@ function wellness_show_recurring_on_order($order)
 	$appointment = get_wc_appointment($appointment_ids[0]);
 	if (! $appointment) return;
 
-	$root_id = $appointment->get_parent_id() > 0 ? $appointment->get_parent_id() : $appointment->get_id();
-	if (get_post_meta($root_id, '_recurring', true) !== 'yes') return;
+	if (! wellness_appointment_is_recurring($appointment)) return;
 
 	wellness_render_recurring_chain($appointment);
 }
@@ -3948,8 +4240,7 @@ function wellness_recurring_admin_metabox($post_type, $post)
 	$appointment = get_wc_appointment($post->ID);
 	if (! $appointment) return;
 
-	$root_id = $appointment->get_parent_id() > 0 ? $appointment->get_parent_id() : $appointment->get_id();
-	if (get_post_meta($root_id, '_recurring', true) !== 'yes') return;
+	if (! wellness_appointment_is_recurring($appointment)) return;
 
 	add_meta_box(
 		'wellness_recurring_chain',
@@ -3990,13 +4281,20 @@ function wellness_appointment_is_recurring($appointment)
 
 	$is_recurring = get_post_meta($root_id, '_recurring', true) === 'yes';
 
-	// Fallback: check the root order item meta (persisted reliably at checkout).
+	// Fallback: walk up to the root order of the series (the recurring engine
+	// creates each follow-up order as a child of the first order) and check its
+	// item meta, which is persisted reliably at checkout.
 	if (! $is_recurring) {
 		$root = get_wc_appointment($root_id);
 		if ($root) {
 			$order = $root->get_order();
 			if ($order) {
-				foreach ($order->get_items() as $item) {
+				$root_order = $order;
+				if ($order->get_parent_id()) {
+					$parent = wc_get_order($order->get_parent_id());
+					if ($parent) $root_order = $parent;
+				}
+				foreach ($root_order->get_items() as $item) {
 					if ($item->get_meta('_recurring') === 'yes') {
 						$is_recurring = true;
 						break;

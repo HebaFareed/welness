@@ -117,7 +117,7 @@ $cancellation_hours = function_exists( 'get_wc_appointment_cancellation_policy_a
 
 // ── Recurring chain (so the client sees the full series + confirmation status) ──
 $recurring_chain = [];
-if ( get_post_meta( $appointment->get_id(), '_recurring', true ) === 'yes' ) {
+if ( function_exists( 'wellness_appointment_is_recurring' ) && wellness_appointment_is_recurring( $appointment ) ) {
 	$recurring_chain = wellness_get_recurring_chain( $appointment );
 }
 ?>

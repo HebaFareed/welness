@@ -118,19 +118,17 @@ $cancellation_hours = function_exists( 'get_wc_appointment_cancellation_policy_a
 	? (int) get_wc_appointment_cancellation_policy_allowed_period()
 	: 24;
 
-// ── Recurring schedule (parent + follow-up dates) ────────────────────────────
-$recurring          = get_post_meta( $appointment->get_id(), '_recurring', true );
-$recurring_interval = get_post_meta( $appointment->get_id(), '_recurring_interval', true );
-$recurring_count    = absint( get_post_meta( $appointment->get_id(), '_recurring_count', true ) );
-$recurring_rows     = [];
+// ── Recurring schedule (actual series dates, root + follow-ups) ─────────────
+$recurring_chain = [];
+if ( function_exists( 'wellness_appointment_is_recurring' ) && wellness_appointment_is_recurring( $appointment ) ) {
+	$recurring_chain = wellness_get_recurring_chain( $appointment );
+}
 
-if ( $recurring === 'yes' && $start_timestamp ) {
-	list( $unit, $mult ) = wellness_recurring_interval_map( $recurring_interval );
-	for ( $i = 0; $i <= $recurring_count; $i++ ) {
-		$ts = $i === 0 ? $start_timestamp : strtotime( '+' . ( $i * $mult ) . ' ' . $unit, $start_timestamp );
-		if ( $ts ) {
-			$recurring_rows[] = wellness_tz_format( $ts, $customer_tz, 'F j, Y \a\t g:i A' );
-		}
+$recurring_rows = [];
+foreach ( $recurring_chain as $chain_appt ) {
+	$ts = $chain_appt->get_start();
+	if ( $ts ) {
+		$recurring_rows[] = wellness_tz_format( $ts, $customer_tz, 'F j, Y \a\t g:i A' );
 	}
 }
 

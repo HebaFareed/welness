@@ -95,7 +95,7 @@ if ( $recurring === 'yes' ) {
 // Full recurring chain with statuses (root + follow-ups), so the therapist sees
 // which sessions are confirmed, pending payment, or already past.
 $recurring_chain = [];
-if ( $recurring === 'yes' ) {
+if ( $recurring === 'yes' || ( function_exists( 'wellness_appointment_is_recurring' ) && wellness_appointment_is_recurring( $appointment ) ) ) {
 	$recurring_chain = wellness_get_recurring_chain( $appointment );
 }
 
