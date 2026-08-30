@@ -3882,21 +3882,35 @@ function wellness_render_recurring_chain($appointment)
 	$chain = wellness_get_recurring_chain($appointment);
 	if (empty($chain)) return;
 
+	$now = current_time('timestamp');
+
 	echo '<div class="wellness-recurring-chain" style="margin:10px 0; padding:10px 12px; background:#f7f7f7; border-left:4px solid #4f7cff;">';
 	echo '<h4 style="margin:0 0 8px; font-size:13px;">' . esc_html__('Recurring Appointment', 'woodmart-child') . '</h4>';
 	echo '<ul style="margin:0; padding:0 0 0 16px;">';
 	foreach ($chain as $a) {
 		$start      = $a->get_start();
-		$is_past    = $start && $start < current_time('timestamp');
+		$is_past    = $start && $start < $now;
 		$is_current = $a->get_id() === $appointment->get_id();
 		$label      = $start ? date_i18n('F j, Y g:i A', $start) : '';
-		printf(
-			'<li>%s — %s%s%s</li>',
-			esc_html($label),
-			esc_html(wellness_appointment_status_label($a->get_status())),
-			$is_past ? ' <em>(past)</em>' : '',
-			$is_current ? ' <strong>(this)</strong>' : ''
-		);
+
+		echo '<li>';
+		echo '<a href="' . esc_url(admin_url('post.php?post=' . $a->get_id() . '&action=edit')) . '" target="_blank">' . esc_html__('Appt #', 'woodmart-child') . esc_html($a->get_id()) . '</a>';
+		if ($label) {
+			echo ' &mdash; ' . esc_html($label);
+		}
+		echo ' &mdash; ' . esc_html(wellness_appointment_status_label($a->get_status()));
+		if ($is_past) {
+			echo ' <em>(past)</em>';
+		}
+		if ($is_current) {
+			echo ' <strong>(this)</strong>';
+		}
+
+		$o = $a->get_order();
+		if ($o) {
+			echo ' &mdash; <a href="' . esc_url($o->get_edit_order_url()) . '" target="_blank">' . esc_html__('Order #', 'woodmart-child') . esc_html($o->get_order_number()) . '</a>';
+		}
+		echo '</li>';
 	}
 	echo '</ul></div>';
 }
@@ -3942,7 +3956,7 @@ function wellness_recurring_admin_metabox($post_type, $post)
 		__('Recurring Appointment', 'woodmart-child'),
 		'wellness_recurring_admin_metabox_cb',
 		'wc_appointment',
-		'side',
+		'normal',
 		'high'
 	);
 }
@@ -3959,6 +3973,12 @@ function wellness_recurring_admin_metabox_cb($post)
 
 /**
  * Whether an appointment belongs to a recurring series (root has _recurring = yes).
+ *
+ * Falls back to the root order item's _recurring meta, because the appointment
+ * post meta is not always set at checkout (the order item _appointment_id is
+ * absent when woocommerce_checkout_order_processed runs, so the engine only
+ * persists it when the order is paid). Without this fallback, unpaid recurrences
+ * would show as "—" in the admin "Recurring" column.
  */
 function wellness_appointment_is_recurring($appointment)
 {
@@ -3968,7 +3988,30 @@ function wellness_appointment_is_recurring($appointment)
 	$root_id = $appointment->get_parent_id() > 0 ? $appointment->get_parent_id() : $appointment->get_id();
 	if (isset($cache[$root_id])) return $cache[$root_id];
 
-	$cache[$root_id] = get_post_meta($root_id, '_recurring', true) === 'yes';
+	$is_recurring = get_post_meta($root_id, '_recurring', true) === 'yes';
+
+	// Fallback: check the root order item meta (persisted reliably at checkout).
+	if (! $is_recurring) {
+		$root = get_wc_appointment($root_id);
+		if ($root) {
+			$order = $root->get_order();
+			if ($order) {
+				foreach ($order->get_items() as $item) {
+					if ($item->get_meta('_recurring') === 'yes') {
+						$is_recurring = true;
+						break;
+					}
+				}
+			}
+		}
+		// Persist so downstream direct meta reads (admin chain / metabox / order
+		// card) agree with the list column.
+		if ($is_recurring) {
+			update_post_meta($root_id, '_recurring', 'yes');
+		}
+	}
+
+	$cache[$root_id] = $is_recurring;
 	return $cache[$root_id];
 }
 
@@ -4009,7 +4052,7 @@ function wellness_appointments_list_column_content($column, $post_id)
 		echo '<span style="color:#bbb;">&mdash;</span>';
 		return;
 	}
-	wellness_render_recurring_badge(wellness_get_recurring_chain($appointment), 'appointment');
+	wellness_render_recurring_badge(wellness_get_recurring_chain($appointment), 'appointment', $appointment->get_order());
 }
 
 /**
@@ -4090,26 +4133,45 @@ function wellness_orders_recurring_cell($order)
 	}
 	$appointment = wellness_order_recurring_appointment($order);
 	$chain       = $appointment ? wellness_get_recurring_chain($appointment) : array();
-	wellness_render_recurring_badge($chain, 'order');
+	wellness_render_recurring_badge($chain, 'order', $order);
 }
 
 /**
  * Shared clickable badge + popup for the recurring admin-list columns.
  *
- * @param array  $chain WC_Appointment[] of the recurring series.
- * @param string $type  'appointment' or 'order'.
+ * Payment- and date-aware: the badge reflects whether the viewed order has been
+ * paid, and the popup lists each session with its date, a "past" marker when it
+ * has already occurred, and its per-session payment status.
+ *
+ * @param array       $chain WC_Appointment[] of the recurring series.
+ * @param string      $type  'appointment' or 'order'.
+ * @param WC_Order|null $order The order being viewed (used for payment status).
  */
-function wellness_render_recurring_badge($chain = array(), $type = 'appointment')
+function wellness_render_recurring_badge($chain = array(), $type = 'appointment', $order = null)
 {
-	$days = wellness_get_recurring_payment_reminder_days();
+	$days    = wellness_get_recurring_payment_reminder_days();
+	$now     = current_time('timestamp');
+	$is_paid = $order instanceof WC_Order && $order->is_paid();
+
+	$status_label = $is_paid
+		? __('Paid', 'woodmart-child')
+		: __('Unpaid', 'woodmart-child');
+	$status_class = $is_paid ? 'wellness-rec-badge--paid' : 'wellness-rec-badge--unpaid';
 
 	echo '<span class="wellness-rec-wrap">';
-	echo '<a href="#" class="wellness-rec-badge" title="' . esc_attr__('Click for recurring details', 'woodmart-child') . '">' . esc_html__('Recurring', 'woodmart-child') . '</a>';
-	echo '<span class="wellness-rec-note">' . esc_html(sprintf(
-		/* translators: %d: days before the appointment */
-		__('pay/confirm %d day(s) before session', 'woodmart-child'),
-		$days
-	)) . '</span>';
+	echo '<a href="#" class="wellness-rec-badge ' . esc_attr($status_class) . '" title="' . esc_attr__('Click for recurring details', 'woodmart-child') . '">';
+	echo esc_html__('Recurring', 'woodmart-child') . ' &middot; ' . esc_html($status_label);
+	echo '</a>';
+
+	if ($is_paid) {
+		echo '<span class="wellness-rec-note">' . esc_html__('Series already paid.', 'woodmart-child') . '</span>';
+	} else {
+		echo '<span class="wellness-rec-note">' . esc_html(sprintf(
+			/* translators: %d: days before the appointment */
+			__('pay/confirm %d day(s) before session', 'woodmart-child'),
+			$days
+		)) . '</span>';
+	}
 
 	echo '<div class="wellness-rec-pop">';
 	echo '<div class="wellness-rec-pop-title">' . esc_html__('Recurring series', 'woodmart-child') . '</div>';
@@ -4119,17 +4181,18 @@ function wellness_render_recurring_badge($chain = array(), $type = 'appointment'
 		foreach ($chain as $a) {
 			$start     = $a->get_start();
 			$when      = $start ? date_i18n('M j, Y g:i A', $start) : '';
+			$is_past   = $start && $start < $now;
 			$appt_link = admin_url('post.php?post=' . $a->get_id() . '&action=edit');
-			$order     = $a->get_order();
+			$o         = $a->get_order();
 
 			echo '<div class="wellness-rec-pop-row">';
 			echo '<a href="' . esc_url($appt_link) . '" target="_blank">' . esc_html__('Appt #', 'woodmart-child') . esc_html($a->get_id()) . '</a>';
 			if ($when) {
-				echo ' <span class="wellness-rec-pop-when">' . esc_html($when) . '</span>';
+				echo ' <span class="wellness-rec-pop-when">' . esc_html($when) . ($is_past ? ' <span class="wellness-rec-pop-past">(' . esc_html__('past', 'woodmart-child') . ')</span>' : '') . '</span>';
 			}
 			echo ' <span class="wellness-rec-pop-status">' . esc_html(wellness_appointment_status_label($a->get_status())) . '</span>';
-			if ($order) {
-				echo ' &mdash; ' . esc_html__('Order', 'woodmart-child') . ' <a href="' . esc_url($order->get_edit_order_url()) . '" target="_blank">#' . esc_html($order->get_order_number()) . '</a>';
+			if ($o) {
+				echo ' &mdash; ' . esc_html__('Order', 'woodmart-child') . ' <a href="' . esc_url($o->get_edit_order_url()) . '" target="_blank">#' . esc_html($o->get_order_number()) . '</a>';
 			}
 			echo '</div>';
 		}
@@ -4157,7 +4220,10 @@ function wellness_recurring_list_popup_assets()
 		.wellness-rec-wrap { position: relative; display: inline-block; }
 		.wellness-rec-badge { display: inline-block; padding: 2px 8px; border-radius: 3px; background: #e3edff; color: #1a56db; font-size: 11px; font-weight: 600; text-decoration: none; border: 1px solid #c7d8ff; }
 		.wellness-rec-badge:hover { background: #d4e2ff; }
+		.wellness-rec-badge--paid { background: #e7f6e7; color: #1e7d32; border-color: #b7e3b7; }
+		.wellness-rec-badge--unpaid { background: #fff3e0; color: #b26a00; border-color: #ffd9a8; }
 		.wellness-rec-note { display: block; color: #666; font-size: 11px; line-height: 1.5; margin-top: 2px; }
+		.wellness-rec-pop-past { color: #999; font-style: italic; }
 		.wellness-rec-pop { display: none; position: absolute; top: 100%; left: 0; z-index: 9999; min-width: 320px; background: #fff; border: 1px solid #ccd0d4; box-shadow: 0 4px 12px rgba(0,0,0,.15); padding: 8px 10px; border-radius: 4px; }
 		.wellness-rec-pop.open { display: block; }
 		.wellness-rec-pop-title { font-weight: 600; margin-bottom: 6px; font-size: 12px; }
