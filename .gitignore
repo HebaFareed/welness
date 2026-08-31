@@ -16,6 +16,9 @@
 !.gitignore
 !wp-content/
 !docs/
+
+# Keep the one-time test-fixtures seeding script in version control (dev tool).
+!test-fixtures.php
  
 # Ignore everything in the "wp-content" directory, except the "themes" directory.
 wp-content/*
