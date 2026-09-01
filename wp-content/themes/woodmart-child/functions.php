@@ -4347,7 +4347,7 @@ function wellness_hide_calendar_until_duration($position, $product_id)
 				wellnessToggleDurationFields();
 			}
 		})(jQuery);
-	</style>
+	</script>
 <?php
 }
 
