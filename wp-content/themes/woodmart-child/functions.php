@@ -432,12 +432,21 @@ function wellness_get_active_currency($product = null)
 	$currency = wellness_get_location_currency(); // location-based default
 
 	if ($product) {
-		$staff_ids = $product->get_staff_ids();
-		if (! empty($staff_ids)) {
-			$staff_id      = (int) $staff_ids[0];
-			$staff_currency = get_user_meta($staff_id, '_staff_currency', true);
-			if ($staff_currency === 'EGP' || $staff_currency === 'USD') {
-				$currency = $staff_currency; // explicit override beats location
+		// A hook/global may pass a product ID (or slug) string rather than a
+		// WC_Product object. Coerce it so get_staff_ids() is never called on a
+		// string; if it can't be resolved, fall back to the location-based currency.
+		if (! is_a($product, 'WC_Product')) {
+			$product = wc_get_product($product);
+		}
+
+		if ($product) {
+			$staff_ids = $product->get_staff_ids();
+			if (! empty($staff_ids)) {
+				$staff_id      = (int) $staff_ids[0];
+				$staff_currency = get_user_meta($staff_id, '_staff_currency', true);
+				if ($staff_currency === 'EGP' || $staff_currency === 'USD') {
+					$currency = $staff_currency; // explicit override beats location
+				}
 			}
 		}
 	}

@@ -138,6 +138,20 @@ function seed_get_staff_by_email( $email ) {
 }
 
 /**
+ * Get a product ID by its slug (WooCommerce products).
+ *
+ * There is no core wc_get_product_id_by_slug(); resolve the product post via
+ * get_page_by_path (the 'product' post type, non-hierarchical).
+ *
+ * @param string $slug Product slug.
+ * @return int Product ID (0 when not found).
+ */
+function seed_get_product_id_by_slug( $slug ) {
+	$post = get_page_by_path( $slug, OBJECT, 'product' );
+	return $post ? (int) $post->ID : 0;
+}
+
+/**
  * Create (or reuse) a `shop_staff` test therapist and set currency/timezone.
  *
  * @param array $cfg Fixture config.
@@ -188,7 +202,7 @@ function seed_ensure_staff( $cfg ) {
  * @return int|WP_Error
  */
 function seed_ensure_product( $cfg, $staff_id, $duration_options ) {
-	$product_id = wc_get_product_id_by_slug( $cfg['product_slug'] );
+	$product_id = seed_get_product_id_by_slug( $cfg['product_slug'] );
 	if ( $product_id ) {
 		$product = wc_get_product( $product_id );
 		if ( $product ) {
@@ -325,7 +339,7 @@ function seed_clean( $fixtures ) {
 	global $wpdb;
 
 	foreach ( $fixtures as $cfg ) {
-		$product_id = wc_get_product_id_by_slug( $cfg['product_slug'] );
+		$product_id = seed_get_product_id_by_slug( $cfg['product_slug'] );
 		if ( $product_id ) {
 			$wpdb->delete( $wpdb->prefix . 'wc_appointment_relationships', array( 'product_id' => $product_id ) );
 			wp_delete_post( $product_id, true );
