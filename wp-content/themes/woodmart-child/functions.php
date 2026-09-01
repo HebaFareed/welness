@@ -137,6 +137,74 @@ function wellness_render_test_therapist_banner()
 	</style>';
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// Test Therapist Fixtures — admin page (QA only). No public URL; admin-gated.
+// ═══════════════════════════════════════════════════════════════════════
+
+add_action('admin_menu', 'wellness_register_test_fixtures_page');
+function wellness_register_test_fixtures_page()
+{
+	add_submenu_page(
+		'woocommerce',
+		__('Test Therapist Fixtures', 'woodmart-child'),
+		__('Test Therapist Fixtures', 'woodmart-child'),
+		'manage_options',
+		'wellness-test-fixtures',
+		'wellness_render_test_fixtures_page'
+	);
+}
+
+function wellness_render_test_fixtures_page()
+{
+	if (! current_user_can('manage_options')) {
+		wp_die(esc_html__('Insufficient permissions.', 'woodmart-child'));
+	}
+
+	// Load the fixture functions (kept in test-fixtures.php at the site root).
+	$fixtures_file = ABSPATH . 'test-fixtures.php';
+	if (file_exists($fixtures_file)) {
+		require_once $fixtures_file;
+	}
+	if (! function_exists('seed_run')) {
+		echo '<div class="notice notice-error"><p>test-fixtures.php missing or seed functions absent.</p></div>';
+		return;
+	}
+
+	$output = '';
+	if (isset($_POST['wellness_fixtures_action'])
+		&& check_admin_referer('wellness_fixtures_nonce', 'wellness_fixtures_nonce')) {
+		$action = sanitize_text_field(wp_unslash($_POST['wellness_fixtures_action']));
+		ob_start();
+		if ($action === 'clean') {
+			seed_clean(seed_get_fixtures());
+		} else {
+			seed_run(seed_get_fixtures(), seed_get_duration_options());
+		}
+		$output = ob_get_clean();
+	}
+	?>
+	<div class="wrap">
+		<h1><?php esc_html_e('Test Therapist Fixtures', 'woodmart-child'); ?></h1>
+		<p><?php esc_html_e('QA-only. Creates hidden test therapists (EGP / USD / Location Based) reachable only by direct URL, plus their staff availability, recurring + session-type settings. Never run on production.', 'woodmart-child'); ?></p>
+		<?php if ($output) : ?>
+			<div class="notice notice-info">
+				<pre style="white-space:pre-wrap;margin:0;"><?php echo esc_html($output); ?></pre>
+			</div>
+		<?php endif; ?>
+		<form method="post">
+			<?php wp_nonce_field('wellness_fixtures_nonce', 'wellness_fixtures_nonce'); ?>
+			<input type="hidden" name="wellness_fixtures_action" value="seed" />
+			<?php submit_button(__('Seed fixtures', 'woodmart-child'), 'primary', '', false); ?>
+		</form>
+		<form method="post" onsubmit="return confirm('Remove all test therapists, their products and availability?');">
+			<?php wp_nonce_field('wellness_fixtures_nonce', 'wellness_fixtures_nonce'); ?>
+			<input type="hidden" name="wellness_fixtures_action" value="clean" />
+			<?php submit_button(__('Clean fixtures', 'woodmart-child'), 'secondary', '', false); ?>
+		</form>
+	</div>
+	<?php
+}
+
 /**
  * Enqueue script and styles for child theme
  */
@@ -846,13 +914,17 @@ function wellness_refresh_usd_egp_rate_callback()
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Re-denominate a USD order to EGP when the payer is in Egypt.
+ * Mark a USD order from Egypt for EGP payment, WITHOUT re-denominating the order.
+ *
+ * The order stays recorded in USD (as the customer saw it); the converted EGP
+ * amount is applied at the Paymob gateway via `paymob_intention_data`, so Paymob
+ * is charged the EGP equivalent. Reads the frozen currency/country from the
+ * order line item's appointment meta (never the cart) so it works on resumed,
+ * Store-API, and standalone pay-for-order flows.
  *
  * Runs on woocommerce_checkout_create_order (shortcode checkout, before the
  * order is saved) and woocommerce_store_api_checkout_order_processed (blocks,
- * after the order is saved — the wrapper saves again). Uses the frozen
- * currency/country captured at add-to-cart so it can never disagree with the
- * amount.
+ * after the order is saved — the wrapper saves again).
  *
  * @param WC_Order|int $order Order object (or ID for the block path).
  * @return void
@@ -864,23 +936,23 @@ function wellness_convert_order_usd_to_egp($order)
 		if (! $order) return;
 	}
 
-	// Only convert once, and only while the order is still in EGP. A resumed
-	// pending/failed order re-runs checkout with USD items and a fresh USD
-	// currency, so a stale marker must not suppress the conversion.
-	if ($order->get_meta('_usd_to_egp_converted') === 'yes' && $order->get_currency() === 'EGP') {
+	// Converted once — the order stays USD, so the marker is enough.
+	if ($order->get_meta('_usd_to_egp_converted') === 'yes') {
 		return;
 	}
 
-	// Frozen currency + country from the cart (still populated during order
-	// creation); fall back to the order's own currency for pre-fix carts.
+	// Frozen currency + country from the line item's appointment (NOT the cart).
 	$currency = '';
 	$country  = '';
 
-	if (WC()->cart && ! WC()->cart->is_empty()) {
-		foreach (WC()->cart->get_cart() as $cart_item) {
-			$currency = wellness_cart_item_currency($cart_item);
-			$country  = wellness_cart_item_country($cart_item);
-			break;
+	foreach ($order->get_items() as $item) {
+		$appointment_id = (int) $item->get_meta('_appointment_id');
+		if ($appointment_id) {
+			$currency = get_post_meta($appointment_id, '_currency', true);
+			$country  = get_post_meta($appointment_id, '_country', true);
+			if ($currency) {
+				break;
+			}
 		}
 	}
 
@@ -888,7 +960,7 @@ function wellness_convert_order_usd_to_egp($order)
 		$currency = $order->get_currency();
 	}
 
-	// Only USD orders paid from Egypt are converted to EGP.
+	// Only USD orders paid from Egypt are charged in EGP via Paymob.
 	if ($currency !== 'USD' || $country !== 'EG') {
 		return;
 	}
@@ -898,53 +970,11 @@ function wellness_convert_order_usd_to_egp($order)
 		return;
 	}
 
-	$decimals       = wc_get_price_decimals();
-	$original_total = round($order->get_total(), $decimals);
-
-	// Convert product line items, including their per-rate tax breakdowns.
-	foreach ($order->get_items() as $item) {
-		if (! is_a($item, 'WC_Order_Item_Product')) {
-			continue;
-		}
-		$item->set_subtotal(round($item->get_subtotal() * $rate, $decimals));
-		$item->set_total(round($item->get_total() * $rate, $decimals));
-		$item->set_subtotal_tax(round($item->get_subtotal_tax() * $rate, $decimals));
-		$item->set_total_tax(round($item->get_total_tax() * $rate, $decimals));
-
-		$taxes = $item->get_taxes();
-		foreach (array('subtotal', 'total') as $tax_key) {
-			if (isset($taxes[$tax_key]) && is_array($taxes[$tax_key])) {
-				foreach ($taxes[$tax_key] as $rate_id => $amount) {
-					$taxes[$tax_key][$rate_id] = round($amount * $rate, $decimals);
-				}
-			}
-		}
-		$item->set_taxes($taxes);
-	}
-
-	// Convert order tax line items so the admin tax breakdown matches the totals.
-	foreach ($order->get_items('tax') as $item) {
-		if (! is_a($item, 'WC_Order_Item_Tax')) {
-			continue;
-		}
-		$item->set_tax_total(round($item->get_tax_total() * $rate, $decimals));
-		$item->set_shipping_tax_total(round($item->get_shipping_tax_total() * $rate, $decimals));
-	}
-
-	// Convert order-level totals (set from the USD cart by set_data_from_cart).
-	$order->set_currency('EGP');
-	$order->set_total(round($order->get_total() * $rate, $decimals));
-	$order->set_shipping_total(round($order->get_shipping_total() * $rate, $decimals));
-	$order->set_discount_total(round($order->get_discount_total() * $rate, $decimals));
-	$order->set_cart_tax(round($order->get_cart_tax() * $rate, $decimals));
-	$order->set_shipping_tax(round($order->get_shipping_tax() * $rate, $decimals));
-	$order->set_discount_tax(round($order->get_discount_tax() * $rate, $decimals));
-
-	// Audit trail.
+	// Leave the order in USD; record the rate + origin for the gateway + audit.
 	$order->update_meta_data('_usd_to_egp_converted', 'yes');
 	$order->update_meta_data('_usd_to_egp_rate', $rate);
 	$order->update_meta_data('_original_currency', 'USD');
-	$order->update_meta_data('_original_total', $original_total);
+	$order->update_meta_data('_original_total', $order->get_total());
 }
 
 add_action('woocommerce_checkout_create_order', 'wellness_convert_order_usd_to_egp', 20, 1);
@@ -961,6 +991,54 @@ function wellness_convert_order_usd_to_egp_save($order)
 	if (is_a($order, 'WC_Order')) {
 		$order->save();
 	}
+}
+
+/**
+ * Paymob gateway: charge EGP for a USD order from Egypt while the order stays USD.
+ *
+ * Called with the intention payload (amount in minor units, currency, optional
+ * items). When the order is marked _usd_to_egp_converted, multiply the amount
+ * (and any line-item amounts) by the frozen rate and set currency to EGP, then
+ * sync PaymobCentsAmount so Paymob's webhook validation passes.
+ *
+ * @param array $data Intention data (amount, currency, items, ...).
+ * @param array $args { order_id, context }.
+ * @return array
+ */
+add_filter('paymob_intention_data', 'wellness_paymob_intention_usd_to_egp', 20, 2);
+function wellness_paymob_intention_usd_to_egp($data, $args)
+{
+	$order_id = isset($args['order_id']) ? (int) $args['order_id'] : 0;
+	$order    = $order_id ? wc_get_order($order_id) : null;
+	if (! $order || $order->get_meta('_usd_to_egp_converted') !== 'yes') {
+		return $data;
+	}
+
+	$rate = (float) $order->get_meta('_usd_to_egp_rate', true);
+	if ($rate <= 0) {
+		return $data;
+	}
+
+	// Convert the intention (and any line items) to EGP; the order stays USD.
+	if (isset($data['amount'])) {
+		$data['amount'] = (int) round($data['amount'] * $rate);
+	}
+	if (isset($data['currency'])) {
+		$data['currency'] = 'EGP';
+	}
+	if (! empty($data['items']) && is_array($data['items'])) {
+		foreach ($data['items'] as $k => $item) {
+			if (isset($item['amount'])) {
+				$data['items'][$k]['amount'] = (int) round($item['amount'] * $rate);
+			}
+		}
+	}
+
+	// Paymob's webhook compares PaymobCentsAmount to the charged amount.
+	$order->update_meta_data('PaymobCentsAmount', $data['amount']);
+	$order->save();
+
+	return $data;
 }
 
 // add css code to admin panel when user role is shop_staff
@@ -3909,26 +3987,27 @@ function wellness_override_duration_option($duration_in_total, $product, $posted
 	return $duration_in_total;
 }
 
-// ── Phase 4b: Override Interval to match selected Duration Option ───────
+// ── Phase 4b: Override Interval + Slot Duration to match selected Duration Option ──
 
-add_filter('woocommerce_appointments_base_interval', 'wellness_override_interval_for_duration_option', 20, 2);
-function wellness_override_interval_for_duration_option($base_interval, $product)
+// Shared helper: minutes for the selected session type (duration option) in the slot AJAX.
+// Returns 0 when not applicable so callers fall back to the product default.
+function wellness_selected_duration_option_minutes($product)
 {
 	// Only during AJAX slot calculation.
 	if (! wp_doing_ajax()) {
-		return $base_interval;
+		return 0;
 	}
 
 	// Parse the AJAX form data to find the selected session type.
 	$form_data = $_POST['form'] ?? '';
 	if (empty($form_data)) {
-		return $base_interval;
+		return 0;
 	}
 
 	parse_str($form_data, $posted);
 
 	if (empty($posted['wc_appointments_field_duration_option'])) {
-		return $base_interval;
+		return 0;
 	}
 
 	$options = json_decode(
@@ -3939,16 +4018,25 @@ function wellness_override_interval_for_duration_option($base_interval, $product
 	$index   = $posted['wc_appointments_field_duration_option'];
 
 	if (! isset($options[$index]) || empty($options[$index]['duration'])) {
-		return $base_interval;
+		return 0;
 	}
 
 	$chosen_minutes = absint($options[$index]['duration']);
-	if ($chosen_minutes <= 0) {
-		return $base_interval;
-	}
 
-	return $chosen_minutes;
+	return $chosen_minutes > 0 ? $chosen_minutes : 0;
 }
+
+// Slot step (base_interval) = chosen duration, so floor(window/step) yields ≥ 1 slot.
+add_filter('woocommerce_appointments_base_interval', function ($base_interval, $product) {
+	$chosen = wellness_selected_duration_option_minutes($product);
+	return $chosen > 0 ? $chosen : $base_interval;
+}, 20, 2);
+
+// Slot length (interval) = chosen duration, so each slot is the session's duration.
+add_filter('woocommerce_appointments_interval', function ($default_interval, $product) {
+	$chosen = wellness_selected_duration_option_minutes($product);
+	return $chosen > 0 ? $chosen : $default_interval;
+}, 20, 2);
 
 // ── Phase 5: Persist selected duration label in appointment data ────────
 

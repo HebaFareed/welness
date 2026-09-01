@@ -10,41 +10,17 @@
  * geolocation-fallback currency path; ?diagnose=1 prints geolocation/currency
  * resolution under normal, simulated-Cloudflare, and spoofed-header conditions.
  *
- * RUN from an environment whose PHP has the mysqli extension (the WP container
- * / the web server PHP — the host shell PHP has no mysqli):
- *
- *   php test-fixtures.php            # create fixtures
- *   php test-fixtures.php --clean    # remove fixtures
- *
- * Or from the web (e.g. logged-in admin), with the seed token:
- *   http://welness.heba/test-fixtures.php?seed=<TOKEN>[&clean=1]
- *
- * This script is kept in the repo as a dev tool for future seeding. Web access
- * is token-guarded; never leave it reachable on a production web root.
+ * This file defines the seed/clean functions used by the WooCommerce →
+ * "Test Therapist Fixtures" admin page (see functions.php). It is never run
+ * directly; passwords are stored in transients, not printed.
  *
  * @package woodmart-child
  */
 
-// Security token for web access. Change it before running if you like.
-if ( ! defined( 'WELLNESS_SEED_TOKEN' ) ) {
-	define( 'WELLNESS_SEED_TOKEN', 'welness-seed-2026-08-30' );
-}
-
-// Bootstrap WordPress if this file was hit directly (web) instead of via CLI.
+// No direct access. Only the WooCommerce → "Test Therapist Fixtures" admin
+// page (see functions.php) includes this file; it is never run directly.
 if ( ! defined( 'ABSPATH' ) ) {
-	require_once __DIR__ . '/wp-load.php';
-}
-
-$is_cli = ( 'cli' === PHP_SAPI );
-
-// Web access requires the token.
-if ( ! $is_cli ) {
-	$token = isset( $_GET['seed'] ) ? sanitize_text_field( wp_unslash( $_GET['seed'] ) ) : '';
-	if ( ! hash_equals( WELLNESS_SEED_TOKEN, $token ) ) {
-		http_response_code( 403 );
-		exit( 'Forbidden: pass ?seed=WELLNESS_SEED_TOKEN or run via CLI.' );
-	}
-	header( 'Content-Type: text/plain; charset=utf-8' );
+	exit( 'Forbidden: run the Test Therapist Fixtures admin page in wp-admin.' );
 }
 
 /**
@@ -196,7 +172,9 @@ function seed_ensure_staff( $cfg ) {
 	update_user_meta( $user_id, '_staff_currency', $cfg['staff_currency'] );
 	update_user_meta( $user_id, 'timezone_string', $cfg['timezone'] );
 
-	echo '  [new] staff password: ' . $password . "\n";
+	// Never echo a generated password. Store it so an admin can read it once;
+	// it is removed by `clean`. Retrieve with get_transient('wellness_seed_password_'.$user_id).
+	set_transient( 'wellness_seed_password_' . $user_id, $password, DAY_IN_SECONDS );
 
 	return (int) $user_id;
 }
@@ -408,20 +386,5 @@ function seed_run( $fixtures, $duration_options ) {
 }
 
 // ── Entry point ────────────────────────────────────────────────────────
-$fixtures         = seed_get_fixtures();
-$duration_options = seed_get_duration_options();
-
-$clean = ( $is_cli && in_array( '--clean', (array) $argv, true ) )
-	|| ( ! $is_cli && isset( $_GET['clean'] ) && '1' === $_GET['clean'] );
-
-if ( ! $is_cli && isset( $_GET['diagnose'] ) && '1' === $_GET['diagnose'] ) {
-	// Diagnostic mode: no seeding, just print geolocation/currency resolution.
-	seed_diagnose_currency();
-	exit;
-}
-
-if ( $clean ) {
-	seed_clean( $fixtures );
-} else {
-	seed_run( $fixtures, $duration_options );
-}
+// No entry point here. The seed/clean functions are invoked from the
+// WooCommerce → "Test Therapist Fixtures" admin page (see functions.php).
