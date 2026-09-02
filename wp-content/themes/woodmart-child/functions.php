@@ -807,7 +807,16 @@ function wellness_filter_gateways_by_currency($gateways)
 	// ── Location-aware routing ───────────────────────────────────────────
 	// EGP → Paymob. USD + payer in Egypt → Paymob (converted to EGP at the
 	// order step, since Paymob doesn't convert). USD + payer elsewhere → Stripe.
-	$allowed = (! $is_usd || $country === 'EG') ? $paymob_ids : $stripe_ids;
+	//
+	// The payer's country (frozen on the cart item) is NOT reliably set at
+	// this point: it can be '' when geolocation hasn't resolved yet. Only
+	// route USD → Stripe when the country is KNOWN to be outside Egypt;
+	// otherwise default to Paymob (the site's gateway). Without this, a USD
+	// cart with an unresolved country loses every gateway on the payment step.
+	$is_usd_cart     = (bool) $is_usd;
+	$is_egypt        = ($country === 'EG');
+	$is_known_abroad = ($country !== '' && ! $is_egypt);
+	$allowed         = (! $is_usd_cart || ! $is_known_abroad) ? $paymob_ids : $stripe_ids;
 
 	foreach ($gateways as $id => $gateway) {
 		if (! in_array($id, $allowed, true)) {
@@ -815,19 +824,42 @@ function wellness_filter_gateways_by_currency($gateways)
 		}
 	}
 
+	// The Paymob plugin hooks its own currency filter at priority 10, which
+	// strips the Paymob gateways when the store currency is USD. But this
+	// theme intentionally shows Paymob for a USD order from Egypt (the amount
+	// is converted to EGP at the gateway). Re-inject only the ENABLED Paymob
+	// gateway instances the plugin removed, so the payment step lists them
+	// once, without surfacing disabled or duplicate gateways.
+	if (! empty($allowed) && in_array('paymob', $allowed, true) && class_exists('WC_Payment_Gateways')) {
+		$wc_gateways = WC()->payment_gateways();
+		if ($wc_gateways && method_exists($wc_gateways, 'payment_gateways')) {
+			$registered = $wc_gateways->payment_gateways();
+			foreach ($paymob_ids as $paymob_id) {
+				$gateway = isset($registered[$paymob_id]) ? $registered[$paymob_id] : null;
+				if (
+					in_array($paymob_id, $allowed, true) &&
+					empty($gateways[$paymob_id]) &&
+					is_a($gateway, 'WC_Payment_Gateway') &&
+					'yes' === $gateway->enabled
+				) {
+					$gateways[$paymob_id] = $gateway;
+				}
+			}
+		}
+	}
+
 	return $gateways;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Live USD→EGP exchange rate (open.er-api.com, cached) — used to convert a USD
-// order to EGP for Paymob (which does not convert currencies) at order creation.
+// Live USD→EGP exchange rate (open.er-api.com) — used to convert a USD order to
+// EGP for Paymob (which does not convert currencies).
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /**
- * Fetch the current USD→EGP rate from open.er-api.com (free, no key, updates
- * daily). Returns 0.0 on any failure so callers can fall back safely.
+ * Fetch the current USD→EGP rate from open.er-api.com (free, no key).
  *
- * @return float
+ * @return float Rate, or 0.0 on any failure so callers can fall back safely.
  */
 function wellness_fetch_usd_egp_rate()
 {
@@ -847,73 +879,39 @@ function wellness_fetch_usd_egp_rate()
 }
 
 /**
+ * Fallback USD→EGP rate used only when the live fetch fails, so a conversion is
+ * never applied at 0.
+ */
+define('WELLNESS_USD_EGP_FALLBACK', 50.0);
+
+/**
  * USD→EGP exchange rate for converting a USD order to EGP for Paymob.
  *
- * The rate lives in options (not a transient) so a stale value survives expiry
- * and checkout never blocks on the API: when the cached rate is older than 12h,
- * a background refresh is scheduled and the stale rate is returned immediately.
- * A synchronous fetch happens only on the very first call (no cached value).
- * On total failure, the site option `wellness_usd_egp_fallback` is returned so
- * a payment is never converted at 0.
+ * The live source is tried first so the rate is always current. If the live
+ * fetch fails, the last cached value is used as a backend fallback; only when
+ * neither is available is the constant fallback returned, so a payment is never
+ * converted at 0.
  *
  * @return float USD→EGP rate (> 0).
  */
 function wellness_get_usd_egp_rate()
 {
-	$rate    = (float) get_option('wellness_usd_egp_rate', 0);
-	$updated = (int) get_option('wellness_usd_egp_rate_updated', 0);
-
-	// Fresh or stale: return it; refresh in the background when stale. This
-	// never blocks a checkout request on the API.
-	if ($rate > 0) {
-		if ((time() - $updated) >= 12 * HOUR_IN_SECONDS && ! as_next_scheduled_action('wellness_refresh_usd_egp_rate')) {
-			as_schedule_single_action(time() + 60, 'wellness_refresh_usd_egp_rate');
-		}
-		return $rate;
-	}
-
-	// No cached value: never block checkout — return the fallback (never 0)
-	// and refresh in the background.
-	if (! as_next_scheduled_action('wellness_refresh_usd_egp_rate')) {
-		as_schedule_single_action(time() + 60, 'wellness_refresh_usd_egp_rate');
-	}
-	$fallback = (float) get_option('wellness_usd_egp_fallback', 30.0);
-	return $fallback <= 0 ? 30.0 : $fallback;
-}
-
-/**
- * Prewarm the USD→EGP rate on site init so the first checkout doesn't rely on
- * the fallback. Runs on a page load (not inside the checkout transaction) and
- * only fetches when no rate is cached yet; stale rates are refreshed in the
- * background by wellness_get_usd_egp_rate().
- */
-add_action('init', 'wellness_prewarm_usd_egp_rate');
-function wellness_prewarm_usd_egp_rate()
-{
-	$rate = (float) get_option('wellness_usd_egp_rate', 0);
-	if ($rate > 0) {
-		return;
-	}
-
-	$fetched = wellness_fetch_usd_egp_rate();
-	if ($fetched > 0) {
-		update_option('wellness_usd_egp_rate', $fetched);
-		update_option('wellness_usd_egp_rate_updated', time());
-	}
-}
-
-/**
- * Background refresh of the USD→EGP rate (scheduled when the cached value goes
- * stale, so checkout requests are never blocked by the API call).
- */
-add_action('wellness_refresh_usd_egp_rate', 'wellness_refresh_usd_egp_rate_callback');
-function wellness_refresh_usd_egp_rate_callback()
-{
+	// Primary: fresh live rate.
 	$rate = wellness_fetch_usd_egp_rate();
 	if ($rate > 0) {
 		update_option('wellness_usd_egp_rate', $rate);
 		update_option('wellness_usd_egp_rate_updated', time());
+		return $rate;
 	}
+
+	// Backend: last-known cached rate.
+	$cached = (float) get_option('wellness_usd_egp_rate', 0);
+	if ($cached > 0) {
+		return $cached;
+	}
+
+	// Last resort: constant, so we never convert at 0.
+	return WELLNESS_USD_EGP_FALLBACK;
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -1019,11 +1017,26 @@ function wellness_paymob_intention_usd_to_egp($data, $args)
 {
 	$order_id = isset($args['order_id']) ? (int) $args['order_id'] : 0;
 	$order    = $order_id ? wc_get_order($order_id) : null;
-	if (! $order || $order->get_meta('_usd_to_egp_converted') !== 'yes') {
+	if (! $order) {
 		return $data;
 	}
 
+	// Paymob's Egypt integrations only accept EGP. A USD order that reached a
+	// Paymob gateway must therefore be charged in EGP, regardless of whether
+	// the conversion marker was set at order creation (which can be skipped
+	// when the frozen payer country is empty/unresolved). So every USD order
+	// hitting Paymob is converted here.
+	$order_currency = strtoupper((string) $order->get_currency());
+	if ($order_currency !== 'USD') {
+		return $data;
+	}
+
+	// Use the frozen rate when present; fall back to the live/cached rate so a
+	// conversion is never skipped (never 0).
 	$rate = (float) $order->get_meta('_usd_to_egp_rate', true);
+	if ($rate <= 0) {
+		$rate = wellness_get_usd_egp_rate();
+	}
 	if ($rate <= 0) {
 		return $data;
 	}
@@ -1043,7 +1056,9 @@ function wellness_paymob_intention_usd_to_egp($data, $args)
 		}
 	}
 
-	// Paymob's webhook compares PaymobCentsAmount to the charged amount.
+	// Record the conversion decision for audit + Paymob's webhook validation.
+	$order->update_meta_data('_usd_to_egp_converted', 'yes');
+	$order->update_meta_data('_usd_to_egp_rate', $rate);
 	$order->update_meta_data('PaymobCentsAmount', $data['amount']);
 	$order->save();
 
