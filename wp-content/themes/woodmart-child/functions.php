@@ -1057,12 +1057,97 @@ function wellness_paymob_intention_usd_to_egp($data, $args)
 	}
 
 	// Record the conversion decision for audit + Paymob's webhook validation.
+	// Also capture the original USD total/currency in case order creation did
+	// not (needed to restore the USD record after Paymob's webhook overwrites
+	// the total with the EGP amount).
+	if (! $order->get_meta('_original_total')) {
+		$order->update_meta_data('_original_total', $order->get_total());
+	}
+	if (! $order->get_meta('_original_currency')) {
+		$order->update_meta_data('_original_currency', $order->get_currency());
+	}
 	$order->update_meta_data('_usd_to_egp_converted', 'yes');
 	$order->update_meta_data('_usd_to_egp_rate', $rate);
 	$order->update_meta_data('PaymobCentsAmount', $data['amount']);
 	$order->save();
 
+	// Persist the conversion as a real order-item meta (non-underscore key) so it
+	// is shown automatically in BOTH the admin order-details table (through
+	// get_all_formatted_meta_data) and the customer-facing item meta (through
+	// get_formatted_meta_data / wc_display_item_meta) - no extra display filter
+	// needed. This is purely visual and does not alter any line/order totals.
+	$egp_amount = (float) $data['amount'] / 100; // EGP = 2 decimals (Paymob Egypt).
+	$conversion = sprintf(
+		/* translators: 1: EGP amount charged, 2: exchange rate */
+		__('%1$s EGP (converted at rate %2$s)', 'woodmart-child'),
+		number_format_i18n($egp_amount, 2),
+		number_format_i18n($rate, 4)
+	);
+	foreach ($order->get_items() as $item) {
+		if (is_a($item, 'WC_Order_Item_Product')) {
+			$item->add_meta_data('paymob_egp_conversion', $conversion, true);
+			$item->save();
+		}
+	}
+
 	return $data;
+}
+
+/**
+ * Restore the recorded USD total/currency after Paymob's webhook re-denominates
+ * the order to EGP.
+ *
+ * Paymob's webhook treats the dashboard amount as the source of truth and calls
+ * sync_order_total_from_paymob_cents() (sets the total to the EGP amount) just
+ * before WC_Order::payment_complete(), which fires this hook after saving. So
+ * we restore the order's USD record here so the order stays booked in USD while
+ * the Paymob charge remains in EGP. The EGP conversion itself is shown as an
+ * order-item meta (see the display-key filter below).
+ *
+ * @param int    $order_id       Order ID.
+ * @param string $transaction_id Transaction ID (unused).
+ * @return void
+ */
+add_action('woocommerce_payment_complete', 'wellness_restore_usd_order_after_paymob', 20, 2);
+function wellness_restore_usd_order_after_paymob($order_id, $transaction_id = '')
+{
+	$order = $order_id ? wc_get_order($order_id) : null;
+	if (! $order || $order->get_meta('_usd_to_egp_converted') !== 'yes') {
+		return;
+	}
+
+	$original_total = (float) $order->get_meta('_original_total', true);
+	$original_curr  = $order->get_meta('_original_currency', true);
+
+	if ($original_total > 0) {
+		$order->set_total($original_total);
+	}
+	if ($original_curr) {
+		$order->set_currency($original_curr);
+	}
+
+	$order->save();
+}
+
+/**
+ * Present the Paymob EGP-conversion item meta with a friendly label in both the
+ * admin and customer order details.
+ *
+ * The value is stored on each product line item as `paymob_egp_conversion`, so
+ * this only renames the displayed key; it affects no totals.
+ *
+ * @param string        $display_key The display key.
+ * @param WC_Order_Item_Meta $meta   The meta object.
+ * @param WC_Order_Item $item        The order item.
+ * @return string
+ */
+add_filter('woocommerce_order_item_display_meta_key', 'wellness_paymob_egp_display_key', 10, 3);
+function wellness_paymob_egp_display_key($display_key, $meta, $item)
+{
+	if (is_object($meta) && isset($meta->key) && 'paymob_egp_conversion' === $meta->key) {
+		return __('Paid via Paymob', 'woodmart-child');
+	}
+	return $display_key;
 }
 
 // add css code to admin panel when user role is shop_staff
