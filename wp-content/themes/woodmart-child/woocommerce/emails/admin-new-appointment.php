@@ -321,6 +321,8 @@ $appointment_url = admin_url( 'post.php?post=' . $appointment->get_id() . '&acti
 
 <?php
 // ── Client Intake Form summary ──────────────────────────────────────────
+// Intake is now collected on the thank-you page after booking. Returning
+// clients show their stored summary; new clients show a pending notice.
 $intake_rows = wellness_get_intake_summary_for_email($client_email);
 if (! empty($intake_rows)) : ?>
 <h2 style="color: #333; font-size: 18px; font-weight: 600; margin: 0 0 12px;">
@@ -330,6 +332,22 @@ if (! empty($intake_rows)) : ?>
 	style="width: 100%; border-collapse: collapse; margin: 0 0 24px; border-color: #e5e5e5;">
 	<tbody>
 		<?php echo $intake_rows; ?>
+	</tbody>
+</table>
+<?php elseif (! empty($client_email)) : ?>
+<h2 style="color: #333; font-size: 18px; font-weight: 600; margin: 0 0 12px;">
+	Client Intake Form: Pending
+</h2>
+<table cellspacing="0" cellpadding="8" border="1"
+	style="width: 100%; border-collapse: collapse; margin: 0 0 24px; border-color: #e5e5e5;">
+	<tbody>
+		<tr>
+			<td style="text-align: left; padding: 10px 14px; font-style: italic;">
+				This client has not completed the intake form yet. It is collected on the
+				thank-you page after booking; the details will appear here and on the order
+				once it has been submitted.
+			</td>
+		</tr>
 	</tbody>
 </table>
 <?php endif; ?>
