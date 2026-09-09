@@ -242,6 +242,15 @@ $appointment_url = admin_url( 'post.php?post=' . $appointment->get_id() . '&acti
 		</tr>
 		<?php endif; ?>
 
+		<tr>
+			<th style="text-align: <?php esc_attr_e( $text_align ); ?>; background: #f7f7f7; width: 38%; padding: 10px 14px; font-weight: 600;">
+				Appointment type
+			</th>
+			<td style="text-align: <?php esc_attr_e( $text_align ); ?>; padding: 10px 14px;">
+				<?php echo esc_html__( 'Online', 'woodmart-child' ); ?>
+			</td>
+		</tr>
+
 		<?php if ( $price_display ) : ?>
 		<tr>
 			<th style="text-align: <?php esc_attr_e( $text_align ); ?>; background: #f7f7f7; width: 38%; padding: 10px 14px; font-weight: 600;">

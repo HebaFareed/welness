@@ -151,6 +151,11 @@ $book_again_url = wc_get_page_permalink( 'shop' );
 			<td style="padding: 10px 14px;"><?php echo esc_html( $datetime_display ); ?></td>
 		</tr>
 
+		<tr>
+			<th style="text-align: left; background: #f7f7f7; width: 38%; padding: 10px 14px; font-weight: 600;">Appointment type</th>
+			<td style="padding: 10px 14px;"><?php echo esc_html__( 'Online', 'woodmart-child' ); ?></td>
+		</tr>
+
 		<?php if ( $price_display ) : ?>
 		<tr>
 			<th style="text-align: left; background: #f7f7f7; width: 38%; padding: 10px 14px; font-weight: 600;">Price</th>

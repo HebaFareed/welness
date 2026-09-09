@@ -4251,6 +4251,62 @@ function wellness_display_session_type_in_orders($html, $item, $args)
 	return $html;
 }
 
+// ── Appointment Type — fixed label (Online), shown in cart & orders ────────────
+
+// Cart / checkout review item data.
+add_filter('woocommerce_get_item_data', 'wellness_appointment_type_cart_item_data', 20, 2);
+function wellness_appointment_type_cart_item_data($item_data, $cart_item)
+{
+	if (empty($cart_item['appointment']) || ! is_array($cart_item['appointment'])) {
+		return $item_data;
+	}
+
+	$product = isset($cart_item['data']) ? $cart_item['data'] : null;
+	if (! $product || ! is_wc_appointment_product($product)) {
+		return $item_data;
+	}
+
+	// Avoid duplicates (e.g. if another filter already added the same key).
+	foreach ($item_data as $data) {
+		if (isset($data['name']) && __('Appointment type', 'woodmart-child') === $data['name']) {
+			return $item_data;
+		}
+	}
+
+	$item_data[] = [
+		'name'  => __('Appointment type', 'woodmart-child'),
+		'value' => __('Online', 'woodmart-child'),
+	];
+
+	return $item_data;
+}
+
+// Order item meta (checkout review, thank-you page, admin order, standard emails).
+add_filter('woocommerce_display_item_meta', 'wellness_display_appointment_type_in_orders', 10, 3);
+function wellness_display_appointment_type_in_orders($html, $item, $args)
+{
+	if (! is_a($item, 'WC_Order_Item_Product')) {
+		return $html;
+	}
+
+	$product = $item->get_product();
+	if (! $product || ! is_wc_appointment_product($product)) {
+		return $html;
+	}
+
+	// Only add if not already displayed.
+	if (strpos($html, 'Appointment type') !== false) {
+		return $html;
+	}
+
+	$html .= '<li class="wellness-appointment-type">';
+	$html .= '<strong class="wc-item-meta-label">' . esc_html__('Appointment type', 'woodmart-child') . ':</strong> ';
+	$html .= '<span>' . esc_html__('Online', 'woodmart-child') . '</span>';
+	$html .= '</li>';
+
+	return $html;
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 // Recurring — capture & persist recurrence data (cart → order item → appointment)
 // ═══════════════════════════════════════════════════════════════════════════════
