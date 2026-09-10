@@ -23,6 +23,7 @@
 | 4 | Admin "new appointment" email | When intake exists → summary (unchanged). When missing → **"Intake: pending"** note |
 | 5 | "Filled in" definition | A `customer_intake_form` CPT entry exists for the order's billing email (`_intake_email`) — existing dedupe rule |
 | 6 | Existing clients | CPT on file ⇒ no thank-you form, no reminder. No overwrite path (create-only) |
+| 7 | Therapist notification on submit (2026-09-10) | Email the therapist (first assigned staff; fallback site admin) the full form on thank-you submit. Exactly-once via Action Scheduler with max 3 send attempts (5m / 30m / 2h backoff). Assumes one staff per product — revisit if multi-staff products are introduced. |
 
 ## 3. Architecture / key facts
 

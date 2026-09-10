@@ -530,7 +530,7 @@ function wellness_thankyou_intake_field_groups()
 {
 	return [
 		__('Personal Details', 'woodmart-child')      => ['intake_client_name', 'intake_birth_date', 'intake_address', 'intake_mobile', 'intake_mobile_text'],
-		__('Phone & Preferences', 'woodmart-child')   => ['intake_home_phone', 'intake_home_voicemail', 'intake_work_phone', 'intake_work_voicemail', 'intake_preferred_comm'],
+		__('Phone & Preferences', 'woodmart-child')   => ['intake_home_phone', 'intake_home_voicemail', 'intake_work_phone', 'intake_work_voicemail', 'intake_work_reminders', 'intake_preferred_comm'],
 		__('Emergency Contact', 'woodmart-child')     => ['intake_emergency_name', 'intake_emergency_relation', 'intake_emergency_home_phone', 'intake_emergency_mobile', 'intake_emergency_voicemail'],
 		__('Health Background', 'woodmart-child')     => ['intake_current_services', 'intake_past_counseling', 'intake_medications', 'intake_expectations', 'intake_emergency_text'],
 		__('How You Heard About Us', 'woodmart-child') => ['intake_referral_friend_name', 'intake_referral_doctor_name', 'intake_referral_family', 'intake_referral_location', 'intake_referral_search', 'intake_referral_facebook'],
@@ -928,7 +928,194 @@ function wellness_save_thankyou_intake_ajax()
 		wp_send_json_error(['message' => __('We could not save your intake form. Please try again or contact us.', 'woodmart-child')]);
 	}
 
+	// Queue the therapist notification (async, exactly once, with retries).
+	wellness_schedule_intake_submitted_notification($post_id);
+
 	wp_send_json_success(['message' => __('Thank you! Your intake form has been received.', 'woodmart-child')]);
+}
+
+/**
+ * Queue the therapist intake notification as a one-shot Action Scheduler job.
+ *
+ * Runs ~30s after submission so the client's request stays fast. Exactly-once:
+ * never queued after a successful send, and never queued twice.
+ *
+ * @param int $intake_id The created customer_intake_form post ID.
+ * @return void
+ */
+function wellness_schedule_intake_submitted_notification($intake_id)
+{
+	$intake_id = (int) $intake_id;
+	if (! $intake_id) {
+		return;
+	}
+
+	if (get_post_meta($intake_id, '_intake_notified', true)) {
+		return;
+	}
+	if (function_exists('as_has_scheduled_action')
+		&& as_has_scheduled_action('wellness-intake-therapist-notification', [$intake_id], 'wca')) {
+		return;
+	}
+
+	as_schedule_single_action(time() + 30, 'wellness-intake-therapist-notification', [$intake_id], 'wca');
+}
+
+/**
+ * Run the therapist intake notification with bounded retries.
+ *
+ * At most 3 send attempts per intake record (initial + 2 retries, with 5 min /
+ * 30 min / 2 h backoff), so a transient mail failure is recovered without ever
+ * spamming the therapist. Gives up with a log entry after the cap.
+ *
+ * @param int $intake_id The customer_intake_form post ID.
+ * @return void
+ */
+add_action('wellness-intake-therapist-notification', 'wellness_run_intake_submitted_notification', 10, 1);
+function wellness_run_intake_submitted_notification($intake_id)
+{
+	$intake_id = (int) $intake_id;
+	if (! $intake_id) {
+		return;
+	}
+
+	// Already delivered — nothing to do.
+	if (get_post_meta($intake_id, '_intake_notified', true)) {
+		return;
+	}
+
+	$attempts = (int) get_post_meta($intake_id, '_intake_notify_attempts', true);
+	if ($attempts >= 3) {
+		if (function_exists('wc_get_logger')) {
+			wc_get_logger()->warning(
+				sprintf(
+					'Therapist intake notification abandoned for intake #%d after %d attempts.',
+					$intake_id,
+					$attempts
+				),
+				['source' => 'welness-intake']
+			);
+		}
+		return;
+	}
+
+	$attempts++;
+	update_post_meta($intake_id, '_intake_notify_attempts', $attempts);
+
+	$order_id = (int) get_post_meta($intake_id, '_intake_order_id', true);
+	$order    = $order_id ? wc_get_order($order_id) : false;
+	if (! $order) {
+		if (function_exists('wc_get_logger')) {
+			wc_get_logger()->warning(
+				sprintf(
+					'Therapist intake notification skipped for intake #%d: order #%d not found.',
+					$intake_id,
+					$order_id
+				),
+				['source' => 'welness-intake']
+			);
+		}
+		return;
+	}
+
+	if (wellness_send_intake_submitted_notification($order, $intake_id)) {
+		return;
+	}
+
+	// Retry with backoff: 5 min, 30 min, 2 h.
+	$delays = [
+		5 * MINUTE_IN_SECONDS,
+		30 * MINUTE_IN_SECONDS,
+		2 * HOUR_IN_SECONDS,
+	];
+	$delay  = isset($delays[ $attempts - 1 ]) ? $delays[ $attempts - 1 ] : 2 * HOUR_IN_SECONDS;
+
+	as_schedule_single_action(time() + $delay, 'wellness-intake-therapist-notification', [$intake_id], 'wca');
+}
+
+/**
+ * Email the therapist the completed intake form when the client submits it on
+ * the thank-you page.
+ *
+ * Recipient: the appointment's therapist, falling back to the site admin.
+ * Sent once per intake record (guarded by the _intake_notified meta).
+ *
+ * @param WC_Order $order     The order the intake belongs to.
+ * @param int      $intake_id The created customer_intake_form post ID.
+ * @return bool Whether an email was sent.
+ */
+function wellness_send_intake_submitted_notification($order, $intake_id)
+{
+	if (! $order instanceof WC_Order || ! $intake_id) {
+		return false;
+	}
+
+	// Send once per intake record.
+	if (get_post_meta($intake_id, '_intake_notified', true)) {
+		return false;
+	}
+
+	$appointment = wellness_intake_reminder_appointment($order->get_id());
+
+	// Therapist recipient (fallback: site admin) — same chain as other notices.
+	$staff_email = '';
+	if ($appointment) {
+		$staff_ids = $appointment->get_staff_ids();
+		if (! empty($staff_ids)) {
+			$u = get_user_by('ID', (int) $staff_ids[0]);
+			if ($u) {
+				$staff_email = $u->user_email;
+			}
+		}
+	}
+	$to = $staff_email ?: get_option('admin_email');
+	if (empty($to)) {
+		return false;
+	}
+
+	$client_name = trim($order->get_billing_first_name() . ' ' . $order->get_billing_last_name());
+	if (empty($client_name)) {
+		$client_name = (string) get_post_meta($intake_id, '_intake_client_name', true);
+	}
+
+	$subject = sprintf(
+		/* translators: %s: client name */
+		__('Intake form received: %s', 'woodmart-child'),
+		$client_name ?: __('New client', 'woodmart-child')
+	);
+
+	$mailer = WC()->mailer();
+	if (! $mailer) {
+		return false;
+	}
+
+	ob_start();
+	$email_obj     = new stdClass();
+	$email_obj->id = 'therapist_intake_submitted';
+	wc_get_template(
+		'emails/therapist-intake-submitted.php',
+		[
+			'appointment'   => $appointment,
+			'order'         => $order,
+			'intake_id'     => $intake_id,
+			'email_heading' => __('Client intake form submitted', 'woodmart-child'),
+			'sent_to_admin' => true,
+			'plain_text'    => false,
+			'email'         => $email_obj,
+		],
+		'',
+		get_stylesheet_directory() . '/woocommerce/'
+	);
+	$message = ob_get_clean();
+
+	$message = $mailer->wrap_message($subject, $message);
+	$sent    = $mailer->send($to, $subject, $message, $mailer->get_headers(), []);
+
+	if ($sent) {
+		update_post_meta($intake_id, '_intake_notified', current_time('mysql'));
+	}
+
+	return (bool) $sent;
 }
 
 
