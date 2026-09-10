@@ -42,3 +42,7 @@ wp-content/*
 # unaffected — .gitignore never applies to tracked files.)
 wp-content/themes/oldwoodmart/
 wp-content/themes/woodmart/
+
+# Manual and editor backups (e.g. functions.php.pre-intake-extract.bak). A
+# duplicate of a live file is never worth committing, and it is large.
+*.bak

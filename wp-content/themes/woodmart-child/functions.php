@@ -430,6 +430,86 @@ function wellness_get_location_currency()
  * @param WC_Product|null $product
  * @return string 'EGP' or 'USD'
  */
+
+/**
+ * The product's own USD price, using the same precedence as the product page
+ * (see get_usd_booking_cost): the USD sale price wins, then the USD display cost.
+ *
+ * @param WC_Product|null $product Product.
+ * @return float 0.0 when the product has no USD price of its own.
+ */
+function wellness_product_usd_price($product)
+{
+	if (! $product || ! is_a($product, 'WC_Product')) {
+		return 0.0;
+	}
+
+	$sale_price = $product->get_meta('_wc_usd_display_sale_price');
+	if (! empty($sale_price)) {
+		return (float) $sale_price;
+	}
+
+	$display_cost = get_post_meta($product->get_id(), '_wc_usd_display_cost', true);
+
+	return ! empty($display_cost) ? (float) $display_cost : 0.0;
+}
+
+/**
+ * A product's session types, normalised to an array.
+ *
+ * @param WC_Product|null $product Product.
+ * @return array
+ */
+function wellness_get_duration_options($product)
+{
+	if (! $product || ! is_a($product, 'WC_Product')) {
+		return [];
+	}
+
+	$options = json_decode(get_post_meta($product->get_id(), '_wc_appointment_duration_options', true), true);
+
+	return is_array($options) ? $options : [];
+}
+
+/**
+ * Whether the product itself carries a USD price.
+ *
+ * Session types are deliberately NOT counted here. This answers "can the product
+ * page be shown in USD?", and the product page displays the product's own price. A
+ * product whose USD price lives only on a session type is shown in EGP until a
+ * session is chosen; the selected type's USD price applies from there on.
+ *
+ * @param WC_Product|null $product Product.
+ * @return bool
+ */
+function wellness_product_has_usd_price($product)
+{
+	return wellness_product_usd_price($product) > 0;
+}
+
+/**
+ * The USD amount to charge for the selected session type.
+ *
+ * A session type with a blank USD price falls back to the product's own USD price.
+ *
+ * @param WC_Product|null $product Product.
+ * @param array           $posted  Posted appointment form data.
+ * @return float 0.0 when no USD amount can be determined.
+ */
+function wellness_selected_option_usd_price($product, $posted = [])
+{
+	$index = $posted['wc_appointments_field_duration_option'] ?? null;
+
+	if ($index !== null && $index !== '') {
+		$options = wellness_get_duration_options($product);
+		if (isset($options[$index]) && ! empty($options[$index]['price_usd'])) {
+			return (float) $options[$index]['price_usd'];
+		}
+	}
+
+	return wellness_product_usd_price($product);
+}
+
 function wellness_get_active_currency($product = null)
 {
 	$currency = wellness_get_location_currency(); // location-based default
@@ -451,6 +531,15 @@ function wellness_get_active_currency($product = null)
 					$currency = $staff_currency; // explicit override beats location
 				}
 			}
+		}
+
+		// A product with no USD price of its own cannot be shown in USD. Without this
+		// the four USD price filters fall through and return the EGP amount, which
+		// would then be labelled and charged as USD. Guarded on $product: the
+		// coercion above can leave it false for an ID or slug that does not resolve,
+		// and an unresolvable product is not evidence that USD pricing is missing.
+		if ($product && $currency === 'USD' && ! wellness_product_has_usd_price($product)) {
+			$currency = 'EGP';
 		}
 	}
 
@@ -667,10 +756,17 @@ function change_woocommerce_currency($currency)
 		if (! empty($form_data['wc_appointments_field_staff'])) {
 			$staff_id       = (int) $form_data['wc_appointments_field_staff'];
 			$staff_currency = get_user_meta($staff_id, '_staff_currency', true);
-			if ($staff_currency === 'USD') {
-				return 'USD';
-			}
 			if ($staff_currency === 'EGP') {
+				return 'EGP';
+			}
+			if ($staff_currency === 'USD') {
+				// Same gate as the price resolution: no USD price anywhere means no
+				// USD label, so the amount and the symbol cannot disagree.
+				$product_id = $form_data['add-to-cart'] ?? ($form_data['appointable-product-id'] ?? 0);
+				$product    = $product_id ? wc_get_product($product_id) : null;
+				if (! $product || wellness_selected_option_usd_price($product, $form_data) > 0) {
+					return 'USD';
+				}
 				return 'EGP';
 			}
 			// empty / Location Based — fall through to product resolution
@@ -3993,7 +4089,15 @@ function wellness_get_ajax_currency($product, $posted = [])
 {
 	if (! empty($posted['wc_appointments_field_staff'])) {
 		$staff_currency = get_user_meta((int) $posted['wc_appointments_field_staff'], '_staff_currency', true);
-		if ($staff_currency === 'USD') return 'USD';
+		if ($staff_currency === 'USD') {
+			// An explicit USD therapist still cannot be shown in USD when the
+			// selected session type AND the product have no USD price. When there is
+			// no product to judge, keep the therapist's currency as before.
+			if (! $product || wellness_selected_option_usd_price($product, $posted) > 0) {
+				return 'USD';
+			}
+			return 'EGP';
+		}
 		if ($staff_currency === 'EGP') return 'EGP';
 		// empty / Location Based — fall through to product-based resolution
 	}
@@ -4057,9 +4161,21 @@ function wellness_duration_option_price($price, $product, $posted)
 	$opt      = $options[$index];
 	$currency = wellness_get_ajax_currency($product, $posted);
 
-	if ($currency === 'USD' && ! empty($opt['price_usd'])) {
-		return floatval($opt['price_usd']);
+	if ($currency === 'USD') {
+		// A blank USD price on the session type means "use the product's USD
+		// price". wellness_get_ajax_currency only answers USD when such an amount
+		// exists, so an EGP figure is never returned under a USD label.
+		$usd_price = ! empty($opt['price_usd'])
+			? (float) $opt['price_usd']
+			: wellness_product_usd_price($product);
+
+		if ($usd_price > 0) {
+			return $usd_price;
+		}
+
+		return $price;
 	}
+
 	if (! empty($opt['price_egp'])) {
 		return floatval($opt['price_egp']);
 	}
