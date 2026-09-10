@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wellness Hub — What's New</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        @page { margin: 0; size: A4; }
+
+        :root {
+            --pink: #e60050;
+            --indigo: #54497c;
+            --bg: #0f0b1f;
+            --bg-card: #11132a;
+            --white: #fff;
+            --muted: rgba(255, 255, 255, 0.7);
+            --faint: rgba(255, 255, 255, 0.45);
+            --border: rgba(255, 255, 255, 0.08);
+            --ok: #34d399;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(180deg, #0f0b1f 0%, #11132a 100%);
+            color: var(--white);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            backdrop-filter: blur(12px);
+            background: linear-gradient(180deg, rgba(15, 11, 31, 0.95) 10%, rgba(15, 11, 31, 0.4) 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 0;
+        }
+
+        .header-inner {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-mark {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            flex-shrink: 0;
+            background: radial-gradient(60% 80% at 30% 30%, var(--pink), transparent 60%),
+                linear-gradient(135deg, var(--indigo), #190b3b);
+        }
+
+        .header-text { font-weight: 700; font-size: 0.95rem; }
+        .header-text span { color: var(--muted); font-weight: 400; margin: 0 6px; }
+
+        .badge {
+            margin-left: auto;
+            padding: 5px 12px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--border);
+            font-size: 0.78rem;
+            color: var(--faint);
+            white-space: nowrap;
+        }
+
+        section { padding: 56px 24px; }
+        .container { max-width: 920px; margin: 0 auto; }
+
+        .intro { padding-top: 64px; padding-bottom: 32px; }
+
+        .intro h1 {
+            font-size: clamp(1.8rem, 4vw, 2.5rem);
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            margin-bottom: 10px;
+        }
+
+        .intro h1 em { font-style: normal; color: var(--pink); }
+
+        .intro p { color: var(--muted); font-size: 1.05rem; max-width: 660px; }
+
+        .toc {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 26px;
+        }
+
+        .toc a {
+            text-decoration: none;
+            color: var(--muted);
+            font-size: 0.82rem;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border);
+            transition: color .15s, border-color .15s;
+        }
+
+        .toc a:hover { color: var(--white); border-color: rgba(255, 255, 255, 0.25); }
+
+        .update {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 32px;
+            margin-bottom: 28px;
+            scroll-margin-top: 90px;
+        }
+
+        .update-head {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            margin-bottom: 6px;
+            flex-wrap: wrap;
+        }
+
+        .update-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            flex-shrink: 0;
+            background: linear-gradient(135deg, var(--pink), var(--indigo));
+            font-size: 1.15rem;
+        }
+
+        .update h2 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            flex: 1 1 auto;
+            min-width: 220px;
+        }
+
+        .update .desc { color: var(--muted); margin: 10px 0 0; font-size: 0.98rem; }
+
+        .update ul { list-style: none; margin-top: 16px; }
+
+        .update ul li {
+            position: relative;
+            padding: 7px 0 7px 26px;
+            color: var(--muted);
+            font-size: 0.93rem;
+        }
+
+        .update ul li::before {
+            content: "";
+            position: absolute;
+            left: 2px;
+            top: 15px;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--pink), var(--indigo));
+        }
+
+        .update ul li strong { color: var(--white); font-weight: 600; }
+
+        .label {
+            display: inline-block;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            padding: 2px 8px;
+            border-radius: 6px;
+            margin-right: 8px;
+            vertical-align: 1px;
+        }
+
+        .label.client { background: rgba(52, 211, 153, 0.12); color: var(--ok); border: 1px solid rgba(52, 211, 153, 0.25); }
+        .label.staff { background: rgba(84, 73, 124, 0.25); color: #b9aee6; border: 1px solid rgba(84, 73, 124, 0.5); }
+        .label.admin { background: rgba(230, 0, 80, 0.1); color: #ff7aa8; border: 1px solid rgba(230, 0, 80, 0.25); }
+
+        .note {
+            background: rgba(84, 73, 124, 0.1);
+            border: 1px solid rgba(84, 73, 124, 0.18);
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-top: 18px;
+            font-size: 0.88rem;
+            color: var(--muted);
+        }
+
+        .note strong { color: var(--white); }
+
+        .note.pink { background: rgba(230, 0, 80, 0.06); border-color: rgba(230, 0, 80, 0.14); }
+
+        .fixes { margin-top: 8px; }
+
+        .fixes li {
+            display: flex;
+            gap: 12px;
+            align-items: baseline;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+
+        .fixes li:last-child { border-bottom: 0; }
+
+        .fixes li time {
+            flex-shrink: 0;
+            width: 86px;
+            font-size: 0.74rem;
+            color: var(--faint);
+            letter-spacing: 0.3px;
+        }
+
+        footer {
+            padding: 40px 24px 60px;
+            text-align: center;
+            color: var(--faint);
+            font-size: 0.82rem;
+            border-top: 1px solid var(--border);
+        }
+
+        footer a { color: var(--muted); text-decoration: none; }
+
+        @media (max-width: 640px) {
+            section { padding: 40px 18px; }
+            .update { padding: 24px 20px; }
+            .badge { display: none; }
+            .fixes li { flex-direction: column; gap: 4px; }
+            .fixes li time { width: auto; }
+        }
+
+        @media print {
+            body { background: #fff; color: #111; }
+            header { position: static; background: none; border-bottom: 1px solid #ddd; }
+            .badge, .toc { display: none; }
+            .update { border: 1px solid #ddd; background: #fff; break-inside: avoid; }
+            .update .desc, .update ul li, .fixes li, .intro p { color: #333; }
+            .update ul li strong, .fixes li strong { color: #000; }
+            .logo-mark { background: #e60050; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="header-inner">
+            <div class="logo-mark" aria-hidden="true"></div>
+            <div class="header-text">The Wellness Hub <span>·</span> What's New</div>
+        </div>
+    </header>
+
+    <section class="intro">
+        <div class="container">
+            <h1>What's new on <em>The Wellness Hub</em></h1>
+            <p>A short, plain-English round-up of the recent improvements to booking, payments and client
+                information — and what they mean for you and your clients.</p>
+
+            <nav class="toc" aria-label="Jump to a section">
+                <a href="#recurring">Repeat bookings</a>
+                <a href="#payments">Prices &amp; payments</a>
+                <a href="#session-types">Session times</a>
+                <a href="#intake">Client intake form</a>
+                <a href="#appt-type">Online sessions</a>
+                <a href="#fixes">Fixes &amp; improvements</a>
+            </nav>
+        </div>
+    </section>
+
+    <section style="padding-top: 8px;">
+        <div class="container">
+
+            <!-- 1. Recurring -->
+            <article class="update" id="recurring">
+                <div class="update-head">
+                    <span class="update-icon" aria-hidden="true">🔁</span>
+                    <h2>Repeat bookings now work properly</h2>
+                </div>
+                <p class="desc">Booking a series of sessions is simpler and clearer for everyone — from the first
+                    booking to the last payment.</p>
+                <ul>
+                    <li><span class="label client">Client</span>Choose to <strong>repeat</strong> a session — weekly,
+                        every two weeks, or monthly — and how many sessions. The full list of upcoming dates is shown
+                        <strong>before</strong> paying.</li>
+                    <li><span class="label staff">Therapist</span>Your first confirmation email lists the
+                        <strong>whole series</strong>, so you can see the full schedule at a glance.</li>
+                    <li><span class="label client">Client</span>A <strong>friendly reminder</strong> is emailed the day
+                        before each session, so the next one is paid in good time.</li>
+                    <li><span class="label staff">Therapist</span>You and the client get a <strong>confirmation for
+                            every session</strong> once it's paid.</li>
+                    <li><span class="label admin">Site owner</span>Sessions that aren't paid in time are
+                        <strong>cancelled automatically</strong> so they don't block the diary, and the therapist is
+                        told.</li>
+                    <li><span class="label admin">Site owner</span>The appointments and orders lists show a
+                        <strong>“Recurring” label</strong> with the full series, and a whole series can be
+                        <strong>cancelled in one go</strong> — with the option to waive the cancellation fee.</li>
+                </ul>
+            </article>
+
+            <!-- 2. Payments -->
+            <article class="update" id="payments">
+                <div class="update-head">
+                    <span class="update-icon" aria-hidden="true">�</span>
+                    <h2>Prices &amp; payments</h2>
+                </div>
+                <p class="desc">Clearer pricing, a smoother payment step, and no surprises about what was charged.</p>
+                <ul>
+                    <li><span class="label client">Client</span>Prices still show in the right currency —
+                        <strong>Egyptian pounds or US dollars</strong> — based on your therapist.</li>
+                    <li><span class="label client">Client</span>When a <strong>US-dollar booking is paid from
+                            Egypt</strong>, the card is charged in <strong>Egyptian pounds</strong> through our Egypt
+                        card provider. The booking itself stays in US dollars for you and your therapist, and the
+                        converted amount is shown on the order.</li>
+                    <li><span class="label client">Client</span>Clients paying from <strong>outside Egypt</strong> are
+                        charged in <strong>US dollars</strong>, as before.</li>
+                    <li><span class="label client">Client</span>A US-dollar booking now <strong>always offers a way to
+                            pay</strong> — previously it could get stuck on the payment step.</li>
+                </ul>
+                <div class="note">In short: you always see the price in your currency, and if a payment has to be
+                    converted, the exact amount charged is shown on the order.</div>
+            </article>
+
+            <!-- 3. Session types -->
+            <article class="update" id="session-types">
+                <div class="update-head">
+                    <span class="update-icon" aria-hidden="true">⏱️</span>
+                    <h2>Session times now match the session length</h2>
+                </div>
+                <p class="desc">The times offered when booking now line up with the length of the session chosen.</p>
+                <ul>
+                    <li><span class="label client">Client</span>A <strong>60-minute session shows 60-minute
+                            times</strong> — 30, 60 and 90-minute sessions all line up correctly.</li>
+                    <li><span class="label client">Client</span>Previously, some longer sessions could show
+                        <strong>no available times at all</strong>. That's fixed.</li>
+                </ul>
+            </article>
+
+            <!-- 4. Intake -->
+            <article class="update" id="intake">
+                <div class="update-head">
+                    <span class="update-icon" aria-hidden="true">📝</span>
+                    <h2>The client intake form moved to the thank-you page</h2>
+                </div>
+                <p class="desc">The health questionnaire no longer stands between the client and paying — it's
+                    collected straight after booking, where it can't slow checkout down.</p>
+                <ul>
+                    <li><span class="label client">Client</span>Booking is now just <strong>two steps</strong>:
+                        contact details, then payment.</li>
+                    <li><span class="label client">Client</span>First-time clients fill in the form on the
+                        <strong>thank-you page</strong>, with their name and mobile already filled in. It takes a
+                        couple of minutes.</li>
+                    <li><span class="label client">Client</span>Returning clients are <strong>never asked
+                            again</strong>.</li>
+                    <li><span class="label client">Client</span>If the form is still missing, a <strong>gentle reminder
+                            email</strong> is sent about a day later.</li>
+                    <li><span class="label staff">Therapist</span>Your new-appointment email shows the client's
+                        answers — or a clear <strong>“Intake form: pending”</strong> note if it hasn't been completed
+                        yet.</li>
+                </ul>
+            </article>
+
+            <!-- 5. Appointment type -->
+            <article class="update" id="appt-type">
+                <div class="update-head">
+                    <span class="update-icon" aria-hidden="true">�</span>
+                    <h2>Online sessions are clearly labelled</h2>
+                </div>
+                <p class="desc">Every booking now says how the session takes place, so there's no confusion.</p>
+                <ul>
+                    <li><span class="label client">Client</span><strong>“Appointment type: Online”</strong> appears in
+                        the basket, at checkout, on the thank-you page, and in every appointment email.</li>
+                    <li><span class="label staff">Therapist</span>It also appears in the appointment details of your
+                        emails, so you can see at a glance that the session is online.</li>
+                </ul>
+            </article>
+
+            <!-- 7. Fixes -->
+            <article class="update" id="fixes">
+                <div class="update-head">
+                    <span class="update-icon" aria-hidden="true">🛠️</span>
+                    <h2>Fixes &amp; improvements</h2>
+                </div>
+                <ul class="fixes">
+                    <li><span>Corrected a currency mix-up that could show the wrong amount on appointment
+                            orders.</span></li>
+                    <li><span>The recurring-series label now shows the right status and opens the full
+                            schedule.</span></li>
+                    <li><span>Fixed an error that could affect how session-type prices were displayed.</span></li>
+                    <li><span>A US-dollar booking no longer gets stuck on the payment step.</span></li>
+                    <li><span>The US-dollar to Egyptian-pound conversion is now shown on the order.</span></li>
+                    <li><span>Polished the wording and layout of several emails so they're easier to read.</span></li>
+                </ul>
+            </article>
+
+        </div>
+    </section>
+
+    <footer>
+        The Wellness Hub · What's New · A plain-English round-up of recent improvements
+    </footer>
+
+</body>
+
+</html>

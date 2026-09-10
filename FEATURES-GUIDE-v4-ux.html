@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wellness Hub — Setup Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --pink: #e60050; --pink-light: rgba(230,0,80,0.08); --pink-border: rgba(230,0,80,0.15);
+  --indigo: #54497c; --indigo-light: rgba(84,73,124,0.08);
+  --bg-dark: #0f0b1f; --bg-card-dark: rgba(255,255,255,0.03);
+  --bg-light: #f5f5f8; --bg-card-light: #ffffff;
+  --white: #fff; --text: #1a1528; --muted-dark: rgba(255,255,255,0.6);
+  --muted-light: #6b6378; --border-dark: rgba(255,255,255,0.06);
+  --border-light: #e4e0eb; --font: 'Outfit', system-ui, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { margin: 0; padding: 0; background: #fff; font-family: var(--font); }
+body {
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.slide {
+  width: 297mm; height: 210mm; overflow: hidden;
+  display: flex; flex-direction: column; position: relative;
+  page-break-after: always; break-after: page;
+}
+.slide.dark { background: var(--bg-dark); color: var(--white); }
+.slide.light { background: var(--bg-light); color: var(--text); }
+
+/* ── Shared Components ───────────────── */
+.page-num {
+  position: absolute; bottom: 14px; right: 28px;
+  font-size: 0.6rem; font-weight: 600; letter-spacing: 0.08em; opacity: 0.3;
+}
+.dark .page-num { color: var(--white); }
+.light .page-num { color: var(--text); }
+
+.label {
+  font-size: 0.58rem; font-weight: 700; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--pink);
+}
+.accent-line { width: 36px; height: 3px; background: var(--pink); border-radius: 2px; }
+.accent-line.mt { margin-top: 0.5rem; }
+
+/* ── PAGE 1: COVER ───────────────────── */
+.cover-layout { display: flex; flex: 1; overflow: hidden; }
+.cover-left {
+  flex: 0 0 48%; display: flex; flex-direction: column; justify-content: center;
+  padding: 3.5rem 4rem; gap: 0.8rem;
+}
+.cover-left .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; }
+.cover-left .logo-mark {
+  width: 40px; height: 40px; border-radius: 10px;
+  background: radial-gradient(60% 80% at 30% 30%, var(--pink), transparent 60%),
+              linear-gradient(135deg, var(--indigo), #190b3b);
+}
+.cover-left .logo-text { font-weight: 800; font-size: 1rem; letter-spacing: -0.3px; }
+.cover-left .logo-text span { font-weight: 400; opacity: 0.4; margin: 0 5px; }
+.cover-left h1 { font-size: 2.6rem; font-weight: 800; line-height: 1.1; letter-spacing: -0.8px; }
+.cover-left h1 em { font-style: normal; color: var(--pink); }
+.cover-left .subtitle { font-size: 0.85rem; opacity: 0.6; font-weight: 300; max-width: 380px; line-height: 1.5; }
+.cover-right {
+  flex: 1; background: linear-gradient(160deg, #13102b 0%, #1a1040 50%, #0f0030 100%);
+  display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden;
+}
+.cover-right::before {
+  content: ''; position: absolute; top: -30%; right: -20%; width: 80%; height: 160%;
+  background: radial-gradient(ellipse, rgba(230,0,80,0.08) 0%, transparent 70%);
+}
+.cover-right .deco-circle {
+  width: 200px; height: 200px; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.06);
+  display: flex; align-items: center; justify-content: center; flex-direction: column;
+}
+.cover-right .deco-num { font-size: 5rem; font-weight: 800; color: var(--pink); opacity: 0.25; line-height: 1; }
+.cover-right .deco-label { font-size: 0.75rem; opacity: 0.35; letter-spacing: 0.1em; text-transform: uppercase; margin-top: -0.5rem; }
+
+/* Stats bar */
+.stats-bar {
+  display: flex; flex-shrink: 0; background: rgba(0,0,0,0.2);
+  border-top: 1px solid var(--border-dark);
+}
+.stat { flex: 1; text-align: center; padding: 0.6rem 1rem; }
+.stat + .stat { border-left: 1px solid var(--border-dark); }
+.stat .val { font-size: 1.1rem; font-weight: 700; }
+.stat .val em { font-style: normal; color: var(--pink); }
+.stat .lbl { font-size: 0.55rem; opacity: 0.45; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 2px; }
+
+/* ── FEATURE PAGES ───────────────────── */
+.feature-page { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+.fp-header {
+  flex-shrink: 0; display: flex; align-items: center; gap: 1rem;
+  padding: 1.2rem 2.8rem 0.8rem;
+}
+.fp-badge {
+  display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; border-radius: 10px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--pink), var(--indigo));
+  font-size: 1.1rem; font-weight: 800; color: #fff;
+}
+.fp-header h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.3px; }
+.fp-header p { font-size: 0.72rem; opacity: 0.55; margin-top: 2px; max-width: 550px; line-height: 1.4; }
+.light .fp-header p { opacity: 0.55; color: var(--muted-light); }
+
+.fp-body { flex: 1; overflow: hidden; display: flex; padding: 0 2.8rem 1.2rem; gap: 2rem; }
+.fp-col { flex: 1; display: flex; flex-direction: column; gap: 0.8rem; overflow: hidden; }
+.fp-col.wide { flex: 1.3; }
+
+/* ── Cards ───────────────────────────── */
+.card {
+  border-radius: 10px; padding: 0.8rem 1rem; flex-shrink: 0;
+}
+.card h3 {
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; margin-bottom: 0.4rem;
+}
+.dark .card { background: var(--bg-card-dark); border: 1px solid var(--border-dark); }
+.light .card { background: var(--bg-card-light); border: 1px solid var(--border-light); }
+.dark .card h3 { color: var(--pink); }
+.light .card h3 { color: var(--pink); }
+
+/* ── Steps inside cards ──────────────── */
+.steps { counter-reset: s; padding: 0; }
+.steps li {
+  counter-increment: s; list-style: none; padding: 3px 0 3px 24px;
+  position: relative; font-size: 0.7rem; line-height: 1.45;
+}
+.dark .steps li { color: var(--muted-dark); }
+.light .steps li { color: var(--muted-light); }
+.steps li::before {
+  content: counter(s); position: absolute; left: 0; top: 2px;
+  width: 17px; height: 17px; border-radius: 50%;
+  font-size: 0.58rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+.dark .steps li::before { background: rgba(230,0,80,0.1); color: var(--pink); }
+.light .steps li::before { background: var(--pink-light); color: var(--pink); }
+.steps li strong { font-weight: 600; }
+.dark .steps li strong { color: var(--white); }
+.light .steps li strong { color: var(--text); }
+
+/* ── Note ────────────────────────────── */
+.note {
+  border-radius: 8px; padding: 0.5rem 0.9rem; font-size: 0.65rem; line-height: 1.4;
+  flex-shrink: 0;
+}
+.dark .note { background: var(--pink-light); border: 1px solid var(--pink-border); color: var(--muted-dark); }
+.light .note { background: var(--pink-light); border: 1px solid var(--pink-border); color: var(--muted-light); }
+.note strong { font-weight: 600; }
+.dark .note strong { color: var(--white); }
+.light .note strong { color: var(--text); }
+
+/* ── Screenshot ──────────────────────── */
+.shot {
+  border-radius: 10px; overflow: hidden; flex-shrink: 0; position: relative;
+}
+.dark .shot { border: 1px solid var(--border-dark); }
+.light .shot { border: 1px solid var(--border-light); }
+.shot img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center; background: #000; }
+.shot-cap {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 4px 10px; font-size: 0.55rem; opacity: 0.55;
+}
+.dark .shot-cap { background: rgba(0,0,0,0.5); }
+.light .shot-cap { background: rgba(255,255,255,0.85); }
+
+/* ── Table ───────────────────────────── */
+.mini-table { width: 100%; border-collapse: collapse; font-size: 0.65rem; }
+.mini-table th {
+  text-align: left; padding: 4px 8px; font-weight: 700; font-size: 0.55rem;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.dark .mini-table th { color: var(--pink); border-bottom: 1px solid var(--border-dark); }
+.light .mini-table th { color: var(--pink); border-bottom: 1px solid var(--border-light); }
+.mini-table td { padding: 5px 8px; line-height: 1.35; }
+.dark .mini-table td { border-bottom: 1px solid var(--border-dark); color: var(--muted-dark); }
+.light .mini-table td { border-bottom: 1px solid var(--border-light); color: var(--muted-light); }
+.mini-table tr:last-child td { border-bottom: none; }
+.mini-table .r { font-weight: 600; white-space: nowrap; width: 60px; }
+.dark .mini-table .r { color: var(--white); }
+.light .mini-table .r { color: var(--text); }
+
+/* ── Step chips ──────────────────────── */
+.chip-row { display: flex; gap: 5px; flex-shrink: 0; }
+.chip {
+  flex: 1; text-align: center; border-radius: 8px; padding: 6px 4px;
+}
+.dark .chip { background: var(--bg-card-dark); border: 1px solid var(--border-dark); }
+.light .chip { background: var(--bg-card-light); border: 1px solid var(--border-light); }
+.chip .no {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; border-radius: 50%; background: var(--pink);
+  font-size: 0.62rem; font-weight: 700; color: #fff; margin-bottom: 3px;
+}
+.chip .lbl { font-weight: 600; font-size: 0.64rem; }
+.chip .sub { font-size: 0.56rem; opacity: 0.5; margin-top: 1px; }
+
+/* ── PAGE 5: CTA ─────────────────────── */
+.cta-center {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; text-align: center; padding: 2rem;
+}
+.cta-center h2 { font-size: 2rem; font-weight: 700; margin: 0.5rem 0; letter-spacing: -0.4px; }
+.cta-center h2 em { font-style: normal; color: var(--pink); }
+.cta-center p { font-size: 0.8rem; opacity: 0.55; max-width: 420px; margin-bottom: 1.5rem; line-height: 1.5; }
+.cta-links { display: flex; gap: 0.8rem; flex-wrap: wrap; justify-content: center; }
+.cta-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 22px; border-radius: 12px; font-weight: 600; font-size: 0.75rem;
+  text-decoration: none; background: var(--pink); color: #fff;
+}
+.cta-btn.ghost { background: transparent; border: 1.5px solid rgba(255,255,255,0.15); }
+.cta-divider { width: 50px; height: 2px; background: rgba(255,255,255,0.08); border-radius: 1px; margin: 1.2rem 0; }
+
+/* ── Spacing helpers ─────────────────── */
+.mt-auto { margin-top: auto; }
+.overflow-auto { overflow: auto; }
+</style>
+</head>
+<body>
+
+<!-- ═══════ PAGE 1: COVER ═══════ -->
+<div class="slide dark">
+  <div class="cover-layout">
+    <div class="cover-left">
+      <div class="logo">
+        <div class="logo-mark"></div>
+        <div class="logo-text">Raisin <span>/</span> Wellness Hub</div>
+      </div>
+      <div class="label">Setup Guide — June 2026</div>
+      <h1>Three new features <em>to set up</em></h1>
+      <p class="subtitle">Step-by-step instructions for admins and therapists covering currency, session types, and the client intake form.</p>
+      <div class="accent-line mt"></div>
+    </div>
+    <div class="cover-right">
+      <div class="deco-circle">
+        <div class="deco-num">3</div>
+        <div class="deco-label">Features</div>
+      </div>
+    </div>
+  </div>
+  <div class="stats-bar">
+    <div class="stat"><div class="val"><em>💰</em> Currency</div><div class="lbl">Per Therapist</div></div>
+    <div class="stat"><div class="val"><em>📋</em> Sessions</div><div class="lbl">Types &amp; Durations</div></div>
+    <div class="stat"><div class="val"><em>📝</em> Intake</div><div class="lbl">First-Time Clients</div></div>
+    <div class="stat"><div class="val"><em>🌐</em> Live Now</div><div class="lbl">thewellnesshub-eg.com</div></div>
+  </div>
+  <div class="page-num">1 / 5</div>
+</div>
+
+<!-- ═══════ PAGE 2: FEATURE 1 — CURRENCY ═══════ -->
+<div class="slide light">
+  <div class="feature-page">
+    <div class="fp-header">
+      <div class="fp-badge">1</div>
+      <div>
+        <h2>Currency Per Therapist</h2>
+        <p>Set EGP or USD per therapist — prices display automatically in their currency. Default is EGP.</p>
+      </div>
+    </div>
+    <div class="fp-body">
+      <div class="fp-col">
+        <div class="card">
+          <h3>Where to Configure</h3>
+          <ol class="steps">
+            <li>Go to <strong>Users → All Users</strong> in the sidebar</li>
+            <li>Click <strong>Edit</strong> on a therapist account</li>
+            <li>Scroll to the <strong>Appointment Timezone</strong> section</li>
+            <li>Find <strong>Your currency</strong> dropdown — directly below the timezone field</li>
+            <li>Choose <strong>EGP</strong> or <strong>USD</strong>, then click <strong>Update Profile</strong></li>
+          </ol>
+        </div>
+        <div class="note"><strong>Note:</strong> The currency dropdown only appears for therapist accounts (shop_staff role). A Currency column also appears in the Users list for quick reference.</div>
+        <div class="card mt-auto">
+          <h3>Who Does What</h3>
+          <table class="mini-table">
+            <tr><th>Role</th><th>Action</th></tr>
+            <tr><td class="r">Admin</td><td>Set currency once per therapist in user profile.</td></tr>
+            <tr><td class="r">Therapist</td><td>No action needed — ask admin if currency is incorrect.</td></tr>
+            <tr><td class="r">Client</td><td>Prices display automatically in the therapist's currency.</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="fp-col wide">
+        <div class="shot" style="height:100%">
+          <img src="screenshots/01-currency-setting.png" alt="Currency setting">
+          <div class="shot-cap">Users → Edit Therapist → Appointment Timezone section</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="page-num">2 / 5</div>
+</div>
+
+<!-- ═══════ PAGE 3: FEATURE 2 — SESSION TYPES ═══════ -->
+<div class="slide dark">
+  <div class="feature-page">
+    <div class="fp-header">
+      <div class="fp-badge">2</div>
+      <div>
+        <h2>Session Types &amp; Durations</h2>
+        <p>Offer multiple session options per product — each with its own label, duration, and dual-currency price (EGP &amp; USD). Clients choose from a dropdown on the booking page.</p>
+      </div>
+    </div>
+    <div class="fp-body">
+      <div class="fp-col wide">
+        <div class="shot" style="height:100%">
+          <img src="screenshots/02-duration-options.png" alt="Duration options">
+          <div class="shot-cap">Products → Edit → General Tab → Wellness Product section</div>
+        </div>
+      </div>
+      <div class="fp-col">
+        <div class="card">
+          <h3>Where to Configure</h3>
+          <ol class="steps">
+            <li>Go to <strong>Products → All Products</strong></li>
+            <li>Click <strong>Edit</strong> on an Appointment product</li>
+            <li>In <strong>Product Data → General</strong>, scroll to <strong>Wellness Product</strong></li>
+            <li>Check <strong>☑ Enable Duration Options</strong></li>
+            <li>Click <strong>+ Add Duration Option</strong> — fill Label, Duration (min), EGP Price, USD Price</li>
+            <li>Click <strong>Update</strong> to save</li>
+          </ol>
+        </div>
+        <div class="note"><strong>Smart fallbacks:</strong> Leave Duration blank → uses product default. Leave EGP or USD Price blank → uses the product's original price for that currency. Only fill what differs from defaults.</div>
+        <div class="card mt-auto">
+          <h3>Where It Appears</h3>
+          <table class="mini-table">
+            <tr><th>Location</th><th>What's Shown</th></tr>
+            <tr><td class="r">Booking</td><td>Session Type dropdown — price updates live on selection</td></tr>
+            <tr><td class="r">Cart</td><td>Session type displayed next to product name</td></tr>
+            <tr><td class="r">Orders</td><td>Visible to client, admin &amp; therapist</td></tr>
+            <tr><td class="r">Emails</td><td>Included in all 6 appointment notification templates</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="page-num">3 / 5</div>
+</div>
+
+<!-- ═══════ PAGE 4: FEATURE 3 — INTAKE FORM ═══════ -->
+<div class="slide light">
+  <div class="feature-page">
+    <div class="fp-header">
+      <div class="fp-badge">3</div>
+      <div>
+        <h2>First-Time Client Intake Form</h2>
+        <p>A health &amp; contact questionnaire that <strong>only appears for emails with no previous orders.</strong> Returning clients skip to payment automatically — no login required.</p>
+      </div>
+    </div>
+    <div class="fp-body">
+      <div class="fp-col" style="gap:0.6rem">
+        <div class="note"><strong>How it decides:</strong> 🆕 Email with no past orders → full 7-step checkout · 🔁 Email with any order → skips to payment (Step 1 → Step 7) · ✏️ Different email → treated as new</div>
+        <div class="card">
+          <h3>Checkout Flow (New Clients Only)</h3>
+          <div class="chip-row">
+            <div class="chip"><div class="no">1</div><div class="lbl">Contact</div><div class="sub">Name, email, address</div></div>
+            <div class="chip"><div class="no">2</div><div class="lbl">Personal</div><div class="sub">Birth date, mobile</div></div>
+            <div class="chip"><div class="no">3</div><div class="lbl">Phone</div><div class="sub">Contact preferences</div></div>
+            <div class="chip"><div class="no">4</div><div class="lbl">Emergency</div><div class="sub">Name, relation, phone</div></div>
+            <div class="chip"><div class="no">5</div><div class="lbl">Health</div><div class="sub">Medications, history</div></div>
+            <div class="chip"><div class="no">6</div><div class="lbl">Referral</div><div class="sub">How you heard</div></div>
+            <div class="chip"><div class="no">7</div><div class="lbl">Payment</div><div class="sub">Complete booking</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Where to View Submitted Forms</h3>
+          <ol class="steps">
+            <li>Go to <strong>Appointments → Intake Forms</strong> in the sidebar</li>
+            <li>Browse forms by email — click any entry to see all <strong>27 fields</strong> in detail</li>
+            <li>Intake summary also appears on each order page &amp; in New Appointment emails</li>
+          </ol>
+        </div>
+        <div class="card mt-auto">
+          <h3>Who Sees What</h3>
+          <table class="mini-table">
+            <tr><th>Role</th><th>What to Expect</th></tr>
+            <tr><td class="r">Admin</td><td>Full intake list under Appointments → Intake Forms. Summary card on each order.</td></tr>
+            <tr><td class="r">Therapist</td><td>Intake summary in New Appointment emails. Browse all forms under Intake Forms.</td></tr>
+            <tr><td class="r">Client</td><td>New clients fill Steps 2–6 during checkout. Returning clients skip to payment.</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="fp-col wide">
+        <div class="shot" style="height:100%">
+          <img src="screenshots/03-intake-forms.png" alt="Intake Forms">
+          <div class="shot-cap">Appointments → Intake Forms — browse all submitted client intake forms</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="page-num">4 / 5</div>
+</div>
+
+<!-- ═══════ PAGE 5: CTA ═══════ -->
+<div class="slide dark">
+  <div class="cta-center">
+    <div class="label">Ready to Go</div>
+    <h2>All three features are <em>live now</em></h2>
+    <p>No extra setup needed for the intake form — it works automatically. Your therapists are already getting intake summaries in their appointment emails.</p>
+    <div class="cta-links">
+      <a href="https://thewellnesshub-eg.com" class="cta-btn">🌐 thewellnesshub-eg.com</a>
+      <a href="mailto:info@the-raisin.com" class="cta-btn ghost">✉️ info@the-raisin.com</a>
+    </div>
+    <div class="cta-divider"></div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:32px;height:32px;border-radius:8px;background:radial-gradient(60% 80% at 30% 30%,var(--pink),transparent 60%),linear-gradient(135deg,var(--indigo),#190b3b)"></div>
+      <span style="font-weight:700;font-size:0.85rem">Raisin <span style="font-weight:400;opacity:0.4;margin:0 5px">/</span> Wellness Hub</span>
+    </div>
+  </div>
+  <div class="page-num">5 / 5</div>
+</div>
+
+</body>
+</html>

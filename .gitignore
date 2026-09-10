@@ -19,6 +19,14 @@
 
 # Keep the one-time test-fixtures seeding script in version control (dev tool).
 !test-fixtures.php
+
+# Keep the feature guides in version control (client-facing docs).
+!FEATURES-GUIDE.md
+!FEATURES-GUIDE.html
+!FEATURES-GUIDE-v2.html
+!FEATURES-GUIDE-v3-brochure.html
+!FEATURES-GUIDE-v4-ux.html
+!UPDATES-SINCE-AUG-17.html
  
 # Ignore everything in the "wp-content" directory, except the "themes" directory.
 wp-content/*

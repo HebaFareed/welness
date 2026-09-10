@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wellness Hub — Setup Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+@page { margin: 0; size: A4; }
+:root {
+  --pink: #e60050; --indigo: #54497c; --bg: #0f0b1f; --bg-card: #11132a;
+  --white: #fff; --muted: rgba(255,255,255,0.7); --border: rgba(255,255,255,0.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Outfit',system-ui,-apple-system,sans-serif;
+  background:linear-gradient(180deg,#0f0b1f 0%,#11132a 100%);
+  color:var(--white);line-height:1.4;width:210mm;min-height:297mm;
+  margin:0 auto;padding:8mm 10mm;
+}
+header{
+  display:flex;align-items:center;gap:10px;padding-bottom:6px;
+  border-bottom:1px solid var(--border);margin-bottom:10px;
+}
+.logo-mark{
+  width:28px;height:28px;border-radius:8px;flex-shrink:0;
+  background:radial-gradient(60% 80% at 30% 30%,var(--pink),transparent 60%),
+             linear-gradient(135deg,var(--indigo),#190b3b);
+}
+.header-text{font-weight:700;font-size:0.8rem}
+.header-text span{color:var(--muted);font-weight:400;margin:0 4px}
+.badge{
+  margin-left:auto;padding:3px 10px;border-radius:999px;
+  background:rgba(255,255,255,0.06);border:1px solid var(--border);
+  font-size:0.68rem;color:rgba(255,255,255,0.5);
+}
+.intro{margin-bottom:8px}
+.intro h1{font-size:1.3rem;font-weight:800;letter-spacing:-0.3px;margin-bottom:2px}
+.intro h1 em{font-style:normal;color:var(--pink)}
+.intro p{color:var(--muted);font-size:0.78rem}
+.meta-links{display:flex;gap:12px;margin-top:4px}
+.meta-links a{color:var(--muted);font-size:0.7rem;text-decoration:none}
+
+/* ── Features layout ─────────────── */
+.features{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}
+.feature{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:10px;padding:12px;
+}
+.feature-num{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:26px;height:26px;border-radius:7px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--pink),var(--indigo));
+  font-weight:800;font-size:0.8rem;margin-bottom:8px;
+}
+.feature h2{font-size:0.9rem;font-weight:700;letter-spacing:-0.2px;margin-bottom:4px}
+.feature .desc{color:var(--muted);font-size:0.7rem;margin-bottom:8px;line-height:1.35}
+.howto h3{
+  font-size:0.62rem;font-weight:600;letter-spacing:0.6px;
+  text-transform:uppercase;color:var(--indigo);margin-bottom:4px;
+}
+.steps{counter-reset:s;padding:0}
+.steps li{
+  counter-increment:s;list-style:none;padding:2px 0 2px 22px;
+  position:relative;color:var(--muted);font-size:0.68rem;
+}
+.steps li::before{
+  content:counter(s);position:absolute;left:0;top:1px;
+  width:16px;height:16px;border-radius:50%;
+  background:rgba(255,255,255,0.06);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.58rem;font-weight:700;color:var(--muted);
+}
+.steps li strong{color:var(--white)}
+.note{
+  background:rgba(84,73,124,0.1);border:1px solid rgba(84,73,124,0.18);
+  border-radius:6px;padding:5px 10px;margin-top:6px;
+  font-size:0.65rem;color:var(--muted);line-height:1.35;
+}
+.note strong{color:var(--white)}
+.note.pink{background:rgba(230,0,80,0.06);border-color:rgba(230,0,80,0.14)}
+.screenshot{
+  margin-top:8px;border-radius:8px;overflow:hidden;
+  border:1px solid var(--border);
+}
+.screenshot img{display:block;width:100%;height:auto}
+.screenshot-caption{
+  font-size:0.6rem;color:rgba(255,255,255,0.35);padding:3px 8px;
+  background:rgba(0,0,0,0.25);
+}
+.who{margin-top:8px}
+.who h3{
+  font-size:0.62rem;font-weight:600;letter-spacing:0.6px;
+  text-transform:uppercase;color:var(--indigo);margin-bottom:3px;
+}
+.who-table{width:100%;border-collapse:collapse;font-size:0.67rem}
+.who-table th{
+  text-align:left;padding:3px 6px;font-weight:600;font-size:0.6rem;
+  letter-spacing:0.5px;text-transform:uppercase;color:var(--indigo);
+  border-bottom:1px solid var(--border);
+}
+.who-table td{padding:4px 6px;border-bottom:1px solid var(--border);color:var(--muted);line-height:1.3}
+.who-table tr:last-child td{border-bottom:none}
+.who-table .role{color:var(--white);font-weight:600;white-space:nowrap;width:70px}
+
+.step-row{display:flex;gap:4px;margin:6px 0;flex-wrap:wrap}
+.step-chip{
+  background:rgba(255,255,255,0.03);border:1px solid var(--border);
+  border-radius:6px;padding:4px 6px;text-align:center;flex:1;min-width:55px;
+}
+.step-chip .no{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:16px;height:16px;border-radius:50%;background:var(--pink);
+  font-size:0.58rem;font-weight:700;margin-bottom:2px;
+}
+.step-chip .lbl{font-weight:600;font-size:0.63rem}
+.step-chip .sub{font-size:0.56rem;color:var(--muted);margin-top:1px}
+
+footer{
+  text-align:center;padding:6px 0;color:rgba(255,255,255,0.3);
+  font-size:0.62rem;border-top:1px solid var(--border);
+}
+footer a{color:var(--pink);text-decoration:none;font-weight:500}
+
+/* Feature 3 is wider */
+.feature:last-child{grid-column:1/-1}
+.feature:last-child .screenshot img{max-height:140px;object-fit:cover;object-position:top}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-mark"></div>
+  <div class="header-text">Raisin <span>/</span> Wellness Hub</div>
+  <div class="badge">Setup Guide · June 2026</div>
+</header>
+
+<div class="intro">
+  <h1>How to set up <em>three new features</em></h1>
+  <p>Step-by-step instructions for configuring currency per therapist, session types, and the client intake form.</p>
+  <div class="meta-links">
+    <a href="https://thewellnesshub-eg.com">🌐 thewellnesshub-eg.com</a>
+    <a href="https://the-raisin.com">Built by Raisin</a>
+  </div>
+</div>
+
+<div class="features">
+
+  <!-- FEATURE 1 -->
+  <div class="feature">
+    <div class="feature-num">1</div>
+    <h2>Currency Per Therapist</h2>
+    <p class="desc">Set each therapist's currency to EGP or USD. Prices display automatically. <strong>Default is EGP.</strong></p>
+    <div class="howto">
+      <h3>Where to configure</h3>
+      <ol class="steps">
+        <li>Go to <strong>Users → All Users</strong></li>
+        <li>Click <strong>Edit</strong> on a therapist</li>
+        <li>Scroll to <strong>Appointment Timezone</strong></li>
+        <li>Find <strong>Your currency</strong> — below the timezone field</li>
+        <li>Choose <strong>EGP</strong> or <strong>USD</strong>, click <strong>Update Profile</strong></li>
+      </ol>
+    </div>
+    <div class="note pink"><strong>Note:</strong> Only appears for therapist accounts (shop_staff role).</div>
+    <div class="screenshot">
+      <img src="screenshots/01-currency-setting.png" alt="Currency setting">
+      <div class="screenshot-caption">Users → Edit Therapist → Appointment Timezone</div>
+    </div>
+    <div class="who">
+      <h3>Who does what</h3>
+      <table class="who-table">
+        <tr><th>Role</th><th>Action</th></tr>
+        <tr><td class="role">Admin</td><td>Set currency per therapist. Currency column in Users list.</td></tr>
+        <tr><td class="role">Therapist</td><td>No action — ask admin if wrong.</td></tr>
+        <tr><td class="role">Client</td><td>Prices show automatically.</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- FEATURE 2 -->
+  <div class="feature">
+    <div class="feature-num">2</div>
+    <h2>Session Types &amp; Durations</h2>
+    <p class="desc">Offer multiple session options per product with custom labels, durations, and dual-currency pricing.</p>
+    <div class="howto">
+      <h3>Where to configure</h3>
+      <ol class="steps">
+        <li>Go to <strong>Products → All Products</strong></li>
+        <li>Click <strong>Edit</strong> on an Appointment product</li>
+        <li>In <strong>Product Data → General</strong>, scroll to <strong>Wellness Product</strong></li>
+        <li>Check <strong>☑ Enable Duration Options</strong></li>
+        <li>Click <strong>+ Add Duration Option</strong>, fill Label / Duration / EGP / USD</li>
+        <li>Click <strong>Update</strong> to save</li>
+      </ol>
+    </div>
+    <div class="note"><strong>Blank = fallback:</strong> Empty duration uses product default. Empty price uses original.</div>
+    <div class="screenshot">
+      <img src="screenshots/02-duration-options.png" alt="Duration options">
+      <div class="screenshot-caption">Products → Edit → General → Wellness Product</div>
+    </div>
+    <div class="who">
+      <h3>Where it appears</h3>
+      <table class="who-table">
+        <tr><th>Location</th><th>Shows</th></tr>
+        <tr><td class="role">Booking page</td><td>Session Type dropdown — price updates live</td></tr>
+        <tr><td class="role">Cart / Checkout</td><td>Session type next to product</td></tr>
+        <tr><td class="role">Order &amp; Emails</td><td>Visible to client, admin &amp; therapist</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- FEATURE 3 (full width) -->
+  <div class="feature">
+    <div class="feature-num">3</div>
+    <h2>Client Intake Form</h2>
+    <p class="desc">First-time clients complete a health &amp; contact form. <strong>Appears only for emails with no previous orders.</strong> Returning clients skip to payment. No login needed.</p>
+    <div class="note pink"><strong>New:</strong> 🆕 Email with no past orders → full 7 steps · 🔁 Email with orders → skips to payment · ✏️ Different email → treated as new</div>
+    <div style="display:flex;gap:12px;margin-top:8px">
+      <div style="flex:1;min-width:0">
+        <div class="howto">
+          <h3>Checkout steps (new clients)</h3>
+          <div class="step-row">
+            <div class="step-chip"><div class="no">1</div><div class="lbl">Contact</div><div class="sub">Name, email</div></div>
+            <div class="step-chip"><div class="no">2</div><div class="lbl">Personal</div><div class="sub">Birth, mobile</div></div>
+            <div class="step-chip"><div class="no">3</div><div class="lbl">Phone</div><div class="sub">Preferences</div></div>
+            <div class="step-chip"><div class="no">4</div><div class="lbl">Emergency</div><div class="sub">Contact info</div></div>
+            <div class="step-chip"><div class="no">5</div><div class="lbl">Health</div><div class="sub">Background</div></div>
+            <div class="step-chip"><div class="no">6</div><div class="lbl">Referral</div><div class="sub">Source</div></div>
+            <div class="step-chip"><div class="no">7</div><div class="lbl">Payment</div><div class="sub">Checkout</div></div>
+          </div>
+        </div>
+        <div class="howto">
+          <h3>Where to view forms</h3>
+          <ol class="steps">
+            <li>Go to <strong>Appointments → Intake Forms</strong></li>
+            <li>Browse by email — click any entry for all <strong>27 fields</strong></li>
+            <li>Also visible on order pages &amp; in New Appointment emails</li>
+          </ol>
+        </div>
+      </div>
+      <div class="screenshot" style="flex:0 0 280px;margin-top:0">
+        <img src="screenshots/03-intake-forms.png" alt="Intake Forms list">
+        <div class="screenshot-caption">Appointments → Intake Forms</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <p>Setup guide by <a href="https://the-raisin.com">Raisin</a> for <a href="https://thewellnesshub-eg.com">The Wellness Hub</a> · June 2026 · <a href="mailto:info@the-raisin.com">info@the-raisin.com</a></p>
+</footer>
+
+</body>
+</html>
