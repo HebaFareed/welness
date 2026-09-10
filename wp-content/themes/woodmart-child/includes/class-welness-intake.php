@@ -531,8 +531,8 @@ function wellness_thankyou_intake_field_groups()
 	return [
 		__('Personal Details', 'woodmart-child')      => ['intake_client_name', 'intake_birth_date', 'intake_address', 'intake_mobile', 'intake_mobile_text'],
 		__('Phone & Preferences', 'woodmart-child')   => ['intake_home_phone', 'intake_home_voicemail', 'intake_work_phone', 'intake_work_voicemail', 'intake_work_reminders', 'intake_preferred_comm'],
-		__('Emergency Contact', 'woodmart-child')     => ['intake_emergency_name', 'intake_emergency_relation', 'intake_emergency_home_phone', 'intake_emergency_mobile', 'intake_emergency_voicemail'],
-		__('Health Background', 'woodmart-child')     => ['intake_current_services', 'intake_past_counseling', 'intake_medications', 'intake_expectations', 'intake_emergency_text'],
+		__('Emergency Contact', 'woodmart-child')     => ['intake_emergency_name', 'intake_emergency_relation', 'intake_emergency_home_phone', 'intake_emergency_mobile', 'intake_emergency_voicemail', 'intake_emergency_text'],
+		__('Health Background', 'woodmart-child')     => ['intake_current_services', 'intake_past_counseling', 'intake_medications', 'intake_expectations'],
 		__('How You Heard About Us', 'woodmart-child') => ['intake_referral_friend_name', 'intake_referral_doctor_name', 'intake_referral_family', 'intake_referral_location', 'intake_referral_search', 'intake_referral_facebook'],
 	];
 }
@@ -687,45 +687,89 @@ function wellness_thankyou_intake_prefill($order)
 }
 
 /**
- * Render the full intake form markup (styles + form + script) on the
- * order-received page.
+ * Cache-busting version for a child theme asset: file mtime, or '1.0.0' when
+ * the file is missing.
  *
- * @param WC_Order $order
+ * @param string $relative Path relative to the child theme root.
+ * @return string
+ */
+function wellness_intake_asset_version($relative)
+{
+	$path = get_stylesheet_directory() . $relative;
+
+	return file_exists($path) ? (string) filemtime($path) : '1.0.0';
+}
+
+/**
+ * Enqueue the thank-you intake assets on the order-received page.
+ *
+ * Both files are real enqueued assets rather than inline tags so they survive
+ * caching / minification layers and are versioned by mtime.
+ *
  * @return void
  */
-function wellness_render_thankyou_intake_form($order)
+add_action('wp_enqueue_scripts', 'wellness_enqueue_thankyou_intake_assets');
+function wellness_enqueue_thankyou_intake_assets()
 {
-	$defs     = wellness_get_intake_field_defs();
-	$groups   = wellness_thankyou_intake_field_groups();
-	$prefill  = wellness_thankyou_intake_prefill($order);
-	$first    = $order->get_billing_first_name();
-	$order_id = $order->get_id();
-	$order_no = $order->get_order_number();
-	$ajax_url = admin_url('admin-ajax.php');
-	$nonce    = wp_create_nonce('wellness_thankyou_intake');
+	if (! is_order_received_page()) {
+		return;
+	}
+
+	$css = '/assets/css/wellness-intake-thankyou.css';
+	$js  = '/assets/js/wellness-intake-thankyou.js';
+
+	wp_enqueue_style(
+		'wellness-intake-thankyou',
+		get_stylesheet_directory_uri() . $css,
+		[],
+		wellness_intake_asset_version($css)
+	);
+
+	wp_enqueue_script(
+		'wellness-intake-thankyou',
+		get_stylesheet_directory_uri() . $js,
+		[],
+		wellness_intake_asset_version($js),
+		true
+	);
+
+	wp_localize_script('wellness-intake-thankyou', 'wellnessIntake', [
+		'ajaxUrl' => admin_url('admin-ajax.php'),
+		'action'  => 'wellness_save_thankyou_intake',
+		'i18n'    => [
+			'saving'        => __('Saving…', 'woodmart-child'),
+			'submit'        => __('Submit Intake Form', 'woodmart-child'),
+			'required'      => __('Please enter the client name and a mobile number.', 'woodmart-child'),
+			'requiredField' => __('Please fill in: %s', 'woodmart-child'),
+			'success'       => __('Thank you! Your intake form has been received.', 'woodmart-child'),
+			'error'         => __('Something went wrong. Please try again.', 'woodmart-child'),
+		],
+	]);
+}
+
+/**
+ * Render the full intake form markup on the order-received page.
+ *
+ * Five steps, one per field group, mirroring the checkout wizard. Without
+ * JavaScript every step stays visible and the whole form submits at once.
+ *
+ * @param WC_Order $order
+ * @param string   $error_message Server-side error from a native POST, if any.
+ * @return void
+ */
+function wellness_render_thankyou_intake_form($order, $error_message = '')
+{
+	$defs       = wellness_get_intake_field_defs();
+	$groups     = wellness_thankyou_intake_field_groups();
+	$prefill    = wellness_thankyou_intake_prefill($order);
+	$first      = $order->get_billing_first_name();
+	$order_id   = $order->get_id();
+	$order_no   = $order->get_order_number();
+	$native_url = $order->get_checkout_order_received_url();
+	$nonce      = wp_create_nonce('wellness_thankyou_intake');
+	$total      = count($groups);
 
 	echo '<section class="wellness-intake-th" id="wellness-thankyou-intake">';
-	echo '<style>' . PHP_EOL;
-	echo '.wellness-intake-th{max-width:760px;margin:32px auto;padding:26px 28px;background:#fff;border:1px solid #e6e1d9;border-radius:14px;box-shadow:0 2px 14px rgba(35,52,68,.06)}' . PHP_EOL;
-	echo '.wellness-intake-th__heading{font-size:1.4rem;font-weight:700;color:#2c3e4f;margin:0 0 6px}' . PHP_EOL;
-	echo '.wellness-intake-th__intro{font-size:.95rem;color:#667085;margin:0 0 20px}' . PHP_EOL;
-	echo '.wellness-intake-th__group{margin:0 0 24px}' . PHP_EOL;
-	echo '.wellness-intake-th__group-title{font-size:1.05rem;font-weight:700;color:#2c3e4f;border-bottom:1px solid #eee;padding-bottom:8px;margin:0 0 6px}' . PHP_EOL;
-	echo '.wellness-intake-th-form label{display:block;font-size:.85rem;font-weight:600;color:#374151;margin:12px 0 4px}' . PHP_EOL;
-	echo '.wellness-intake-th-form input[type="text"],.wellness-intake-th-form textarea,.wellness-intake-th-form select{width:100%;box-sizing:border-box;border:1px solid #d4d8dd;border-radius:8px;padding:10px 12px;font-size:.95rem;background:#fff;color:#111827;margin:0}' . PHP_EOL;
-	echo '.wellness-intake-th-form input:focus,.wellness-intake-th-form textarea:focus,.wellness-intake-th-form select:focus{outline:none;border-color:#4b7f8c;box-shadow:0 0 0 3px rgba(75,127,140,.15)}' . PHP_EOL;
-	echo '.wellness-intake-th-check{display:flex;align-items:center;gap:10px;margin:10px 0;cursor:pointer;font-weight:500;font-size:.9rem;color:#374151}' . PHP_EOL;
-	echo '.wellness-intake-th-check input{width:auto;margin:0}' . PHP_EOL;
-	echo '.wellness-intake-th-req{color:#b3392f}' . PHP_EOL;
-	echo '.wellness-intake-th__note{font-size:.8rem;color:#667085;margin:2px 0 0}' . PHP_EOL;
-	echo '.wellness-intake-th__submit{margin-top:20px;text-align:center}' . PHP_EOL;
-	echo '.wellness-intake-th__submit button{background:#2c3e4f;color:#fff;border:0;border-radius:999px;padding:13px 32px;font-size:1rem;font-weight:600;cursor:pointer}' . PHP_EOL;
-	echo '.wellness-intake-th__submit button:hover{background:#1f2e3b}' . PHP_EOL;
-	echo '.wellness-intake-th__submit button:disabled{opacity:.6;cursor:default}' . PHP_EOL;
-	echo '.wellness-intake-th__error,.wellness-intake-th__success{border-radius:8px;padding:12px 14px;margin:16px 0 0;font-size:.9rem}' . PHP_EOL;
-	echo '.wellness-intake-th__error{background:#fdecea;color:#b3392f;border:1px solid #f3c1bb}' . PHP_EOL;
-	echo '.wellness-intake-th__success{background:#e9f6ee;color:#1e7a3c;border:1px solid #bce6cc}' . PHP_EOL;
-	echo '</style>' . PHP_EOL;
 
 	echo '<h2 class="wellness-intake-th__heading">' . esc_html__('Client Intake Form', 'woodmart-child') . '</h2>';
 	echo '<p class="wellness-intake-th__intro">';
@@ -745,15 +789,49 @@ function wellness_render_thankyou_intake_form($order)
 	}
 	echo '</p>';
 
-	echo '<form class="wellness-intake-th-form" id="wellness-thankyou-intake-form" action="' . esc_url($ajax_url) . '" method="post" novalidate>';
-	echo '<input type="hidden" name="action" value="wellness_save_thankyou_intake" />';
+	// Progress dots. The step headings carry the labels, the dots carry the
+	// position; the script colours them as the client moves through.
+	echo '<div class="wellness-progress">';
+	for ($i = 1; $i <= $total; $i++) {
+		echo '<span class="wellness-progress__dot' . (1 === $i ? ' wellness-progress__dot--active' : '') . '" data-dot="' . esc_attr($i) . '">';
+		echo '<span class="wellness-progress__dot-inner">' . esc_html($i) . '</span>';
+		echo '</span>';
+	}
+	echo '</div>';
+
+	// Above the form so a validation message stays visible in every step.
+	echo '<div class="wellness-intake-th__error" id="wellness-intake-th-error" role="alert"' . ($error_message ? '' : ' hidden') . '>' . ($error_message ? esc_html($error_message) : '') . '</div>';
+
+	// Posts to the order-received URL itself: the server-side native handler
+	// saves it, so a submission still lands if the JS never runs. The JS takes
+	// over and sends the same payload to admin-ajax instead.
+	echo '<form class="wellness-intake-th-form" id="wellness-thankyou-intake-form" action="' . esc_url($native_url) . '" method="post" novalidate>';
+	echo '<input type="hidden" name="wellness_intake_native" value="1" />';
 	echo '<input type="hidden" name="order_id" value="' . esc_attr($order_id) . '" />';
 	echo '<input type="hidden" name="order_key" value="' . esc_attr($order->get_order_key()) . '" />';
-	echo '<input type="hidden" name="_ajax_nonce" value="' . esc_attr($nonce) . '" />';
+	echo '<input type="hidden" name="wellness_intake_nonce" value="' . esc_attr($nonce) . '" />';
+
+	$step = 0;
 
 	foreach ($groups as $heading => $keys) {
-		echo '<div class="wellness-intake-th__group">';
-		echo '<h3 class="wellness-intake-th__group-title">' . esc_html($heading) . '</h3>';
+		$step++;
+		$is_last = ($step === $total);
+
+		echo '<div class="wellness-intake-th-step' . (1 === $step ? ' is-current' : '') . '" data-step="' . esc_attr($step) . '" role="group" aria-label="' . esc_attr($heading) . '">';
+
+		echo '<div class="wellness-step-header">';
+		echo '<span class="wellness-step-number" aria-hidden="true">' . wellness_step_icon($step) . '</span>';
+		echo '<span class="wellness-step-title">' . esc_html($heading) . '</span>';
+		echo '<span class="wellness-step-divider"></span>';
+		echo '<span class="wellness-step-count">' . esc_html(sprintf(
+			/* translators: 1: current step, 2: total number of steps */
+			__('Step %1$d of %2$d', 'woodmart-child'),
+			$step,
+			$total
+		)) . '</span>';
+		echo '</div>';
+
+		echo '<div class="wellness-step-body">';
 		foreach ($keys as $key) {
 			if (! isset($defs[$key])) {
 				continue;
@@ -762,42 +840,35 @@ function wellness_render_thankyou_intake_form($order)
 			wellness_thankyou_render_field($key, $defs[$key], $value);
 		}
 		echo '</div>';
+
+		echo '<div class="wellness-step-actions">';
+
+		if ($step > 1) {
+			echo '<button type="button" class="wellness-btn-back" data-back="' . esc_attr($step - 1) . '">';
+			echo '<svg class="wellness-btn-back__icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3L5 8l5 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>';
+			echo '<span>' . esc_html__('Back', 'woodmart-child') . '</span>';
+			echo '</button>';
+		}
+
+		if (! $is_last) {
+			echo '<button type="button" class="wellness-btn-next" data-next="' . esc_attr($step + 1) . '">';
+			echo '<span>' . esc_html__('Continue', 'woodmart-child') . '</span>';
+			echo '<svg class="wellness-btn-next__icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round" /></svg>';
+			echo '</button>';
+		} else {
+			echo '<button type="submit" class="wellness-btn-next" id="wellness-intake-th-submit">' . esc_html__('Submit Intake Form', 'woodmart-child') . '</button>';
+		}
+
+		echo '</div>';
+
+		echo '</div>';
 	}
 
-	echo '<p class="wellness-intake-th__note">' . esc_html__('Required fields are marked with *. Your information is confidential and shared only with your therapist.', 'woodmart-child') . '</p>';
-
-	echo '<div class="wellness-intake-th__error" id="wellness-intake-th-error" hidden></div>';
-	echo '<div class="wellness-intake-th__submit"><button type="submit" id="wellness-intake-th-submit">' . esc_html__('Submit Intake Form', 'woodmart-child') . '</button></div>';
 	echo '</form>';
 
-	echo '<div class="wellness-intake-th__success" id="wellness-intake-th-success" hidden></div>';
-	echo '<noscript><p class="wellness-intake-th__note">' . esc_html__('Please enable JavaScript to submit your intake form.', 'woodmart-child') . '</p></noscript>';
-
-	echo '<script>' . PHP_EOL;
-	echo '(function(){' . PHP_EOL;
-	echo 'var form=document.getElementById("wellness-thankyou-intake-form");' . PHP_EOL;
-	echo 'if(!form){return;}' . PHP_EOL;
-	echo 'var btn=document.getElementById("wellness-intake-th-submit");' . PHP_EOL;
-	echo 'var err=document.getElementById("wellness-intake-th-error");' . PHP_EOL;
-	echo 'var ok=document.getElementById("wellness-intake-th-success");' . PHP_EOL;
-	echo 'function show(el,msg){if(!el){return;}el.hidden=false;if(msg){el.textContent=msg;}el.scrollIntoView({behavior:"smooth",block:"center"});}' . PHP_EOL;
-	echo 'form.addEventListener("submit",function(e){' . PHP_EOL;
-	echo 'e.preventDefault();' . PHP_EOL;
-	echo 'if(err){err.hidden=true;}' . PHP_EOL;
-	echo 'var n=document.getElementById("th-intake_client_name");' . PHP_EOL;
-	echo 'var m=document.getElementById("th-intake_mobile");' . PHP_EOL;
-	echo 'if(!n||!m||!n.value.trim()||!m.value.trim()){show(err,"' . esc_js(__('Please enter the client name and a mobile number.', 'woodmart-child')) . '");return;}' . PHP_EOL;
-	echo 'if(btn){btn.disabled=true;btn.textContent="' . esc_js(__('Saving…', 'woodmart-child')) . '";}' . PHP_EOL;
-	echo 'fetch(form.action,{method:"POST",credentials:"same-origin",body:new FormData(form)})' . PHP_EOL;
-	echo '.then(function(r){return r.json();})' . PHP_EOL;
-	echo '.then(function(res){' . PHP_EOL;
-	echo 'if(btn){btn.disabled=false;btn.textContent="' . esc_js(__('Submit Intake Form', 'woodmart-child')) . '";}' . PHP_EOL;
-	echo 'if(res&&res.success){form.hidden=true;show(ok,(res.data&&res.data.message)?res.data.message:"' . esc_js(__('Thank you! Your intake form has been received.', 'woodmart-child')) . '");ok.innerHTML="<strong>"+ok.textContent+"</strong>";}' . PHP_EOL;
-	echo 'else{show(err,(res&&res.data&&res.data.message)?res.data.message:"' . esc_js(__('Something went wrong. Please try again.', 'woodmart-child')) . '");}' . PHP_EOL;
-	echo '}).catch(function(){if(btn){btn.disabled=false;btn.textContent="' . esc_js(__('Submit Intake Form', 'woodmart-child')) . '";}show(err,"' . esc_js(__('Something went wrong. Please try again.', 'woodmart-child')) . '");});' . PHP_EOL;
-	echo '});' . PHP_EOL;
-	echo '})();' . PHP_EOL;
-	echo '</script>';
+	echo '<p class="wellness-intake-th__note">' . esc_html__('Required fields are marked with *. Your information is confidential and shared only with your therapist.', 'woodmart-child') . '</p>';
+	echo '<div class="wellness-intake-th__success" id="wellness-intake-th-success" role="status" hidden></div>';
+	echo '<noscript><p class="wellness-intake-th__note">' . esc_html__('JavaScript is switched off in your browser, so all steps are shown on one page. The form still submits normally.', 'woodmart-child') . '</p></noscript>';
 
 	echo '</section>';
 }
@@ -826,6 +897,14 @@ function wellness_render_thankyou_intake($order_id)
 		return;
 	}
 
+	// A native (non-JS) POST handled earlier in this request already has its
+	// answer: confirm it here instead of rendering the form again.
+	$native = wellness_thankyou_intake_native_result();
+	if ($native && in_array($native['state'], ['saved', 'already'], true)) {
+		wellness_render_thankyou_intake_confirmation($native['message']);
+		return;
+	}
+
 	if ($order->has_status(['failed', 'cancelled', 'refunded', 'trash', 'checkout-draft'])) {
 		return;
 	}
@@ -840,7 +919,28 @@ function wellness_render_thankyou_intake($order_id)
 		return;
 	}
 
-	wellness_render_thankyou_intake_form($order);
+	wellness_render_thankyou_intake_form($order, $native ? $native['message'] : '');
+}
+
+/**
+ * Render the "intake received" confirmation.
+ *
+ * Used when a native POST was handled in the same request — the page
+ * re-renders after that form submits, so there is no AJAX callback to swap the
+ * markup.
+ *
+ * @param string $message
+ * @return void
+ */
+function wellness_render_thankyou_intake_confirmation($message = '')
+{
+	if ('' === $message) {
+		$message = __('Your intake form has already been submitted. Thank you!', 'woodmart-child');
+	}
+
+	echo '<section class="wellness-intake-th" id="wellness-thankyou-intake">';
+	echo '<div class="wellness-intake-th__success" role="status"><strong>' . esc_html($message) . '</strong></div>';
+	echo '</section>';
 }
 
 // Primary hook — fires inside Woodmart's thankyou template when the order exists
@@ -876,56 +976,236 @@ function wellness_thankyou_intake_footer_fallback()
 	wellness_render_thankyou_intake($order_id);
 }
 
+// ── Submission helpers (shared by the AJAX and native paths) ──────────────
+
+/**
+ * Result of a native (non-JS) intake submission handled in this request.
+ *
+ * 'saved' | 'already' | 'error', plus an optional message. Null when no native
+ * submit happened. Read by wellness_render_thankyou_intake() so the same
+ * request can render the confirmation instead of the form.
+ *
+ * @param string|null $state   Pass a state to store one.
+ * @param string      $message Optional message to store with it.
+ * @return array{state:string,message:string}|null
+ */
+function wellness_thankyou_intake_native_result($state = null, $message = '')
+{
+	static $result = null;
+
+	if ($state !== null) {
+		$result = ['state' => $state, 'message' => $message];
+	}
+
+	return $result;
+}
+
+/**
+ * Resolve the order referenced by a posted intake form.
+ *
+ * The order key is the capability check: it is only exposed on the
+ * order-received page (and in the reminder email link), so a matching key
+ * proves the submitter is entitled to that order.
+ *
+ * @return array{order:WC_Order|null,error:string}
+ */
+function wellness_resolve_posted_intake_order()
+{
+	$order_id = isset($_POST['order_id']) ? absint($_POST['order_id']) : 0;
+	$order    = $order_id ? wc_get_order($order_id) : false;
+
+	if (! $order) {
+		return [
+			'order' => null,
+			'error' => __('We could not find your order. Please contact us.', 'woodmart-child'),
+		];
+	}
+
+	$key = isset($_POST['order_key']) && is_string($_POST['order_key'])
+		? sanitize_text_field(wp_unslash($_POST['order_key']))
+		: '';
+
+	if (! hash_equals($order->get_order_key(), $key)) {
+		return [
+			'order' => null,
+			'error' => __('Your session could not be verified. Please reload the page and try again.', 'woodmart-child'),
+		];
+	}
+
+	return ['order' => $order, 'error' => ''];
+}
+
+/**
+ * The posted intake nonce, if any. Both field names are accepted so a page
+ * already open in a browser keeps working across the rename.
+ *
+ * @return string
+ */
+function wellness_posted_intake_nonce()
+{
+	foreach (['wellness_intake_nonce', '_ajax_nonce'] as $field) {
+		if (! empty($_POST[$field]) && is_string($_POST[$field])) {
+			return sanitize_text_field(wp_unslash($_POST[$field]));
+		}
+	}
+
+	return '';
+}
+
+/**
+ * Pull every canonical intake field out of the current POST request.
+ * Non-string values (arrays / nested payloads) are dropped.
+ *
+ * @return array<string,string>
+ */
+function wellness_collect_posted_intake_fields()
+{
+	$posted = [];
+
+	foreach (array_keys(wellness_get_intake_field_defs()) as $field_key) {
+		$value = isset($_POST[$field_key]) ? wp_unslash($_POST[$field_key]) : '';
+
+		$posted[$field_key] = is_string($value) ? $value : '';
+	}
+
+	return $posted;
+}
+
+/**
+ * Server-side required-field checks (client name + mobile).
+ *
+ * @param array<string,string> $posted
+ * @return string[] Error messages; empty when the submission is valid.
+ */
+function wellness_validate_posted_intake_fields($posted)
+{
+	$errors = [];
+
+	if ('' === trim((string) ($posted['intake_client_name'] ?? ''))) {
+		$errors[] = __('Please enter the client name.', 'woodmart-child');
+	}
+
+	if ('' === trim((string) ($posted['intake_mobile'] ?? ''))) {
+		$errors[] = __('Please enter a mobile number.', 'woodmart-child');
+	}
+
+	return $errors;
+}
+
+// ── Native (non-JS) POST fallback ─────────────────────────────────────────
+
+/**
+ * Handle an intake form POST that reached the page itself instead of admin-ajax.
+ *
+ * The form's own action is the order-received URL, so a submission still lands
+ * when the script never runs (blocked, cached, stripped, minified, or fetch
+ * unavailable). Runs before output, so the page renders the confirmation in
+ * the same request — no redirect and no extra query-string state.
+ *
+ * @return void
+ */
+add_action('wp', 'wellness_handle_native_intake_submit', 5);
+function wellness_handle_native_intake_submit()
+{
+	if (is_admin() || empty($_POST['wellness_intake_native']) || ! is_order_received_page()) {
+		return;
+	}
+
+	$resolved = wellness_resolve_posted_intake_order();
+
+	if (! $resolved['order']) {
+		wellness_thankyou_intake_native_result('error', $resolved['error']);
+		return;
+	}
+
+	$order = $resolved['order'];
+
+	// Verified but never enforced: the reminder email can bring the client
+	// back more than 24 h later, when the nonce has already expired. The order
+	// key checked above is the real capability.
+	wp_verify_nonce(wellness_posted_intake_nonce(), 'wellness_thankyou_intake');
+
+	$email = $order->get_billing_email();
+	if (empty($email)) {
+		wellness_thankyou_intake_native_result('error', __('We could not find your order. Please contact us.', 'woodmart-child'));
+		return;
+	}
+
+	if (wellness_intake_has_record($email)) {
+		wellness_thankyou_intake_native_result('already');
+		return;
+	}
+
+	$posted = wellness_collect_posted_intake_fields();
+	$errors = wellness_validate_posted_intake_fields($posted);
+
+	if (! empty($errors)) {
+		wellness_thankyou_intake_native_result('error', implode(' ', $errors));
+		return;
+	}
+
+	$post_id = wellness_create_intake_record($order, $posted);
+
+	if (! $post_id) {
+		wellness_thankyou_intake_native_result('error', __('We could not save your intake form. Please try again or contact us.', 'woodmart-child'));
+		return;
+	}
+
+	wellness_schedule_intake_submitted_notification($post_id);
+	wellness_thankyou_intake_native_result('saved');
+}
+
 // ── AJAX: save the thank-you intake form ──────────────────────────────────
 
 add_action('wp_ajax_wellness_save_thankyou_intake', 'wellness_save_thankyou_intake_ajax');
 add_action('wp_ajax_nopriv_wellness_save_thankyou_intake', 'wellness_save_thankyou_intake_ajax');
 function wellness_save_thankyou_intake_ajax()
 {
-	check_ajax_referer('wellness_thankyou_intake', '_ajax_nonce');
+	$resolved = wellness_resolve_posted_intake_order();
 
-	$order_id = isset($_POST['order_id']) ? absint($_POST['order_id']) : 0;
-	$order    = $order_id ? wc_get_order($order_id) : false;
-
-	if (! $order) {
-		wp_send_json_error(['message' => __('We could not find your order. Please contact us.', 'woodmart-child')]);
+	if (! $resolved['order']) {
+		wp_send_json_error(['message' => $resolved['error'], 'code' => 'invalid_order']);
 	}
 
-	$key = isset($_POST['order_key']) ? sanitize_text_field(wp_unslash($_POST['order_key'])) : '';
-	if (! hash_equals($order->get_order_key(), $key)) {
-		wp_send_json_error(['message' => __('Your session could not be verified. Please reload the page and try again.', 'woodmart-child')]);
-	}
+	$order = $resolved['order'];
+
+	// Verified but never enforced — see wellness_handle_native_intake_submit().
+	wp_verify_nonce(wellness_posted_intake_nonce(), 'wellness_thankyou_intake');
 
 	$email = $order->get_billing_email();
-	if (empty($email) || wellness_intake_has_record($email)) {
-		wp_send_json_error(['message' => __('Your intake form has already been submitted. Thank you!', 'woodmart-child')]);
+
+	if (empty($email)) {
+		wp_send_json_error([
+			'message' => __('We could not find your order. Please contact us.', 'woodmart-child'),
+			'code'    => 'invalid_order',
+		]);
 	}
 
-	// Required: client name + mobile (server-side).
-	$client_name = isset($_POST['intake_client_name']) ? sanitize_text_field(wp_unslash($_POST['intake_client_name'])) : '';
-	$mobile      = isset($_POST['intake_mobile']) ? sanitize_text_field(wp_unslash($_POST['intake_mobile'])) : '';
+	// Already on file: confirm calmly instead of showing an error.
+	if (wellness_intake_has_record($email)) {
+		wp_send_json_success([
+			'message' => __('Your intake form has already been submitted. Thank you!', 'woodmart-child'),
+			'already' => true,
+		]);
+	}
 
-	$errors = [];
-	if ('' === $client_name) {
-		$errors[] = __('Please enter the client name.', 'woodmart-child');
-	}
-	if ('' === $mobile) {
-		$errors[] = __('Please enter a mobile number.', 'woodmart-child');
-	}
+	$posted = wellness_collect_posted_intake_fields();
+	$errors = wellness_validate_posted_intake_fields($posted);
+
 	if (! empty($errors)) {
-		wp_send_json_error(['message' => implode(' ', $errors)]);
-	}
-
-	$defs   = wellness_get_intake_field_defs();
-	$posted = [];
-	foreach (array_keys($defs) as $field_key) {
-		$posted[$field_key] = isset($_POST[$field_key]) ? wp_unslash($_POST[$field_key]) : '';
+		wp_send_json_error([
+			'message' => implode(' ', $errors),
+			'code'    => 'invalid_fields',
+		]);
 	}
 
 	$post_id = wellness_create_intake_record($order, $posted);
 
 	if (! $post_id) {
-		wp_send_json_error(['message' => __('We could not save your intake form. Please try again or contact us.', 'woodmart-child')]);
+		wp_send_json_error([
+			'message' => __('We could not save your intake form. Please try again or contact us.', 'woodmart-child'),
+			'code'    => 'save_failed',
+		]);
 	}
 
 	// Queue the therapist notification (async, exactly once, with retries).

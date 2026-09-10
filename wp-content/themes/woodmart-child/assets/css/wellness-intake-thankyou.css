@@ -1,0 +1,514 @@
+/**
+ * The Wellness Hub — client intake form on the thank-you (order-received) page.
+ *
+ * Step chrome (design tokens, step card/header, progress dots, Next/Back
+ * buttons, field styling) mirrors woocommerce/checkout/form-checkout.php so the
+ * intake wizard looks and behaves like the checkout wizard. The checkout copy
+ * is inline in that template and only loads on the checkout page, so it is
+ * repeated here — scoped to .wellness-intake-th — rather than extracted and
+ * risked against the payment iframe layout.
+ *
+ * Progressive enhancement: steps collapse into a wizard only once the script
+ * adds .wellness-intake-th--js. Without JavaScript every step is visible and
+ * the whole form submits in one page.
+ *
+ * @package woodmart-child
+ */
+
+.wellness-intake-th {
+	--wellness-primary: var(--wd-primary-color, #5B8C5A);
+	/* Hardcoded fallbacks for Safari < 16.2 which lacks color-mix(). */
+	--wellness-primary-deep: #3D6B3C;
+	--wellness-primary-soft: #EEF5EE;
+	--wellness-primary-mist: #F7FAF7;
+	--wellness-cream: #FDFBF7;
+	--wellness-charcoal: #2C2416;
+	--wellness-muted: #6B5E4F;
+	--wellness-border: #E0D9CF;
+	--wellness-white: #FFFFFF;
+	--wellness-radius: 12px;
+	--wellness-radius-sm: 8px;
+	--wellness-shadow: 0 1px 3px rgba(44, 36, 22, 0.04), 0 4px 24px rgba(44, 36, 22, 0.05);
+	--wellness-shadow-lg: 0 2px 8px rgba(44, 36, 22, 0.04), 0 8px 40px rgba(44, 36, 22, 0.08);
+	--wellness-transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+	--wellness-danger: #b3392f;
+	--wellness-success: #1e7a3c;
+
+	max-width: 760px;
+	margin: 32px auto;
+}
+
+@supports (color: color-mix(in srgb, red 50%, blue 50%)) {
+	.wellness-intake-th {
+		--wellness-primary-deep: color-mix(in srgb, var(--wd-primary-color) 80%, #000 20%);
+		--wellness-primary-soft: color-mix(in srgb, var(--wd-primary-color) 12%, #fff 88%);
+		--wellness-primary-mist: color-mix(in srgb, var(--wd-primary-color) 5%, #fff 95%);
+	}
+}
+
+.wellness-intake-th *,
+.wellness-intake-th *::before,
+.wellness-intake-th *::after {
+	box-sizing: border-box;
+}
+
+.wellness-intake-th [hidden] {
+	display: none !important;
+}
+
+/* ── Heading + intro ─────────────────────────────────────── */
+.wellness-intake-th__heading {
+	font-size: 1.4rem;
+	font-weight: 700;
+	color: var(--wellness-charcoal);
+	margin: 0 0 6px;
+}
+
+.wellness-intake-th__intro {
+	font-size: 0.95rem;
+	color: var(--wellness-muted);
+	margin: 0 0 22px;
+}
+
+.wellness-intake-th__note {
+	font-size: 0.8rem;
+	color: var(--wellness-muted);
+	margin: 14px 0 0;
+	text-align: center;
+}
+
+/* ── Progress indicator ──────────────────────────────────── */
+.wellness-intake-th .wellness-progress {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 20px;
+	margin: 0 0 24px;
+	padding: 0 12px;
+}
+
+.wellness-intake-th .wellness-progress__dot {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	border-radius: 50%;
+	background: var(--wellness-white);
+	border: 2px solid var(--wellness-border);
+	position: relative;
+	transition: all var(--wellness-transition);
+}
+
+.wellness-intake-th .wellness-progress__dot::after {
+	content: '';
+	position: absolute;
+	left: calc(100% + 20px);
+	top: 50%;
+	width: 20px;
+	height: 1px;
+	background: var(--wellness-border);
+	transform: translateY(-50%);
+	transition: background var(--wellness-transition);
+}
+
+.wellness-intake-th .wellness-progress__dot:last-child::after {
+	display: none;
+}
+
+.wellness-intake-th .wellness-progress__dot--active {
+	border-color: var(--wellness-primary);
+	background: var(--wellness-primary-soft);
+	box-shadow: 0 0 0 6px color-mix(in srgb, var(--wd-primary-color) 10%, transparent 90%);
+}
+
+.wellness-intake-th .wellness-progress__dot--active::after,
+.wellness-intake-th .wellness-progress__dot--done::after {
+	background: var(--wellness-primary);
+}
+
+.wellness-intake-th .wellness-progress__dot--done {
+	border-color: var(--wellness-primary);
+	background: var(--wellness-primary);
+}
+
+.wellness-intake-th .wellness-progress__dot-inner {
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--wellness-muted);
+	transition: color var(--wellness-transition);
+}
+
+.wellness-intake-th .wellness-progress__dot--active .wellness-progress__dot-inner {
+	color: var(--wellness-primary-deep);
+}
+
+.wellness-intake-th .wellness-progress__dot--done .wellness-progress__dot-inner {
+	font-size: 0;
+}
+
+.wellness-intake-th .wellness-progress__dot--done .wellness-progress__dot-inner::after {
+	content: '✓';
+	font-size: 0.85rem;
+	color: var(--wellness-white);
+}
+
+/* ── Step visibility (enhanced mode only) ────────────────── */
+.wellness-intake-th--js .wellness-intake-th-step {
+	display: none;
+}
+
+.wellness-intake-th--js .wellness-intake-th-step.is-current {
+	display: block;
+}
+
+/* ── Step card ───────────────────────────────────────────── */
+.wellness-intake-th-step {
+	border-radius: var(--wellness-radius);
+	overflow: hidden;
+	background: var(--wellness-white);
+	border: 1px solid var(--wellness-border);
+	box-shadow: var(--wellness-shadow);
+	transition: box-shadow var(--wellness-transition);
+}
+
+.wellness-intake-th-step:hover {
+	box-shadow: var(--wellness-shadow-lg);
+}
+
+.wellness-intake-th-step.wellness-step-entering {
+	animation: wellness-intake-fadeSlideIn 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes wellness-intake-fadeSlideIn {
+	from {
+		opacity: 0;
+		transform: translateY(12px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* ── Step header ─────────────────────────────────────────── */
+.wellness-intake-th .wellness-step-header {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 18px 28px;
+	background: linear-gradient(135deg, var(--wellness-primary-mist) 0%, var(--wellness-cream) 100%);
+	border-bottom: 1px solid var(--wellness-border);
+}
+
+.wellness-intake-th .wellness-step-number {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	background: var(--wellness-primary);
+	color: #fff;
+	font-size: 0.8rem;
+	font-weight: 700;
+	flex-shrink: 0;
+}
+
+.wellness-intake-th .wellness-step-number svg {
+	display: block;
+	width: 16px;
+	height: 16px;
+}
+
+.wellness-intake-th .wellness-step-title {
+	font-size: 1.1rem;
+	font-weight: 600;
+	color: var(--wellness-charcoal);
+	letter-spacing: -0.01em;
+}
+
+.wellness-intake-th .wellness-step-divider {
+	flex: 1;
+	height: 1px;
+	background: linear-gradient(90deg, var(--wellness-primary) 0%, transparent 100%);
+	opacity: 0.3;
+}
+
+.wellness-intake-th .wellness-step-count {
+	font-size: 0.78rem;
+	font-weight: 600;
+	color: var(--wellness-muted);
+	white-space: nowrap;
+}
+
+/* ── Step body ───────────────────────────────────────────── */
+.wellness-intake-th .wellness-step-body {
+	padding: 28px;
+}
+
+/* ── Fields ──────────────────────────────────────────────── */
+.wellness-intake-th-form label {
+	display: block;
+	font-size: 0.85rem;
+	font-weight: 500;
+	color: var(--wellness-muted);
+	margin: 16px 0 4px;
+}
+
+.wellness-intake-th-form .wellness-intake-th-field:first-child label {
+	margin-top: 0;
+}
+
+.wellness-intake-th-form input[type="text"],
+.wellness-intake-th-form textarea,
+.wellness-intake-th-form select {
+	width: 100%;
+	border: 1.5px solid var(--wellness-border);
+	border-radius: var(--wellness-radius-sm);
+	padding: 12px 16px;
+	font-size: 0.95rem;
+	font-family: inherit;
+	color: var(--wellness-charcoal);
+	background: var(--wellness-cream);
+	margin: 0;
+	transition: border-color var(--wellness-transition), box-shadow var(--wellness-transition), background var(--wellness-transition);
+}
+
+.wellness-intake-th-form input[type="text"]:focus,
+.wellness-intake-th-form textarea:focus,
+.wellness-intake-th-form select:focus {
+	outline: none;
+	border-color: var(--wellness-primary);
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--wd-primary-color) 12%, transparent 88%);
+	background: var(--wellness-white);
+}
+
+.wellness-intake-th-form textarea {
+	resize: vertical;
+	min-height: 90px;
+}
+
+.wellness-intake-th-check {
+	display: flex !important;
+	align-items: center;
+	gap: 10px;
+	margin: 12px 0 !important;
+	cursor: pointer;
+	font-size: 0.9rem !important;
+	font-weight: 500;
+	color: var(--wellness-charcoal) !important;
+}
+
+.wellness-intake-th-check input {
+	width: auto;
+	margin: 0;
+	accent-color: var(--wellness-primary);
+	flex-shrink: 0;
+}
+
+.wellness-intake-th-req {
+	color: var(--wellness-danger);
+}
+
+/* ── Actions ─────────────────────────────────────────────── */
+.wellness-intake-th .wellness-step-actions {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 20px 28px;
+	border-top: 1px solid var(--wellness-border);
+	background: var(--wellness-primary-mist);
+	gap: 12px;
+}
+
+.wellness-intake-th .wellness-btn-next,
+.wellness-intake-th .wellness-btn-back {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	border-radius: var(--wellness-radius-sm);
+	font-size: 0.95rem;
+	font-weight: 600;
+	font-family: inherit;
+	cursor: pointer;
+	transition: background var(--wellness-transition), color var(--wellness-transition), border-color var(--wellness-transition), transform var(--wellness-transition), box-shadow var(--wellness-transition);
+}
+
+.wellness-intake-th .wellness-btn-next {
+	padding: 12px 28px;
+	background: var(--wellness-primary);
+	color: #fff;
+	border: none;
+	margin-left: auto;
+}
+
+.wellness-intake-th .wellness-btn-next:hover {
+	background: #fff;
+	color: var(--wellness-primary);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px color-mix(in srgb, var(--wd-primary-color) 30%, transparent 70%);
+}
+
+.wellness-intake-th .wellness-btn-next:active {
+	transform: translateY(0);
+}
+
+.wellness-intake-th .wellness-btn-next__icon {
+	transition: transform var(--wellness-transition);
+}
+
+.wellness-intake-th .wellness-btn-next:hover .wellness-btn-next__icon {
+	transform: translateX(3px);
+}
+
+.wellness-intake-th .wellness-btn-back {
+	padding: 12px 20px;
+	background: transparent;
+	color: var(--wellness-muted);
+	border: 1.5px solid var(--wellness-border);
+	font-size: 0.9rem;
+	font-weight: 500;
+}
+
+.wellness-intake-th .wellness-btn-back:hover {
+	color: var(--wellness-charcoal);
+	border-color: var(--wellness-charcoal);
+	background: var(--wellness-white);
+}
+
+.wellness-intake-th .wellness-btn-back__icon {
+	transition: transform var(--wellness-transition);
+	flex-shrink: 0;
+}
+
+.wellness-intake-th .wellness-btn-back:hover .wellness-btn-back__icon {
+	transform: translateX(-2px);
+}
+
+.wellness-intake-th .wellness-btn-next:disabled {
+	opacity: 0.65;
+	cursor: default;
+	transform: none;
+	box-shadow: none;
+}
+
+.wellness-intake-th .wellness-btn-next.wellness-loading {
+	pointer-events: none;
+	opacity: 0.8;
+	position: relative;
+	color: transparent;
+}
+
+.wellness-intake-th .wellness-btn-next.wellness-loading::after {
+	content: '';
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 18px;
+	height: 18px;
+	margin: -9px 0 0 -9px;
+	border: 2px solid rgba(255, 255, 255, 0.3);
+	border-top-color: #fff;
+	border-radius: 50%;
+	animation: wellness-intake-spin 0.7s linear infinite;
+}
+
+@keyframes wellness-intake-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* ── Messages ────────────────────────────────────────────── */
+.wellness-intake-th__error,
+.wellness-intake-th__success {
+	border-radius: var(--wellness-radius-sm);
+	padding: 12px 14px;
+	font-size: 0.9rem;
+}
+
+.wellness-intake-th__error {
+	background: #fdecea;
+	color: var(--wellness-danger);
+	border: 1px solid #f3c1bb;
+	margin: 0 0 16px;
+}
+
+.wellness-intake-th__success {
+	background: #e9f6ee;
+	color: var(--wellness-success);
+	border: 1px solid #bce6cc;
+	margin: 0;
+}
+
+/* ── Accessibility: reduced motion ───────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+	.wellness-intake-th-step,
+	.wellness-intake-th-step.wellness-step-entering,
+	.wellness-intake-th .wellness-btn-next,
+	.wellness-intake-th .wellness-btn-next__icon,
+	.wellness-intake-th .wellness-btn-back__icon {
+		transition: none !important;
+		animation: none !important;
+	}
+}
+
+/* ── Touch devices ───────────────────────────────────────── */
+@media (hover: none) and (pointer: coarse) {
+	.wellness-intake-th .wellness-btn-next:hover {
+		transform: none;
+		box-shadow: none;
+	}
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+	.wellness-intake-th {
+		margin: 20px 0;
+	}
+
+	.wellness-intake-th .wellness-progress {
+		gap: 12px;
+	}
+
+	.wellness-intake-th .wellness-progress__dot {
+		width: 28px;
+		height: 28px;
+	}
+
+	.wellness-intake-th .wellness-progress__dot::after {
+		left: calc(100% + 12px);
+		width: 12px;
+	}
+
+	.wellness-intake-th .wellness-step-header {
+		padding: 14px 18px;
+		flex-wrap: wrap;
+	}
+
+	.wellness-intake-th .wellness-step-count {
+		display: none;
+	}
+
+	.wellness-intake-th .wellness-step-body {
+		padding: 18px;
+	}
+
+	.wellness-intake-th .wellness-step-actions {
+		padding: 16px 18px;
+		flex-wrap: wrap;
+	}
+
+	.wellness-intake-th .wellness-btn-next,
+	.wellness-intake-th .wellness-btn-back {
+		width: 100%;
+		justify-content: center;
+	}
+
+	.wellness-intake-th .wellness-btn-next {
+		margin-left: 0;
+		order: -1;
+	}
+}
