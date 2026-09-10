@@ -26,7 +26,7 @@
 !FEATURES-GUIDE-v2.html
 !FEATURES-GUIDE-v3-brochure.html
 !FEATURES-GUIDE-v4-ux.html
-!UPDATES-SINCE-AUG-17.html
+!WHATS-NEW-9-SEPT-26.html
  
 # Ignore everything in the "wp-content" directory, except the "themes" directory.
 wp-content/*

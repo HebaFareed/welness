@@ -97,7 +97,7 @@ Therapists only need intake details once per client. After the first booking, th
 | Who | What to do |
 |-----|-------------|
 | **Admin** | Go to **Appointments → Intake Forms** to browse all submitted forms. Each is tied to the client's email address — one entry per unique email. Click any entry to see the full intake record (the thank-you form collects 27 fields). On any order page, an intake summary card appears below the billing address. |
-| **Staff/Therapist** | Your **New Appointment** email includes the intake summary for first-time clients, or a **"Client Intake Form: Pending"** note when the client has not yet filled it in. You can also browse all forms under **Appointments → Intake Forms**. |
+| **Staff/Therapist** | Your **New Appointment** email includes the intake summary for first-time clients, or a **"Client Intake Form: Pending"** note when the client has not yet filled it in. When the client submits the form, you get an email with the **full intake form**. You can also browse all forms under **Appointments → Intake Forms**. |
 | **Client** | Checkout is 2 steps (Contact & Billing → Payment). After ordering, first-time clients complete the intake form on the thank-you page (prefilled); a reminder is emailed ~24h later if it is still missing. No login needed — it works by email. |
 
 **Checkout — 2 steps (all clients):**
@@ -123,6 +123,7 @@ Therapists only need intake details once per client. After the first booking, th
 - 📋 **Appointments → Intake Forms** — full list and detailed view (admin + staff)
 - 🧾 **Order detail page** — intake summary card below billing address
 - ✉️ **New Appointment email** — intake summary, or "Client Intake Form: Pending" when missing
+- ✉️ **Therapist intake email** — the full form, sent to the therapist as soon as the client submits it
 - ⏰ **Intake reminder email** — sent ~24h after booking if the form is still incomplete
 
 ---
